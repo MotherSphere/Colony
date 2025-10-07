@@ -6,12 +6,11 @@ Colony is a simple text editor using tkinter (not complete)
 
 ```
 Colony
-├── src
-│   ├── main.py          # Entry point of the application
-│   └── app.py           # Main application class
-├── requirements.txt     # Dependencies (optional)
-├── pyproject.toml       # Project configuration (optional)
-└── README.md            # Documentation (this file)
+│ main.py          # Entry point of the application
+│ app.py           # Main application class
+├ requirements.txt     # Dependencies (optional)
+├ pyproject.toml       # Project configuration (optional)
+└ README.md            # Documentation (this file)
 ```
 
 ## Prerequisites

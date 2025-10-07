@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Colony"
+version = "0.1.0"
+description = "A simple text editor"
+authors = [{ name = "MotherSphere", email = "linhajahad@gmail.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.6"
+dependencies = [
+    "tkinter"
+]

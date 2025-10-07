@@ -1,55 +1,42 @@
 # Colony
 
-hello! here's a little about me:
+Colony is a simple text editor using tkinter (not complete)
 
-<h1>
-  i really like music :headphones:
-</h1>
+## Project structure
 
-<!-- Nothing weird to see here -->
-<p align="center">
-  <a href="https://andyruwruw.vercel.app/api/now-playing?open">
-    <!-- Music bars move to the beat and are colored based on the track's happiness, danceability and energy! -->
-    <img src="https://andyruwruw.vercel.app/api/now-playing">
-  </a>
-</p>
+```
+Colony
+├── src
+│   ├── main.py          # Entry point of the application
+│   └── app.py           # Main application class
+├── requirements.txt     # Dependencies (optional)
+├── pyproject.toml       # Project configuration (optional)
+└── README.md            # Documentation (this file)
+```
 
-<p align="center">
-  <img src="https://andyruwruw.vercel.app/api/top-played">
-</p>
- 
-<p align="center">
-  <!-- He came up with the idea of HOW to show React components as an img on a README.md and the now playing component! -->
-  <i>inspired by <a href="https://github.com/natemoo-re">natemoo-re</a></i>
-</p>
+## Prerequisites
 
-<p></p>
+- Python 3.8+ installed.
+- (Optional) create a virtual environment:
+  - python -m venv .venv
+  - .venv\Scripts\activate
 
-<h1>
-  i was a frontend intern at chess.com ♟️
-</h1>
+Install dependencies if necessary:
+```
+pip install -r requirements.txt
+```
 
-<p align="center">
-  <a href="https://www.chess.com/member/andyruwruw">
-    <img src="https://andyruwruw.vercel.app/api/chess-games">
-  </a>
-</p>
+## Run
 
-<p align="center">
-  <i>luckily being good at chess wasn't a pre-req to the job</i>
-</p>
+Start the application:
+```
+python src/Colony.py
+```
+or
+```
+python -m src.Colony
+```
 
-<p></p>
+## License
 
-<h1>
-  i'm a vue.js fanboy, but i do some other stuff too :hammer:
-</h1>
-
-<p align="center">
-  <img src="https://andyruwruw.vercel.app/api/skills">
-</p>
-
------
-Credits: [andyruwruw](https://github.com/andyruwruw)
-
-Last Edited on: 08/01/2021
+Open-source project — But please credit

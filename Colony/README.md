@@ -1,42 +1,42 @@
 # Colony
 
-Colony est un simple éditeur de texte sous tkinter (non complet)
+Colony is a simple text editor using tkinter (not complete)
 
-## Structure du projet
+## Project structure
 
 ```
 Colony
 ├── src
-│   ├── main.py          # Point d'entrée de l'application
-│   └── app.py           # Classe principale de l'application
-├── requirements.txt     # Dépendances (facultatif)
-├── pyproject.toml       # Configuration du projet (facultatif)
-└── README.md            # Documentation (ce fichier)
+│   ├── main.py          # Entry point of the application
+│   └── app.py           # Main application class
+├── requirements.txt     # Dependencies (optional)
+├── pyproject.toml       # Project configuration (optional)
+└── README.md            # Documentation (this file)
 ```
 
-## Prérequis
+## Prerequisites
 
-- Python 3.8+ installé.
-- (Optionnel) créer un environnement virtuel :
+- Python 3.8+ installed.
+- (Optional) create a virtual environment:
   - python -m venv .venv
   - .venv\Scripts\activate
 
-Installer les dépendances si nécessaire :
+Install dependencies if necessary:
 ```
 pip install -r requirements.txt
 ```
 
-## Exécution
+## Run
 
-Lancer l'application :
+Start the application:
 ```
 python src/Colony.py
 ```
-ou
+or
 ```
 python -m src.Colony
 ```
 
-## Licence
+## License
 
-Projet open‑source — Mais a créditer
+Open-source project — But please credit

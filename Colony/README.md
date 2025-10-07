@@ -37,13 +37,6 @@ ou
 python -m src.Colony
 ```
 
-## Tests
-
-Exécuter les tests unitaires :
-```
-python -m unittest discover -s tests
-```
-
 ## Licence
 
 Projet open‑source — Mais a créditer

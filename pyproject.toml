@@ -5,11 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "Colony"
 version = "0.1.0"
-description = "A simple text editor"
+description = "Mother Sphere"
 authors = [{ name = "MotherSphere", email = "linhajahad@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.6"
 dependencies = [
     "tkinter"
+    "Pillow"
+    "pyperclip"
+    "pygments"
+    "qrcode"
+    "pyfiglet"
+    "rich"
 ]

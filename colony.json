@@ -1,0 +1,30 @@
+{
+  "language": "fr",
+  "theme": "light",
+  "font_size": 14,
+  "font_family": "Segoe UI",
+  "word_wrap": true,
+  "show_line_numbers": true,
+  "show_whitespace": false,
+  "indent_with_spaces": true,
+  "tab_size": 4,
+  "trim_trailing": true,
+  "insert_final_newline": true,
+  "format_on_save": false,
+  "auto_save": false,
+  "auto_save_delay": 300000,
+  "rulers": [
+    80,
+    120
+  ],
+  "minimap": false,
+  "sticky_scroll": false,
+  "breadcrumb": false,
+  "inlay_hints": false,
+  "bracket_pairs": true,
+  "current_lexer": "auto",
+  "terminal_shell": "cmd",
+  "terminal_font": "Consolas 11",
+  "recent_files": [],
+  "shortcuts": {}
+}

@@ -2,7 +2,9 @@
 
 #include "colony/core/Module.hpp"
 
+#include <functional>
 #include <sstream>
+#include <unordered_set>
 
 namespace colony::installer {
 
@@ -12,36 +14,50 @@ ModuleInstaller::ModuleInstaller(core::ModuleRegistry &registry,
     : registry_(registry), security_(security), appCenter_(appCenter) {}
 
 InstallResult ModuleInstaller::install(const std::string &identifier) {
-    if (registry_.isInstalled(identifier)) {
-        return {false, identifier + " is already installed"};
-    }
+    std::unordered_set<std::string> visiting;
 
-    auto manifest = appCenter_.manifest(identifier);
-    if (!manifest) {
-        return {false, "Manifest not found for " + identifier};
-    }
-
-    for (const auto &dependency : manifest->dependencies) {
-        if (!registry_.isInstalled(dependency)) {
-            std::ostringstream oss;
-            oss << "Missing dependency '" << dependency << "' for module '" << identifier << "'";
-            return {false, oss.str()};
+    std::function<InstallResult(const std::string &)> installRecursive =
+        [&](const std::string &moduleId) -> InstallResult {
+        if (registry_.isInstalled(moduleId)) {
+            return {true, moduleId + " already installed"};
         }
-    }
 
-    if (!registry_.hasFactory(identifier)) {
-        return {false, "No module implementation registered for " + identifier};
-    }
+        if (!visiting.insert(moduleId).second) {
+            return {false, "Circular dependency detected for " + moduleId};
+        }
 
-    security::PermissionSet requested(manifest->permissions.begin(), manifest->permissions.end());
-    security_.requestPermissions(identifier, requested);
+        auto manifest = appCenter_.manifest(moduleId);
+        if (!manifest) {
+            visiting.erase(moduleId);
+            return {false, "Manifest not found for " + moduleId};
+        }
 
-    auto module = registry_.create(identifier);
-    module->initialize();
-    module->shutdown();
+        for (const auto &dependency : manifest->dependencies) {
+            auto dependencyResult = installRecursive(dependency);
+            if (!dependencyResult.success) {
+                visiting.erase(moduleId);
+                return dependencyResult;
+            }
+        }
 
-    registry_.markInstalled(*manifest);
-    return {true, identifier + " installed"};
+        visiting.erase(moduleId);
+
+        if (!registry_.hasFactory(moduleId)) {
+            return {false, "No module implementation registered for " + moduleId};
+        }
+
+        security::PermissionSet requested(manifest->permissions.begin(), manifest->permissions.end());
+        security_.requestPermissions(moduleId, requested);
+
+        auto module = registry_.create(moduleId);
+        module->initialize();
+        module->shutdown();
+
+        registry_.markInstalled(*manifest);
+        return {true, moduleId + " installed"};
+    };
+
+    return installRecursive(identifier);
 }
 
 InstallResult ModuleInstaller::uninstall(const std::string &identifier) {

@@ -60,7 +60,7 @@ std::vector<std::string> extractArray(const std::string &data, const std::string
         if (quoteEnd == std::string::npos) {
             break;
         }
-        result.emplace_back(content.substr(quoteStart + 1, quoteEnd - quoteStart - 1));
+        result.push_back(content.substr(quoteStart + 1, quoteEnd - quoteStart - 1));
         current = quoteEnd + 1;
     }
 

@@ -1,8 +1,0 @@
-{
-  "identifier": "audio_player",
-  "name": "Audio Player",
-  "version": "0.1.0",
-  "description": "Colony's music and podcast player",
-  "permissions": ["filesystem", "audio_output"],
-  "dependencies": []
-}

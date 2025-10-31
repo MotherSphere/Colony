@@ -1,14 +1,24 @@
-# Colony
+# Colony Launcher Skeleton
 
-This repository has been intentionally cleared. The previous C++ prototype and its associated assets have been removed, leaving
-this README as the sole remaining file.
+Ce dépôt propose une base Qt 6 minimale pour afficher un lanceur "Colony" vide :
+- Navigation verticale à gauche listant des catégories d’applications.
+- Barre d’onglets en haut permettant de garder ouvertes les applications lancées.
+- Vue centrale affichant soit la grille d’applications d’une catégorie, soit un placeholder pour l’application sélectionnée.
 
-## Purpose
+## Prérequis
+- Qt 6 (module Widgets) installé et disponible dans le `PATH`/`CMAKE_PREFIX_PATH`.
+- CMake ≥ 3.16
+- Un compilateur C++17 (Clang, GCC, MSVC…)
 
-The repository is kept as a placeholder in case future work needs to be reintroduced. For now, it simply documents that the
-codebase has been archived and is no longer available in this location.
+## Compilation rapide
+```bash
+cmake -S . -B build
+cmake --build build
+```
 
-## Next steps
+## Exécution
+```bash
+./build/colony_launcher
+```
 
-- Restore the prior history via Git if you need to recover the former implementation.
-- Start anew by committing fresh content to this repository when you're ready to rebuild.
+Le binaire ouvre une fenêtre avec la structure du launcher ; aucun module fonctionnel n’est encore implémenté.

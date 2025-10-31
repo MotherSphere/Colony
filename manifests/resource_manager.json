@@ -1,0 +1,8 @@
+{
+  "identifier": "resource_manager",
+  "name": "Resource Manager",
+  "version": "0.1.0",
+  "description": "Centralized resource library for Colony",
+  "permissions": ["filesystem"],
+  "dependencies": []
+}

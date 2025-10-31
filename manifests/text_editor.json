@@ -1,0 +1,8 @@
+{
+  "identifier": "text_editor",
+  "name": "Text Editor",
+  "version": "0.1.0",
+  "description": "Colony's integrated text editor",
+  "permissions": ["filesystem", "configuration"],
+  "dependencies": ["resource_manager"]
+}

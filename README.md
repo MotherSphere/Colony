@@ -44,6 +44,20 @@ The resulting executable (`ecosystem_app`) will be located in the `build` direct
 
 Close the window to exit the application.
 
+### Fonts
+
+The UI uses the **DejaVu Sans** typeface. At launch the application verifies whether the font is available on your system. If it
+can be found in a common location, it is copied into `assets/fonts/DejaVuSans.ttf`; otherwise the font is downloaded on demand
+from the [official DejaVu repository](https://github.com/dejavu-fonts/dejavu-fonts). If you prefer to use a different font, set
+the `COLONY_FONT_PATH` environment variable to a TTF file before launching the executable:
+
+```bash
+COLONY_FONT_PATH=/path/to/your/font.ttf ./build/ecosystem_app
+```
+
+If the environment variable is unset and the automatic lookup or download fails (for example, because `curl` is unavailable),
+place `DejaVuSans.ttf` under `assets/fonts/` manually.
+
 ## Next steps
 
 - Add new source files under `src/` and register them in `CMakeLists.txt`.

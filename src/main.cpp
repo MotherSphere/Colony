@@ -2,7 +2,9 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -17,7 +19,150 @@ constexpr SDL_Color kSidebarColor{236, 236, 236, SDL_ALPHA_OPAQUE};
 constexpr SDL_Color kPrimaryTextColor{30, 30, 30, SDL_ALPHA_OPAQUE};
 constexpr SDL_Color kMutedTextColor{120, 120, 120, SDL_ALPHA_OPAQUE};
 constexpr SDL_Color kAccentColor{20, 20, 20, SDL_ALPHA_OPAQUE};
-constexpr char kFontPath[] = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+constexpr char kFontFileName[] = "DejaVuSans.ttf";
+constexpr char kBundledFontDirectory[] = "assets/fonts";
+constexpr char kFontDownloadUrl[] =
+    "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf";
+
+constexpr std::array<std::filesystem::path, 3> kSystemFontCandidates{
+    std::filesystem::path{"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"},
+    std::filesystem::path{"/usr/local/share/fonts/DejaVuSans.ttf"},
+    std::filesystem::path{"/Library/Fonts/DejaVuSans.ttf"}};
+
+std::filesystem::path GetBundledFontPath()
+{
+    return std::filesystem::path{kBundledFontDirectory} / kFontFileName;
+}
+
+bool CopyFontIfPresent(const std::filesystem::path& source, const std::filesystem::path& destination)
+{
+    std::error_code error;
+    if (!std::filesystem::exists(source, error))
+    {
+        return false;
+    }
+
+    std::filesystem::create_directories(destination.parent_path(), error);
+    if (error)
+    {
+        return false;
+    }
+
+    std::filesystem::copy_file(
+        source,
+        destination,
+        std::filesystem::copy_options::overwrite_existing,
+        error);
+
+    return !error;
+}
+
+bool IsCommandAvailable(std::string_view command)
+{
+#ifdef _WIN32
+    std::string checkCommand{"where "};
+#else
+    std::string checkCommand{"command -v "};
+#endif
+    checkCommand.append(command);
+#ifdef _WIN32
+    checkCommand.append(" >nul 2>&1");
+#else
+    checkCommand.append(" >/dev/null 2>&1");
+#endif
+    return std::system(checkCommand.c_str()) == 0;
+}
+
+bool DownloadFont(const std::filesystem::path& destination)
+{
+    if (!IsCommandAvailable("curl"))
+    {
+        return false;
+    }
+
+    std::error_code error;
+    std::filesystem::create_directories(destination.parent_path(), error);
+    if (error)
+    {
+        return false;
+    }
+
+    std::string command{"curl -fsSL --create-dirs -o \""};
+    command.append(destination.generic_string());
+    command.append("\" \"");
+    command.append(kFontDownloadUrl);
+    command.append("\"");
+
+    if (std::system(command.c_str()) != 0)
+    {
+        std::filesystem::remove(destination, error);
+        return false;
+    }
+
+    return std::filesystem::exists(destination, error);
+}
+
+bool EnsureBundledFontAvailable()
+{
+    const std::filesystem::path bundledPath = GetBundledFontPath();
+    std::error_code error;
+    if (std::filesystem::exists(bundledPath, error))
+    {
+        return true;
+    }
+
+    for (const auto& candidate : kSystemFontCandidates)
+    {
+        if (CopyFontIfPresent(candidate, bundledPath))
+        {
+            return true;
+        }
+    }
+
+    return DownloadFont(bundledPath);
+}
+
+std::string ResolveFontPath()
+{
+    std::vector<std::filesystem::path> candidates;
+
+    if (const char* envFontPath = std::getenv("COLONY_FONT_PATH"); envFontPath != nullptr)
+    {
+        std::filesystem::path envPath{envFontPath};
+        std::error_code envError;
+        if (std::filesystem::exists(envPath, envError))
+        {
+            return envPath.string();
+        }
+        std::cerr << "Environment variable COLONY_FONT_PATH is set to '" << envFontPath
+                  << "', but the file could not be found. Falling back to defaults.\n";
+    }
+
+    EnsureBundledFontAvailable();
+
+    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
+    {
+        std::filesystem::path base{basePath};
+        SDL_free(basePath);
+        candidates.emplace_back(base / kBundledFontDirectory / kFontFileName);
+    }
+
+    candidates.emplace_back(GetBundledFontPath());
+    candidates.emplace_back(std::filesystem::path{"fonts"} / kFontFileName);
+    candidates.emplace_back(std::filesystem::path{kFontFileName});
+    candidates.insert(candidates.end(), kSystemFontCandidates.begin(), kSystemFontCandidates.end());
+
+    for (const auto& candidate : candidates)
+    {
+        std::error_code error;
+        if (std::filesystem::exists(candidate, error))
+        {
+            return candidate.string();
+        }
+    }
+
+    return {};
+}
 
 struct TextTexture
 {
@@ -101,16 +246,30 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    TTF_Font* brandFont = TTF_OpenFont(kFontPath, 44);
-    TTF_Font* navFont = TTF_OpenFont(kFontPath, 22);
-    TTF_Font* headingFont = TTF_OpenFont(kFontPath, 58);
-    TTF_Font* paragraphFont = TTF_OpenFont(kFontPath, 20);
-    TTF_Font* buttonFont = TTF_OpenFont(kFontPath, 24);
+    const std::string fontPath = ResolveFontPath();
+    if (fontPath.empty())
+    {
+        std::cerr << "Unable to locate a usable font file. Provide DejaVuSans.ttf in assets/fonts, set COLONY_FONT_PATH, "
+                  << "or ensure curl is installed for automatic download." << '\n';
+        TTF_Quit();
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
+    auto loadFont = [&](int size) { return TTF_OpenFont(fontPath.c_str(), size); };
+
+    TTF_Font* brandFont = loadFont(44);
+    TTF_Font* navFont = loadFont(22);
+    TTF_Font* headingFont = loadFont(58);
+    TTF_Font* paragraphFont = loadFont(20);
+    TTF_Font* buttonFont = loadFont(24);
 
     if (brandFont == nullptr || navFont == nullptr || headingFont == nullptr || paragraphFont == nullptr
         || buttonFont == nullptr)
     {
-        std::cerr << "Failed to load font from " << kFontPath << ": " << TTF_GetError() << '\n';
+        std::cerr << "Failed to load font from " << fontPath << ": " << TTF_GetError() << '\n';
         if (brandFont != nullptr)
             TTF_CloseFont(brandFont);
         if (navFont != nullptr)

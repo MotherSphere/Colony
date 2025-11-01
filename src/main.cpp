@@ -24,7 +24,7 @@ constexpr char kBundledFontDirectory[] = "assets/fonts";
 constexpr char kFontDownloadUrl[] =
     "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf";
 
-constexpr std::array<std::filesystem::path, 3> kSystemFontCandidates{
+const std::array<std::filesystem::path, 3> kSystemFontCandidates{
     std::filesystem::path{"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"},
     std::filesystem::path{"/usr/local/share/fonts/DejaVuSans.ttf"},
     std::filesystem::path{"/Library/Fonts/DejaVuSans.ttf"}};

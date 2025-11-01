@@ -22,7 +22,7 @@ constexpr SDL_Color kAccentColor{20, 20, 20, SDL_ALPHA_OPAQUE};
 constexpr char kFontFileName[] = "DejaVuSans.ttf";
 constexpr char kBundledFontDirectory[] = "assets/fonts";
 constexpr char kFontDownloadUrl[] =
-    "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf";
+    "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans.ttf";
 
 const std::array<std::filesystem::path, 3> kSystemFontCandidates{
     std::filesystem::path{"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"},

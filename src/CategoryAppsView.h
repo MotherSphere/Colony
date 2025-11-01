@@ -5,7 +5,7 @@
 
 #include "LauncherModels.h"
 
-class QGridLayout;
+class QVBoxLayout;
 
 class CategoryAppsView : public QWidget {
     Q_OBJECT
@@ -22,5 +22,5 @@ private:
     void rebuildGrid();
 
     QList<ApplicationInfo> m_apps;
-    QGridLayout *m_layout = nullptr;
+    QVBoxLayout *m_layout = nullptr;
 };

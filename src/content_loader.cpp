@@ -103,8 +103,8 @@ ViewContent ParseViewContent(const std::string& viewId, const nlohmann::json& js
 
             if (!sectionJson.contains("options") || !sectionJson["options"].is_array())
             {
-                throw std::runtime_error("View \"" + viewId
-                    + "\" requires each section to declare an array of options.");
+                throw std::runtime_error(
+                    "View \"" + viewId + "\" requires each section to declare an array of options.");
             }
 
             ViewSection section;

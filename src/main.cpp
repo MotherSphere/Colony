@@ -6,12 +6,20 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "content_loader.hpp"
+#include "controllers/navigation_controller.hpp"
+#include "utils/sdl_wrappers.hpp"
+#include "utils/text.hpp"
+#include "views/simple_text_view.hpp"
+
 namespace
 {
+
 constexpr int kWindowWidth = 1024;
 constexpr int kWindowHeight = 640;
 constexpr SDL_Color kBackgroundColor{245, 245, 245, SDL_ALPHA_OPAQUE};
@@ -23,6 +31,7 @@ constexpr char kFontFileName[] = "DejaVuSans.ttf";
 constexpr char kBundledFontDirectory[] = "assets/fonts";
 constexpr char kFontDownloadUrl[] =
     "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans.ttf";
+constexpr char kContentFile[] = "assets/content/app_content.json";
 
 const std::array<std::filesystem::path, 3> kSystemFontCandidates{
     std::filesystem::path{"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"},
@@ -164,45 +173,35 @@ std::string ResolveFontPath()
     return {};
 }
 
-struct TextTexture
+std::filesystem::path ResolveContentPath()
 {
-    SDL_Texture* texture{};
-    int width{};
-    int height{};
-};
-
-TextTexture CreateTextTexture(SDL_Renderer* renderer, TTF_Font* font, std::string_view text, SDL_Color color)
-{
-    const std::string textString{text};
-    SDL_Surface* surface = TTF_RenderUTF8_Blended(font, textString.c_str(), color);
-    if (surface == nullptr)
+    std::filesystem::path candidate{kContentFile};
+    std::error_code error;
+    if (std::filesystem::exists(candidate, error))
     {
-        std::cerr << "Failed to render text surface: " << TTF_GetError() << '\n';
-        return {};
+        return candidate;
     }
 
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (texture == nullptr)
+    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
     {
-        std::cerr << "Failed to create text texture: " << SDL_GetError() << '\n';
-        SDL_FreeSurface(surface);
-        return {};
+        std::filesystem::path base{basePath};
+        SDL_free(basePath);
+        std::filesystem::path baseCandidate = base / kContentFile;
+        if (std::filesystem::exists(baseCandidate, error))
+        {
+            return baseCandidate;
+        }
     }
 
-    TextTexture result{texture, surface->w, surface->h};
-    SDL_FreeSurface(surface);
-    return result;
+    return candidate;
 }
 
-void DestroyTextTexture(TextTexture& textTexture)
+bool PointInRect(const SDL_Rect& rect, int x, int y)
 {
-    if (textTexture.texture != nullptr)
-    {
-        SDL_DestroyTexture(textTexture.texture);
-        textTexture = {};
-    }
+    return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
 }
-}
+
+} // namespace
 
 int main(int argc, char** argv)
 {
@@ -212,27 +211,28 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    SDL_Window* window = SDL_CreateWindow(
+    colony::sdl::WindowHandle window{SDL_CreateWindow(
         "Ecosystem Application",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         kWindowWidth,
         kWindowHeight,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE)};
 
-    if (window == nullptr)
+    if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << '\n';
         SDL_Quit();
         return EXIT_FAILURE;
     }
 
-    SDL_Renderer* renderer =
-        SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
-    if (renderer == nullptr)
+    colony::sdl::RendererHandle renderer{SDL_CreateRenderer(
+        window.get(),
+        -1,
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE)};
+    if (!renderer)
     {
         std::cerr << "Failed to create renderer: " << SDL_GetError() << '\n';
-        SDL_DestroyWindow(window);
         SDL_Quit();
         return EXIT_FAILURE;
     }
@@ -240,128 +240,146 @@ int main(int argc, char** argv)
     if (TTF_Init() == -1)
     {
         std::cerr << "Failed to initialize SDL_ttf: " << TTF_GetError() << '\n';
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
         SDL_Quit();
         return EXIT_FAILURE;
     }
+
+    struct TtfGuard
+    {
+        ~TtfGuard() { TTF_Quit(); }
+    } ttfGuard;
 
     const std::string fontPath = ResolveFontPath();
     if (fontPath.empty())
     {
-        std::cerr << "Unable to locate a usable font file. Provide DejaVuSans.ttf in assets/fonts, set COLONY_FONT_PATH, "
-                  << "or ensure curl is installed for automatic download." << '\n';
-        TTF_Quit();
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
+        std::cerr << "Unable to locate a usable font file. Provide DejaVuSans.ttf in assets/fonts, set COLONY_FONT_PATH, or "
+                     "ensure curl is installed for automatic download." << '\n';
         SDL_Quit();
         return EXIT_FAILURE;
     }
 
-    auto loadFont = [&](int size) { return TTF_OpenFont(fontPath.c_str(), size); };
+    auto openFont = [&](int size) { return colony::sdl::FontHandle{TTF_OpenFont(fontPath.c_str(), size)}; };
 
-    TTF_Font* brandFont = loadFont(44);
-    TTF_Font* navFont = loadFont(22);
-    TTF_Font* headingFont = loadFont(58);
-    TTF_Font* paragraphFont = loadFont(20);
-    TTF_Font* buttonFont = loadFont(24);
+    colony::sdl::FontHandle brandFont = openFont(44);
+    colony::sdl::FontHandle navFont = openFont(22);
+    colony::sdl::FontHandle headingFont = openFont(52);
+    colony::sdl::FontHandle paragraphFont = openFont(20);
+    colony::sdl::FontHandle buttonFont = openFont(24);
 
-    if (brandFont == nullptr || navFont == nullptr || headingFont == nullptr || paragraphFont == nullptr
-        || buttonFont == nullptr)
+    if (!brandFont || !navFont || !headingFont || !paragraphFont || !buttonFont)
     {
-        std::cerr << "Failed to load font from " << fontPath << ": " << TTF_GetError() << '\n';
-        if (brandFont != nullptr)
-            TTF_CloseFont(brandFont);
-        if (navFont != nullptr)
-            TTF_CloseFont(navFont);
-        if (headingFont != nullptr)
-            TTF_CloseFont(headingFont);
-        if (paragraphFont != nullptr)
-            TTF_CloseFont(paragraphFont);
-        if (buttonFont != nullptr)
-            TTF_CloseFont(buttonFont);
-        TTF_Quit();
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
+        std::cerr << "Failed to load required fonts from " << fontPath << ": " << TTF_GetError() << '\n';
         SDL_Quit();
         return EXIT_FAILURE;
     }
 
-    TextTexture brandText = CreateTextTexture(renderer, brandFont, "COLONY", kPrimaryTextColor);
-    std::vector<std::string> navigationLabels{"HOME", "MISSIONS", "DATABASE", "SETTINGS"};
-    std::vector<TextTexture> navigationTexts(navigationLabels.size());
-    int activeNavigationIndex = 0;
+    colony::AppContent content;
+    try
+    {
+        content = colony::LoadContentFromFile(ResolveContentPath().string());
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr << ex.what() << '\n';
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
+    colony::NavigationController navigationController;
+    navigationController.SetEntries(content.navigation);
+
+    colony::ViewCollection views;
+    views.reserve(content.navigation.size());
+    for (const auto& id : content.navigation)
+    {
+        auto view = std::make_unique<colony::SimpleTextView>(id);
+        if (auto it = content.views.find(id); it != content.views.end())
+        {
+            view->BindContent(it->second);
+        }
+        else
+        {
+            colony::ViewContent fallbackContent{
+                .heading = id,
+                .paragraphs = {"This section is waiting for mission data."},
+                .primaryActionLabel = "Acknowledge",
+                .statusMessage = "No module connected to this panel yet."};
+            view->BindContent(fallbackContent);
+        }
+        views.emplace_back(std::move(view));
+    }
+
+    colony::RenderContext renderContext{
+        .renderer = renderer.get(),
+        .headingFont = headingFont.get(),
+        .paragraphFont = paragraphFont.get(),
+        .buttonFont = buttonFont.get(),
+        .primaryColor = kPrimaryTextColor,
+        .mutedColor = kMutedTextColor,
+        .accentColor = kAccentColor};
+
+    colony::View* activeView = nullptr;
+    std::string statusMessage{"Systems idle."};
+    colony::TextTexture statusTexture;
+
+    auto rebuildStatusTexture = [&]() {
+        statusTexture = colony::CreateTextTexture(renderContext.renderer, paragraphFont.get(), statusMessage, kMutedTextColor);
+    };
+
+    colony::TextTexture brandTexture = colony::CreateTextTexture(
+        renderContext.renderer,
+        brandFont.get(),
+        content.brandName,
+        kPrimaryTextColor);
+
+    std::vector<colony::TextTexture> navigationTextures;
+    std::vector<SDL_Rect> navigationRects(content.navigation.size());
+
     auto refreshNavigationTextures = [&]() {
-        bool allCreated = true;
-        for (std::size_t i = 0; i < navigationLabels.size(); ++i)
+        navigationTextures.clear();
+        navigationTextures.reserve(content.navigation.size());
+        for (std::size_t i = 0; i < content.navigation.size(); ++i)
         {
-            DestroyTextTexture(navigationTexts[i]);
-            const bool isActive = static_cast<int>(i) == activeNavigationIndex;
-            navigationTexts[i] = CreateTextTexture(renderer, navFont, navigationLabels[i], isActive ? kPrimaryTextColor : kMutedTextColor);
-            if (navigationTexts[i].texture == nullptr)
-            {
-                allCreated = false;
-            }
+            const bool isActive = static_cast<int>(i) == navigationController.ActiveIndex();
+            navigationTextures.emplace_back(colony::CreateTextTexture(
+                renderContext.renderer,
+                navFont.get(),
+                content.navigation[i],
+                isActive ? kPrimaryTextColor : kMutedTextColor));
         }
-        return allCreated;
     };
 
-    std::vector<SDL_Rect> navigationRects(navigationLabels.size(), SDL_Rect{0, 0, 0, 0});
-
-    bool navigationTexturesValid = refreshNavigationTextures();
-
-    TextTexture welcomeText = CreateTextTexture(renderer, headingFont, "WELCOME", kPrimaryTextColor);
-    TextTexture paragraphLine1 = CreateTextTexture(
-        renderer,
-        paragraphFont,
-        "Lorem ipsum dolor sit amet, consectetur adipiscing",
-        kMutedTextColor);
-    TextTexture paragraphLine2 = CreateTextTexture(
-        renderer,
-        paragraphFont,
-        "elit, sed do eiusmod tempor incididunt ut labore",
-        kMutedTextColor);
-    TextTexture paragraphLine3 =
-        CreateTextTexture(renderer, paragraphFont, "et dolore magna aliqua.", kMutedTextColor);
-    TextTexture launchText = CreateTextTexture(renderer, buttonFont, "LAUNCH", kAccentColor);
-
-    auto destroyTextResources = [&]() {
-        DestroyTextTexture(brandText);
-        for (auto& text : navigationTexts)
+    auto activateView = [&](int index) {
+        if (index < 0 || index >= static_cast<int>(views.size()))
         {
-            DestroyTextTexture(text);
+            return;
         }
-        DestroyTextTexture(welcomeText);
-        DestroyTextTexture(paragraphLine1);
-        DestroyTextTexture(paragraphLine2);
-        DestroyTextTexture(paragraphLine3);
-        DestroyTextTexture(launchText);
 
-        if (brandFont != nullptr)
-            TTF_CloseFont(brandFont);
-        if (navFont != nullptr)
-            TTF_CloseFont(navFont);
-        if (headingFont != nullptr)
-            TTF_CloseFont(headingFont);
-        if (paragraphFont != nullptr)
-            TTF_CloseFont(paragraphFont);
-        if (buttonFont != nullptr)
-            TTF_CloseFont(buttonFont);
+        if (activeView != nullptr)
+        {
+            activeView->Deactivate();
+        }
+
+        activeView = views[index].get();
+        activeView->Activate(renderContext);
+
+        const auto& entryId = navigationController.Entries()[index];
+        if (auto it = content.views.find(entryId); it != content.views.end())
+        {
+            statusMessage = it->second.statusMessage;
+        }
+        else
+        {
+            statusMessage = "Awaiting subsystem telemetry.";
+        }
+        rebuildStatusTexture();
+        refreshNavigationTextures();
     };
 
-    bool textCreationFailed = brandText.texture == nullptr || welcomeText.texture == nullptr || paragraphLine1.texture == nullptr
-        || paragraphLine2.texture == nullptr || paragraphLine3.texture == nullptr || launchText.texture == nullptr || !navigationTexturesValid;
+    navigationController.OnSelectionChanged([&](int index) { activateView(index); });
 
-    if (textCreationFailed)
-    {
-        std::cerr << "Failed to create UI text resources." << '\n';
-        destroyTextResources();
-        TTF_Quit();
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return EXIT_FAILURE;
-    }
+    refreshNavigationTextures();
+    activateView(navigationController.ActiveIndex());
 
     bool running = true;
     SDL_Event event;
@@ -377,23 +395,25 @@ int main(int argc, char** argv)
             {
                 const int mouseX = event.button.x;
                 const int mouseY = event.button.y;
+
                 for (std::size_t i = 0; i < navigationRects.size(); ++i)
                 {
-                    const SDL_Rect& rect = navigationRects[i];
-                    const bool withinX = mouseX >= rect.x && mouseX <= rect.x + rect.w;
-                    const bool withinY = mouseY >= rect.y && mouseY <= rect.y + rect.h;
-                    if (withinX && withinY)
+                    if (PointInRect(navigationRects[i], mouseX, mouseY))
                     {
-                        if (static_cast<int>(i) != activeNavigationIndex)
-                        {
-                            activeNavigationIndex = static_cast<int>(i);
-                            navigationTexturesValid = refreshNavigationTextures();
-                            if (!navigationTexturesValid)
-                            {
-                                std::cerr << "Failed to refresh navigation textures." << '\n';
-                            }
-                        }
+                        navigationController.Activate(static_cast<int>(i));
                         break;
+                    }
+                }
+
+                if (activeView != nullptr)
+                {
+                    if (const std::optional<SDL_Rect> actionRect = activeView->PrimaryActionRect())
+                    {
+                        if (PointInRect(*actionRect, mouseX, mouseY))
+                        {
+                            activeView->OnPrimaryAction(statusMessage);
+                            rebuildStatusTexture();
+                        }
                     }
                 }
             }
@@ -401,89 +421,74 @@ int main(int argc, char** argv)
 
         int outputWidth = 0;
         int outputHeight = 0;
-        SDL_GetRendererOutputSize(renderer, &outputWidth, &outputHeight);
+        SDL_GetRendererOutputSize(renderer.get(), &outputWidth, &outputHeight);
 
-        SDL_SetRenderDrawColor(renderer, kBackgroundColor.r, kBackgroundColor.g, kBackgroundColor.b, kBackgroundColor.a);
-        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer.get(), kBackgroundColor.r, kBackgroundColor.g, kBackgroundColor.b, kBackgroundColor.a);
+        SDL_RenderClear(renderer.get());
 
         const int sidebarWidth = static_cast<int>(std::clamp(outputWidth / 4, 220, 280));
         const int contentPadding = 48;
 
         SDL_Rect sidebarRect{0, 0, sidebarWidth, outputHeight};
-        SDL_SetRenderDrawColor(renderer, kSidebarColor.r, kSidebarColor.g, kSidebarColor.b, kSidebarColor.a);
-        SDL_RenderFillRect(renderer, &sidebarRect);
+        SDL_SetRenderDrawColor(renderer.get(), kSidebarColor.r, kSidebarColor.g, kSidebarColor.b, kSidebarColor.a);
+        SDL_RenderFillRect(renderer.get(), &sidebarRect);
 
-        SDL_SetRenderDrawColor(renderer, kAccentColor.r, kAccentColor.g, kAccentColor.b, kAccentColor.a);
-        SDL_RenderDrawLine(renderer, sidebarWidth, 0, sidebarWidth, outputHeight);
+        SDL_SetRenderDrawColor(renderer.get(), kAccentColor.r, kAccentColor.g, kAccentColor.b, kAccentColor.a);
+        SDL_RenderDrawLine(renderer.get(), sidebarWidth, 0, sidebarWidth, outputHeight);
 
-        SDL_Rect brandRect{contentPadding / 2, contentPadding, brandText.width, brandText.height};
-        SDL_RenderCopy(renderer, brandText.texture, nullptr, &brandRect);
-
-        if (!navigationTexturesValid)
+        if (brandTexture.texture)
         {
-            running = false;
-            continue;
+            SDL_Rect brandRect{contentPadding / 2, contentPadding, brandTexture.width, brandTexture.height};
+            colony::RenderTexture(renderer.get(), brandTexture, brandRect);
         }
 
-        int navY = brandRect.y + brandRect.h + 48;
+        int navY = contentPadding + 120;
         const int navSpacing = 48;
-        for (std::size_t i = 0; i < navigationTexts.size(); ++i)
+        for (std::size_t i = 0; i < navigationTextures.size(); ++i)
         {
-            SDL_Rect navRect{contentPadding / 2, navY, navigationTexts[i].width, navigationTexts[i].height};
+            const auto& texture = navigationTextures[i];
+            SDL_Rect navRect{contentPadding / 2, navY, texture.width, texture.height};
             navigationRects[i] = navRect;
-            SDL_RenderCopy(renderer, navigationTexts[i].texture, nullptr, &navRect);
-            if (static_cast<int>(i) == activeNavigationIndex)
+            colony::RenderTexture(renderer.get(), texture, navRect);
+            if (static_cast<int>(i) == navigationController.ActiveIndex())
             {
-                SDL_RenderDrawLine(renderer, navRect.x, navRect.y + navRect.h + 6, navRect.x + navRect.w, navRect.y + navRect.h + 6);
+                SDL_RenderDrawLine(renderer.get(), navRect.x, navRect.y + navRect.h + 6, navRect.x + navRect.w, navRect.y + navRect.h + 6);
             }
             navY += navSpacing;
         }
 
         const int contentStartX = sidebarWidth + contentPadding;
         const int contentWidth = outputWidth - contentStartX - contentPadding;
+        const int contentStartY = contentPadding;
 
-        const int timelineY = contentPadding + 8;
+        const int timelineY = contentStartY + 8;
         const int timelineStartX = contentStartX;
-        const int timelineEndX = contentStartX + contentWidth - 120;
-        SDL_SetRenderDrawColor(renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
-        SDL_RenderDrawLine(renderer, timelineStartX, timelineY, timelineEndX, timelineY);
+        const int timelineEndX = contentStartX + std::max(contentWidth - 120, 120);
+        SDL_SetRenderDrawColor(renderer.get(), 200, 200, 200, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawLine(renderer.get(), timelineStartX, timelineY, timelineEndX, timelineY);
         SDL_Rect timelineAccent{timelineEndX, timelineY - 3, 12, 12};
-        SDL_SetRenderDrawColor(renderer, kAccentColor.r, kAccentColor.g, kAccentColor.b, kAccentColor.a);
-        SDL_RenderFillRect(renderer, &timelineAccent);
+        SDL_SetRenderDrawColor(renderer.get(), kAccentColor.r, kAccentColor.g, kAccentColor.b, kAccentColor.a);
+        SDL_RenderFillRect(renderer.get(), &timelineAccent);
 
-        SDL_Rect welcomeRect{contentStartX, timelineY + 72, welcomeText.width, welcomeText.height};
-        SDL_RenderCopy(renderer, welcomeText.texture, nullptr, &welcomeRect);
+        if (activeView != nullptr)
+        {
+            SDL_Rect contentBounds{contentStartX, timelineY + 72, contentWidth, outputHeight - (timelineY + 72) - contentPadding};
+            activeView->Render(renderContext, contentBounds);
+        }
 
-        SDL_Rect paragraphRect1{contentStartX, welcomeRect.y + welcomeRect.h + 32, paragraphLine1.width, paragraphLine1.height};
-        SDL_RenderCopy(renderer, paragraphLine1.texture, nullptr, &paragraphRect1);
+        if (statusTexture.texture)
+        {
+            SDL_Rect statusRect{contentStartX, outputHeight - contentPadding - statusTexture.height, statusTexture.width, statusTexture.height};
+            colony::RenderTexture(renderer.get(), statusTexture, statusRect);
+        }
 
-        SDL_Rect paragraphRect2{contentStartX, paragraphRect1.y + paragraphRect1.h + 8, paragraphLine2.width, paragraphLine2.height};
-        SDL_RenderCopy(renderer, paragraphLine2.texture, nullptr, &paragraphRect2);
-
-        SDL_Rect paragraphRect3{contentStartX, paragraphRect2.y + paragraphRect2.h + 8, paragraphLine3.width, paragraphLine3.height};
-        SDL_RenderCopy(renderer, paragraphLine3.texture, nullptr, &paragraphRect3);
-
-        SDL_Rect buttonRect{contentStartX, paragraphRect3.y + paragraphRect3.h + 40, 200, 60};
-        SDL_SetRenderDrawColor(renderer, 245, 245, 245, SDL_ALPHA_OPAQUE);
-        SDL_RenderFillRect(renderer, &buttonRect);
-        SDL_SetRenderDrawColor(renderer, kAccentColor.r, kAccentColor.g, kAccentColor.b, kAccentColor.a);
-        SDL_RenderDrawRect(renderer, &buttonRect);
-
-        SDL_Rect buttonTextRect{
-            buttonRect.x + (buttonRect.w - launchText.width) / 2,
-            buttonRect.y + (buttonRect.h - launchText.height) / 2,
-            launchText.width,
-            launchText.height};
-        SDL_RenderCopy(renderer, launchText.texture, nullptr, &buttonTextRect);
-
-        SDL_RenderPresent(renderer);
+        SDL_RenderPresent(renderer.get());
     }
 
-    destroyTextResources();
-    TTF_Quit();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    if (activeView != nullptr)
+    {
+        activeView->Deactivate();
+    }
 
     return EXIT_SUCCESS;
 }

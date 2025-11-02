@@ -1,0 +1,46 @@
+{
+  "brand": "COLONY",
+  "navigation": ["HOME", "MISSIONS", "DATABASE", "SETTINGS"],
+  "views": {
+    "HOME": {
+      "heading": "Welcome, Pioneer",
+      "paragraphs": [
+        "Monitor the pulse of your ecosystem, from orbital relays to subterranean labs.",
+        "Deploy new modules, triage anomalies, and keep the signal flowing across every colony node.",
+        "Your dashboard updates live as each subsystem reports in."
+      ],
+      "primaryActionLabel": "Launch Hub",
+      "statusMessage": "Initiating Colony hub bootstrap... telemetry link pending."
+    },
+    "MISSIONS": {
+      "heading": "Mission Control",
+      "paragraphs": [
+        "Curate expeditions for survey crews and autonomous drones.",
+        "Review intel, assign specialists, and sync their loadouts before departure.",
+        "Adaptive routing keeps teams supplied as they cross hostile biomes."
+      ],
+      "primaryActionLabel": "Queue Mission",
+      "statusMessage": "Next mission packet staged for uplink. Awaiting confirmation."
+    },
+    "DATABASE": {
+      "heading": "Knowledge Vault",
+      "paragraphs": [
+        "Archive genomes, trade manifests, and decoded beacon reports.",
+        "Link fragments together to map trade routes and culture exchanges.",
+        "Pattern matching surfaces anomalies before they reach the frontier."
+      ],
+      "primaryActionLabel": "Index Artifact",
+      "statusMessage": "Archival node reserved. Begin artifact ingestion sequence."
+    },
+    "SETTINGS": {
+      "heading": "Systems Configuration",
+      "paragraphs": [
+        "Tune failover thresholds, diagnostics cadence, and access protocols.",
+        "Harden comms relays, rotate keys, and route maintenance drones proactively.",
+        "Export hardened configs to staging before syncing the fleet."
+      ],
+      "primaryActionLabel": "Deploy Update",
+      "statusMessage": "Configuration diff compiled. Ready for distributed rollout."
+    }
+  }
+}

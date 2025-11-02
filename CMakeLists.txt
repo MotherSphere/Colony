@@ -12,6 +12,7 @@ add_executable(ecosystem_app
     src/main.cpp
     src/content_loader.cpp
     src/controllers/navigation_controller.cpp
+    src/utils/text_wrapping.cpp
     src/views/simple_text_view.cpp
 )
 

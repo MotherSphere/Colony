@@ -719,6 +719,8 @@ int main(int argc, char** argv)
 
     auto activeProgramId = getActiveProgramId();
 
+    std::optional<SDL_Rect> actionButtonRect;
+
     auto rebuildStatusTexture = [&]() {
         const auto visualsIt = programVisuals.find(activeProgramId);
         actionButtonRect.reset();
@@ -760,7 +762,6 @@ int main(int argc, char** argv)
 
     std::vector<SDL_Rect> channelButtonRects(content.channels.size());
     std::vector<SDL_Rect> programTileRects;
-    std::optional<SDL_Rect> actionButtonRect;
 
     auto activateProgram = [&](const std::string& programId) {
         if (programVisuals.find(programId) == programVisuals.end())

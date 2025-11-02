@@ -22,12 +22,25 @@ class SimpleTextView : public View
     std::string id_;
     ViewContent content_;
     void RebuildParagraphTextures(const RenderContext& context, int maxWidth);
+    void RebuildSectionTextures(const RenderContext& context, int maxWidth);
 
     TextTexture headingTexture_;
     std::vector<std::vector<TextTexture>> paragraphLines_;
+    struct SectionLine
+    {
+        TextTexture texture;
+        bool indent = false;
+    };
+    struct SectionRenderData
+    {
+        TextTexture titleTexture;
+        std::vector<std::vector<SectionLine>> optionLines;
+    };
+    std::vector<SectionRenderData> sectionRenderData_;
     TextTexture actionTexture_;
     mutable std::optional<SDL_Rect> lastActionRect_;
     mutable int lastLayoutWidth_ = 0;
+    mutable int lastSectionLayoutWidth_ = 0;
 };
 
 } // namespace colony

@@ -288,13 +288,27 @@ int main(int argc, char** argv)
     }
 
     TextTexture brandText = CreateTextTexture(renderer, brandFont, "COLONY", kPrimaryTextColor);
-    std::vector<TextTexture> navigationTexts;
     std::vector<std::string> navigationLabels{"HOME", "MISSIONS", "DATABASE", "SETTINGS"};
-    navigationTexts.reserve(navigationLabels.size());
-    for (const auto& label : navigationLabels)
-    {
-        navigationTexts.emplace_back(CreateTextTexture(renderer, navFont, label, label == "HOME" ? kPrimaryTextColor : kMutedTextColor));
-    }
+    std::vector<TextTexture> navigationTexts(navigationLabels.size());
+    int activeNavigationIndex = 0;
+    auto refreshNavigationTextures = [&]() {
+        bool allCreated = true;
+        for (std::size_t i = 0; i < navigationLabels.size(); ++i)
+        {
+            DestroyTextTexture(navigationTexts[i]);
+            const bool isActive = static_cast<int>(i) == activeNavigationIndex;
+            navigationTexts[i] = CreateTextTexture(renderer, navFont, navigationLabels[i], isActive ? kPrimaryTextColor : kMutedTextColor);
+            if (navigationTexts[i].texture == nullptr)
+            {
+                allCreated = false;
+            }
+        }
+        return allCreated;
+    };
+
+    std::vector<SDL_Rect> navigationRects(navigationLabels.size(), SDL_Rect{0, 0, 0, 0});
+
+    bool navigationTexturesValid = refreshNavigationTextures();
 
     TextTexture welcomeText = CreateTextTexture(renderer, headingFont, "WELCOME", kPrimaryTextColor);
     TextTexture paragraphLine1 = CreateTextTexture(
@@ -336,15 +350,7 @@ int main(int argc, char** argv)
     };
 
     bool textCreationFailed = brandText.texture == nullptr || welcomeText.texture == nullptr || paragraphLine1.texture == nullptr
-        || paragraphLine2.texture == nullptr || paragraphLine3.texture == nullptr || launchText.texture == nullptr;
-    for (const auto& navigationText : navigationTexts)
-    {
-        if (navigationText.texture == nullptr)
-        {
-            textCreationFailed = true;
-            break;
-        }
-    }
+        || paragraphLine2.texture == nullptr || paragraphLine3.texture == nullptr || launchText.texture == nullptr || !navigationTexturesValid;
 
     if (textCreationFailed)
     {
@@ -366,6 +372,30 @@ int main(int argc, char** argv)
             if (event.type == SDL_QUIT)
             {
                 running = false;
+            }
+            else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
+            {
+                const int mouseX = event.button.x;
+                const int mouseY = event.button.y;
+                for (std::size_t i = 0; i < navigationRects.size(); ++i)
+                {
+                    const SDL_Rect& rect = navigationRects[i];
+                    const bool withinX = mouseX >= rect.x && mouseX <= rect.x + rect.w;
+                    const bool withinY = mouseY >= rect.y && mouseY <= rect.y + rect.h;
+                    if (withinX && withinY)
+                    {
+                        if (static_cast<int>(i) != activeNavigationIndex)
+                        {
+                            activeNavigationIndex = static_cast<int>(i);
+                            navigationTexturesValid = refreshNavigationTextures();
+                            if (!navigationTexturesValid)
+                            {
+                                std::cerr << "Failed to refresh navigation textures." << '\n';
+                            }
+                        }
+                        break;
+                    }
+                }
             }
         }
 
@@ -389,13 +419,20 @@ int main(int argc, char** argv)
         SDL_Rect brandRect{contentPadding / 2, contentPadding, brandText.width, brandText.height};
         SDL_RenderCopy(renderer, brandText.texture, nullptr, &brandRect);
 
+        if (!navigationTexturesValid)
+        {
+            running = false;
+            continue;
+        }
+
         int navY = brandRect.y + brandRect.h + 48;
-        const int navSpacing = 36;
+        const int navSpacing = 48;
         for (std::size_t i = 0; i < navigationTexts.size(); ++i)
         {
             SDL_Rect navRect{contentPadding / 2, navY, navigationTexts[i].width, navigationTexts[i].height};
+            navigationRects[i] = navRect;
             SDL_RenderCopy(renderer, navigationTexts[i].texture, nullptr, &navRect);
-            if (i == 0)
+            if (static_cast<int>(i) == activeNavigationIndex)
             {
                 SDL_RenderDrawLine(renderer, navRect.x, navRect.y + navRect.h + 6, navRect.x + navRect.w, navRect.y + navRect.h + 6);
             }

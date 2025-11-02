@@ -21,10 +21,13 @@ class SimpleTextView : public View
   private:
     std::string id_;
     ViewContent content_;
+    void RebuildParagraphTextures(const RenderContext& context, int maxWidth);
+
     TextTexture headingTexture_;
-    std::vector<TextTexture> paragraphTextures_;
+    std::vector<std::vector<TextTexture>> paragraphLines_;
     TextTexture actionTexture_;
     mutable std::optional<SDL_Rect> lastActionRect_;
+    mutable int lastLayoutWidth_ = 0;
 };
 
 } // namespace colony

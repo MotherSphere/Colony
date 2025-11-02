@@ -381,8 +381,17 @@ int main(int argc, char** argv)
     refreshNavigationTextures();
     activateView(navigationController.ActiveIndex());
 
+    auto triggerPrimaryAction = [&]() {
+        if (activeView != nullptr)
+        {
+            activeView->OnPrimaryAction(statusMessage);
+            rebuildStatusTexture();
+        }
+    };
+
     bool running = true;
     SDL_Event event;
+    bool keyboardNavigationFocusVisible = false;
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -393,6 +402,7 @@ int main(int argc, char** argv)
             }
             else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
             {
+                keyboardNavigationFocusVisible = false;
                 const int mouseX = event.button.x;
                 const int mouseY = event.button.y;
 
@@ -411,9 +421,62 @@ int main(int argc, char** argv)
                     {
                         if (PointInRect(*actionRect, mouseX, mouseY))
                         {
-                            activeView->OnPrimaryAction(statusMessage);
-                            rebuildStatusTexture();
+                            triggerPrimaryAction();
                         }
+                    }
+                }
+            }
+            else if (event.type == SDL_KEYDOWN)
+            {
+                const auto entryCount = static_cast<int>(navigationController.Entries().size());
+                bool handledNavigationKey = false;
+                if (entryCount > 0)
+                {
+                    const int currentIndex = navigationController.ActiveIndex();
+                    int targetIndex = currentIndex;
+                    switch (event.key.keysym.sym)
+                    {
+                    case SDLK_UP:
+                    case SDLK_LEFT:
+                        targetIndex = (currentIndex - 1 + entryCount) % entryCount;
+                        handledNavigationKey = true;
+                        break;
+                    case SDLK_DOWN:
+                    case SDLK_RIGHT:
+                        targetIndex = (currentIndex + 1) % entryCount;
+                        handledNavigationKey = true;
+                        break;
+                    case SDLK_TAB:
+                        targetIndex = (currentIndex + ((event.key.keysym.mod & KMOD_SHIFT) ? entryCount - 1 : 1)) % entryCount;
+                        handledNavigationKey = true;
+                        break;
+                    case SDLK_HOME:
+                        targetIndex = 0;
+                        handledNavigationKey = true;
+                        break;
+                    case SDLK_END:
+                        targetIndex = entryCount - 1;
+                        handledNavigationKey = true;
+                        break;
+                    default:
+                        break;
+                    }
+
+                    if (handledNavigationKey)
+                    {
+                        keyboardNavigationFocusVisible = true;
+                        if (targetIndex != currentIndex)
+                        {
+                            navigationController.Activate(targetIndex);
+                        }
+                    }
+                }
+
+                if (!handledNavigationKey)
+                {
+                    if (event.key.keysym.sym == SDLK_RETURN || event.key.keysym.sym == SDLK_SPACE)
+                    {
+                        triggerPrimaryAction();
                     }
                 }
             }
@@ -449,8 +512,20 @@ int main(int argc, char** argv)
             const auto& texture = navigationTextures[i];
             SDL_Rect navRect{contentPadding / 2, navY, texture.width, texture.height};
             navigationRects[i] = navRect;
+            const bool isActiveEntry = static_cast<int>(i) == navigationController.ActiveIndex();
+            if (isActiveEntry && keyboardNavigationFocusVisible)
+            {
+                SDL_Rect focusRect{navRect.x - 12, navRect.y - 8, navRect.w + 24, navRect.h + 16};
+                focusRect.x = std::max(focusRect.x, 0);
+                focusRect.w = std::min(focusRect.w, sidebarWidth - focusRect.x);
+                focusRect.h = std::min(focusRect.h, navSpacing);
+                SDL_SetRenderDrawColor(renderer.get(), 220, 220, 220, SDL_ALPHA_OPAQUE);
+                SDL_RenderFillRect(renderer.get(), &focusRect);
+                SDL_SetRenderDrawColor(renderer.get(), kAccentColor.r, kAccentColor.g, kAccentColor.b, SDL_ALPHA_OPAQUE);
+                SDL_RenderDrawRect(renderer.get(), &focusRect);
+            }
             colony::RenderTexture(renderer.get(), texture, navRect);
-            if (static_cast<int>(i) == navigationController.ActiveIndex())
+            if (isActiveEntry)
             {
                 SDL_RenderDrawLine(renderer.get(), navRect.x, navRect.y + navRect.h + 6, navRect.x + navRect.w, navRect.y + navRect.h + 6);
             }

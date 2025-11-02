@@ -1,0 +1,14 @@
+{
+  "brand": "COLONY",
+  "navigation": ["HOME"],
+  "views": {
+    "HOME": {
+      "heading": "Diagnostics",
+      "paragraphs": [
+        "Review baseline habitat vitals before dispatching the next survey team."
+      ],
+      "primaryActionLabel": "Acknowledge",
+      "statusMessage": "Initial ping acknowledged. Awaiting further input."
+    }
+  }
+}

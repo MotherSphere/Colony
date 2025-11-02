@@ -124,7 +124,7 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
             const int cardWidth = bounds.w;
             int cardHeight = 2 * kSectionPadding;
 
-            const bool hasTitle = section.titleTexture.texture != nullptr;
+            const bool hasTitle = section.titleTexture.texture.get() != nullptr;
             const bool hasOptions = !section.optionLines.empty();
 
             if (hasTitle)
@@ -340,7 +340,7 @@ void SimpleTextView::RebuildSectionTextures(const RenderContext& context, int ma
             }
         }
 
-        if (renderData.titleTexture.texture != nullptr || !renderData.optionLines.empty())
+        if (renderData.titleTexture.texture.get() != nullptr || !renderData.optionLines.empty())
         {
             sectionRenderData_.emplace_back(std::move(renderData));
         }

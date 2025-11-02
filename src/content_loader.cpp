@@ -1,6 +1,6 @@
 #include "content_loader.hpp"
 
-#include "third_party/json.hpp"
+#include "json.hpp"
 
 #include <fstream>
 #include <stdexcept>

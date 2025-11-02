@@ -37,10 +37,70 @@
       "paragraphs": [
         "Tune failover thresholds, diagnostics cadence, and access protocols.",
         "Harden comms relays, rotate keys, and route maintenance drones proactively.",
-        "Export hardened configs to staging before syncing the fleet."
+        "Export hardened configs to staging before syncing the fleet.",
+        "Baseline utilities cover the essentials so every operator can tailor their cockpit without diving into custom scripts.",
+        "Configuration changes snapshot automatically with rollback points, making it safe to explore more aggressive profiles."
       ],
       "primaryActionLabel": "Deploy Update",
-      "statusMessage": "Configuration diff compiled. Ready for distributed rollout."
+      "statusMessage": "Configuration diff compiled. Ready for distributed rollout.",
+      "sections": [
+        {
+          "title": "General",
+          "options": [
+            "Profile identity, avatar rotation, and contact channels",
+            "Language, locale formatting, and measurement units",
+            "Startup behavior, workspace restore, and autosave cadence"
+          ]
+        },
+        {
+          "title": "Display",
+          "options": [
+            "Theme selection: Light, Dark, or follow system",
+            "Font scale, UI density, and high-contrast overlays",
+            "Windowing defaults including fullscreen, snapping, and multi-monitor focus"
+          ]
+        },
+        {
+          "title": "Audio",
+          "options": [
+            "Master mix, alert channel trims, and mute schedules",
+            "Spatialization toggles for multi-speaker rigs",
+            "Voice comms devices, push-to-talk, and noise suppression"
+          ]
+        },
+        {
+          "title": "Network",
+          "options": [
+            "Preferred uplink routes and offline cache horizon",
+            "Proxy credentials, trusted relays, and quarantine zones",
+            "Telemetry sampling rate, bandwidth caps, and sync windows"
+          ]
+        },
+        {
+          "title": "Security",
+          "options": [
+            "Multi-factor policy, session timeout, and device trust",
+            "Encryption suites, key rotation frequency, and audit trails",
+            "Incident response contacts and escalation automation"
+          ]
+        },
+        {
+          "title": "Accessibility",
+          "options": [
+            "Screen reader hints, captions, and descriptive telemetry",
+            "Input remapping, sticky controls, and dwell interactions",
+            "Colorblind palettes, motion reduction, and haptic feedback tuning"
+          ]
+        },
+        {
+          "title": "Shortcuts & Automation",
+          "options": [
+            "Keyboard layers, macro sequencing, and command palettes",
+            "Scheduler windows for routine diagnostics and deployments",
+            "Webhooks, API tokens, and sandboxed scripting runtimes"
+          ]
+        }
+      ]
     }
   }
 }

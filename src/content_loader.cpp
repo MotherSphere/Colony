@@ -48,6 +48,56 @@ ViewContent ParseViewContent(const std::string& viewId, const nlohmann::json& js
         }
     }
 
+    if (json.contains("sections"))
+    {
+        if (!json["sections"].is_array())
+        {
+            throw std::runtime_error("View \"" + viewId + "\" must declare sections as an array.");
+        }
+
+        for (const auto& sectionJson : json["sections"])
+        {
+            if (!sectionJson.is_object())
+            {
+                throw std::runtime_error("View \"" + viewId + "\" has a section that is not an object.");
+            }
+
+            if (!sectionJson.contains("title") || !sectionJson["title"].is_string()
+                || sectionJson["title"].get<std::string>().empty())
+            {
+                throw std::runtime_error("View \"" + viewId + "\" requires each section to declare a non-empty title.");
+            }
+
+            if (!sectionJson.contains("options") || !sectionJson["options"].is_array())
+            {
+                throw std::runtime_error("View \"" + viewId
+                    + "\" requires each section to declare an array of options.");
+            }
+
+            ViewSection section;
+            section.title = sectionJson["title"].get<std::string>();
+
+            for (const auto& optionJson : sectionJson["options"])
+            {
+                if (!optionJson.is_string())
+                {
+                    throw std::runtime_error("View \"" + viewId + "\" has a section option that is not a string.");
+                }
+                const std::string optionText = optionJson.get<std::string>();
+                if (optionText.empty())
+                {
+                    continue;
+                }
+                section.options.emplace_back(optionText);
+            }
+
+            if (!section.options.empty())
+            {
+                content.sections.emplace_back(std::move(section));
+            }
+        }
+    }
+
     return content;
 }
 } // namespace

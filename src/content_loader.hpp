@@ -7,10 +7,17 @@
 namespace colony
 {
 
+struct ViewSection
+{
+    std::string title;
+    std::vector<std::string> options;
+};
+
 struct ViewContent
 {
     std::string heading;
     std::vector<std::string> paragraphs;
+    std::vector<ViewSection> sections;
     std::string primaryActionLabel;
     std::string statusMessage;
 };

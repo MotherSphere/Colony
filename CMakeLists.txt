@@ -10,7 +10,12 @@ find_package(SDL2_ttf REQUIRED)
 
 add_executable(ecosystem_app
     src/main.cpp
+    src/content_loader.cpp
+    src/controllers/navigation_controller.cpp
+    src/views/simple_text_view.cpp
 )
+
+target_include_directories(ecosystem_app PRIVATE src third_party)
 
 target_link_libraries(ecosystem_app PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 

@@ -85,7 +85,7 @@ bool DownloadToFile(const std::string& url, const std::filesystem::path& destina
     std::unique_ptr<httplib::Client> client;
     if (scheme == "https")
     {
-        client = std::make_unique<httplib::SSLClient>(host);
+        client.reset(new httplib::SSLClient(host));
     }
     else if (scheme == "http")
     {

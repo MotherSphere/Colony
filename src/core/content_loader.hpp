@@ -1,13 +1,9 @@
 #pragma once
 
 #include "core/content.hpp"
+#include "json.hpp"
 
 #include <string>
-
-namespace nlohmann
-{
-class json;
-}
 
 namespace colony
 {

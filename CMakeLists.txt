@@ -12,13 +12,27 @@ add_executable(ecosystem_app
     src/main.cpp
     src/content_loader.cpp
     src/controllers/navigation_controller.cpp
+    src/utils/color.cpp
+    src/utils/font_manager.cpp
     src/utils/text_wrapping.cpp
+    src/ui/theme.cpp
+    src/ui/program_visuals.cpp
+    src/ui/navigation.cpp
+    src/ui/library_panel.cpp
+    src/ui/hero_panel.cpp
+    src/ui/settings_panel.cpp
     src/views/simple_text_view.cpp
 )
 
 target_include_directories(ecosystem_app PRIVATE src third_party)
 
 target_link_libraries(ecosystem_app PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
+
+find_package(OpenSSL QUIET)
+if(OpenSSL_FOUND)
+    target_compile_definitions(ecosystem_app PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+    target_link_libraries(ecosystem_app PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 if(TARGET SDL2::SDL2main)
     target_link_libraries(ecosystem_app PRIVATE SDL2::SDL2main)

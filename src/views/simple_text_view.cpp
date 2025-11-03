@@ -1,6 +1,7 @@
 #include "views/simple_text_view.hpp"
 
 #include "utils/text_wrapping.hpp"
+#include "utils/drawing.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -159,9 +160,9 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
 
             SDL_Rect cardRect{bounds.x, cursorY, cardWidth, cardHeight};
             SDL_SetRenderDrawColor(context.renderer, kCardFillColor.r, kCardFillColor.g, kCardFillColor.b, kCardFillColor.a);
-            SDL_RenderFillRect(context.renderer, &cardRect);
+            colony::drawing::RenderFilledRoundedRect(context.renderer, cardRect, 18);
             SDL_SetRenderDrawColor(context.renderer, kCardBorderColor.r, kCardBorderColor.g, kCardBorderColor.b, kCardBorderColor.a);
-            SDL_RenderDrawRect(context.renderer, &cardRect);
+            colony::drawing::RenderRoundedRect(context.renderer, cardRect, 18);
 
             int contentX = cardRect.x + kSectionPadding;
             int contentY = cardRect.y + kSectionPadding;
@@ -208,9 +209,9 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
 
     SDL_Rect buttonRect{bounds.x, cursorY, kActionWidth, kActionHeight};
     SDL_SetRenderDrawColor(context.renderer, 245, 245, 245, SDL_ALPHA_OPAQUE);
-    SDL_RenderFillRect(context.renderer, &buttonRect);
+    colony::drawing::RenderFilledRoundedRect(context.renderer, buttonRect, 16);
     SDL_SetRenderDrawColor(context.renderer, context.accentColor.r, context.accentColor.g, context.accentColor.b, context.accentColor.a);
-    SDL_RenderDrawRect(context.renderer, &buttonRect);
+    colony::drawing::RenderRoundedRect(context.renderer, buttonRect, 16);
 
     if (actionTexture_.texture)
     {

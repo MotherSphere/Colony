@@ -25,6 +25,7 @@ add_library(colony_ui
     src/views/simple_text_view.cpp
     src/views/view_registry.cpp
     src/views/view_factory.cpp
+    src/utils/drawing.cpp
     src/utils/color.cpp
     src/utils/font_manager.cpp
     src/utils/text_wrapping.cpp

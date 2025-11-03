@@ -41,7 +41,38 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     SDL_RenderFillRect(renderer, &filterRect);
     SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
     SDL_RenderDrawRect(renderer, &filterRect);
-    if (chrome_.filterLabel.texture)
+    const int filterIconSize = filterRect.h - 12;
+    if (filterIconSize > 0)
+    {
+        SDL_Rect filterIconRect{
+            filterRect.x + 10,
+            filterRect.y + (filterRect.h - filterIconSize) / 2,
+            filterIconSize,
+            filterIconSize};
+        SDL_Color filterIconColor = colony::color::Mix(theme.muted, theme.heroTitle, 0.25f);
+        SDL_Color filterIconFill = colony::color::Mix(theme.libraryCard, filterIconColor, 0.45f);
+        SDL_SetRenderDrawColor(renderer, filterIconFill.r, filterIconFill.g, filterIconFill.b, filterIconFill.a);
+        SDL_RenderFillRect(renderer, &filterIconRect);
+        SDL_SetRenderDrawColor(renderer, filterIconColor.r, filterIconColor.g, filterIconColor.b, filterIconColor.a);
+        SDL_RenderDrawRect(renderer, &filterIconRect);
+        SDL_RenderDrawLine(
+            renderer,
+            filterIconRect.x + filterIconRect.w - 4,
+            filterIconRect.y + filterIconRect.h - 4,
+            filterIconRect.x + filterIconRect.w + 2,
+            filterIconRect.y + filterIconRect.h + 2);
+
+        if (chrome_.filterLabel.texture)
+        {
+            SDL_Rect filterLabelRect{
+                filterIconRect.x + filterIconRect.w + 10,
+                filterRect.y + (filterRect.h - chrome_.filterLabel.height) / 2,
+                chrome_.filterLabel.width,
+                chrome_.filterLabel.height};
+            colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+        }
+    }
+    else if (chrome_.filterLabel.texture)
     {
         SDL_Rect filterLabelRect{
             filterRect.x + 12,
@@ -87,8 +118,42 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(renderer, &accentStrip);
 
-        int textX = tileRect.x + 18;
-        int textY = tileRect.y + 14;
+        SDL_Rect iconRect{
+            tileRect.x + 18,
+            tileRect.y + (tileRect.h - 56) / 2,
+            56,
+            56};
+        SDL_Color iconFill = colony::color::Mix(programIt->second.accent, baseColor, 0.25f);
+        SDL_SetRenderDrawColor(renderer, iconFill.r, iconFill.g, iconFill.b, iconFill.a);
+        SDL_RenderFillRect(renderer, &iconRect);
+        SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawRect(renderer, &iconRect);
+        SDL_Rect glyphRect{
+            iconRect.x + iconRect.w / 2 - 10,
+            iconRect.y + iconRect.h / 2 - 10,
+            20,
+            20};
+        SDL_SetRenderDrawColor(renderer, theme.libraryCard.r, theme.libraryCard.g, theme.libraryCard.b, theme.libraryCard.a);
+        SDL_RenderDrawRect(renderer, &glyphRect);
+        SDL_RenderDrawLine(
+            renderer,
+            glyphRect.x,
+            glyphRect.y + glyphRect.h,
+            glyphRect.x + glyphRect.w,
+            glyphRect.y);
+
+        int textX = iconRect.x + iconRect.w + 16;
+        SDL_Rect textClip{
+            textX,
+            tileRect.y + 12,
+            tileRect.x + tileRect.w - textX - 18,
+            tileRect.h - 24};
+        const bool hasTextClip = textClip.w > 0 && textClip.h > 0;
+        if (hasTextClip)
+        {
+            SDL_RenderSetClipRect(renderer, &textClip);
+        }
+        int textY = hasTextClip ? textClip.y : tileRect.y + 14;
         if (programIt->second.tileTitle.texture)
         {
             SDL_Rect titleRect{textX, textY, programIt->second.tileTitle.width, programIt->second.tileTitle.height};
@@ -107,6 +172,10 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             colony::RenderTexture(renderer, programIt->second.tileMeta, metaRect);
         }
 
+        if (hasTextClip)
+        {
+            SDL_RenderSetClipRect(renderer, nullptr);
+        }
         result.tileRects.emplace_back(tileRect);
         libraryCursorY += tileHeight + tileSpacing;
     }

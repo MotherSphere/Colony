@@ -38,6 +38,17 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
         textColumnWidth = heroContentWidth;
     }
 
+    SDL_Rect textColumnClip{
+        heroContentX,
+        heroRect.y + heroPaddingY,
+        textColumnWidth,
+        heroRect.h - heroPaddingY * 2};
+    const bool hasColumnClip = textColumnClip.w > 0 && textColumnClip.h > 0;
+    if (hasColumnClip)
+    {
+        SDL_RenderSetClipRect(renderer, &textColumnClip);
+    }
+
     const SDL_Color highlightColor = colony::color::Mix(visuals.accent, theme.heroBody, 0.25f);
     RebuildDescription(visuals, renderer, heroBodyFont, textColumnWidth, theme.heroBody);
     RebuildHighlights(visuals, renderer, heroBodyFont, textColumnWidth, highlightColor);
@@ -125,7 +136,7 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
 
     heroCursorY += 16;
 
-    const int buttonWidth = 240;
+    const int buttonWidth = textColumnWidth > 0 ? std::min(textColumnWidth, 240) : 240;
     const int buttonHeight = 64;
     SDL_Rect buttonRect{heroContentX, heroCursorY, buttonWidth, buttonHeight};
     SDL_Color buttonColor = colony::color::Mix(visuals.accent, theme.heroTitle, 0.15f);
@@ -133,14 +144,49 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     SDL_RenderFillRect(renderer, &buttonRect);
     SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawRect(renderer, &buttonRect);
+
+    const bool hasButtonClip = buttonRect.w > 0 && buttonRect.h > 0;
+    if (hasButtonClip)
+    {
+        SDL_RenderSetClipRect(renderer, &buttonRect);
+    }
+    const int iconBoxSize = std::min(26, buttonHeight - 20);
+    int buttonLabelLeft = buttonRect.x + 24;
+    if (iconBoxSize > 0)
+    {
+        SDL_Rect iconRect{
+            buttonRect.x + 18,
+            buttonRect.y + (buttonRect.h - iconBoxSize) / 2,
+            iconBoxSize,
+            iconBoxSize};
+        SDL_Color iconFill = colony::color::Mix(visuals.accent, theme.heroTitle, 0.35f);
+        SDL_SetRenderDrawColor(renderer, iconFill.r, iconFill.g, iconFill.b, iconFill.a);
+        SDL_RenderFillRect(renderer, &iconRect);
+        SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawRect(renderer, &iconRect);
+
+        SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
+        SDL_Point arrowPoints[4] = {
+            {iconRect.x + iconRect.w / 2 - 3, iconRect.y + iconRect.h / 4},
+            {iconRect.x + iconRect.w / 2 - 3, iconRect.y + iconRect.h - iconRect.h / 4},
+            {iconRect.x + iconRect.w - iconRect.w / 4, iconRect.y + iconRect.h / 2},
+            {iconRect.x + iconRect.w / 2 - 3, iconRect.y + iconRect.h / 4}};
+        SDL_RenderDrawLines(renderer, arrowPoints, 4);
+
+        buttonLabelLeft = iconRect.x + iconRect.w + 12;
+    }
     if (visuals.actionLabel.texture)
     {
         SDL_Rect buttonTextRect{
-            buttonRect.x + (buttonRect.w - visuals.actionLabel.width) / 2,
+            buttonLabelLeft,
             buttonRect.y + (buttonRect.h - visuals.actionLabel.height) / 2,
             visuals.actionLabel.width,
             visuals.actionLabel.height};
         colony::RenderTexture(renderer, visuals.actionLabel, buttonTextRect);
+    }
+    if (hasButtonClip)
+    {
+        SDL_RenderSetClipRect(renderer, hasColumnClip ? &textColumnClip : nullptr);
     }
     result.actionButtonRect = buttonRect;
 
@@ -170,6 +216,11 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     drawMetaChip(visuals.installState);
     drawMetaChip(visuals.lastLaunched);
 
+    if (hasColumnClip)
+    {
+        SDL_RenderSetClipRect(renderer, nullptr);
+    }
+
     if (patchPanelWidth > 0 && !visuals.sections.empty())
     {
         SDL_Rect patchRect{
@@ -183,6 +234,11 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
         SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
         SDL_RenderDrawRect(renderer, &patchRect);
 
+        const bool hasPatchClip = patchRect.w > 0 && patchRect.h > 0;
+        if (hasPatchClip)
+        {
+            SDL_RenderSetClipRect(renderer, &patchRect);
+        }
         int patchCursorX = patchRect.x + 24;
         int patchCursorY = patchRect.y + 24;
         if (chrome_.updatesLabel.texture)
@@ -218,6 +274,11 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
             }
 
             patchCursorY += 12;
+        }
+
+        if (hasPatchClip)
+        {
+            SDL_RenderSetClipRect(renderer, nullptr);
         }
     }
 

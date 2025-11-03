@@ -1,8 +1,10 @@
 #include "ui/navigation.hpp"
 
 #include "utils/color.hpp"
+#include "utils/drawing.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace colony::ui
 {
@@ -81,18 +83,28 @@ std::vector<SDL_Rect> NavigationRail::Render(
         SDL_Color baseColor = channelAccentColor(static_cast<int>(i));
         SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.15f) : baseColor;
         SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
-        SDL_RenderFillRect(renderer, &buttonRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 14);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        SDL_RenderDrawRect(renderer, &buttonRect);
+        colony::drawing::RenderRoundedRect(renderer, buttonRect, 14);
 
         if (i < chrome_.channelLabels.size() && chrome_.channelLabels[i].texture)
         {
+            const auto& label = chrome_.channelLabels[i];
+            const float availableWidth = static_cast<float>(std::max(navRailRect.w - 16, 0));
+            float scale = 1.0f;
+            if (availableWidth > 0.0f && label.width > availableWidth)
+            {
+                scale = availableWidth / static_cast<float>(label.width);
+            }
+
+            const int labelWidth = static_cast<int>(std::round(label.width * scale));
+            const int labelHeight = std::max(1, static_cast<int>(std::round(label.height * scale)));
             SDL_Rect labelRect{
-                navRailRect.x + (navRailRect.w - chrome_.channelLabels[i].width) / 2,
+                navRailRect.x + (navRailRect.w - labelWidth) / 2,
                 buttonRect.y + buttonRect.h + 6,
-                chrome_.channelLabels[i].width,
-                chrome_.channelLabels[i].height};
-            colony::RenderTexture(renderer, chrome_.channelLabels[i], labelRect);
+                labelWidth,
+                labelHeight};
+            colony::RenderTexture(renderer, label, labelRect);
         }
 
         buttonRects[i] = buttonRect;
@@ -108,7 +120,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
             avatarSize,
             avatarSize};
         SDL_SetRenderDrawColor(renderer, 90, 214, 102, SDL_ALPHA_OPAQUE);
-        SDL_RenderFillRect(renderer, &avatarRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, avatarRect, avatarSize / 2);
 
         SDL_Rect nameRect{
             navRailRect.x + (navRailRect.w - chrome_.userName.width) / 2,

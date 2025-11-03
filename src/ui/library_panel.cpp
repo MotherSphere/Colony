@@ -1,7 +1,9 @@
 #include "ui/library_panel.hpp"
 
 #include "utils/color.hpp"
+#include "utils/drawing.hpp"
 
+#include <algorithm>
 #include <string>
 
 namespace colony::ui
@@ -38,9 +40,9 @@ LibraryRenderResult LibraryPanelRenderer::Render(
 
     SDL_Rect filterRect{libraryRect.x + libraryPadding, libraryCursorY, libraryRect.w - 2 * libraryPadding, 36};
     SDL_SetRenderDrawColor(renderer, theme.libraryCard.r, theme.libraryCard.g, theme.libraryCard.b, theme.libraryCard.a);
-    SDL_RenderFillRect(renderer, &filterRect);
+    colony::drawing::RenderFilledRoundedRect(renderer, filterRect, 12);
     SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-    SDL_RenderDrawRect(renderer, &filterRect);
+    colony::drawing::RenderRoundedRect(renderer, filterRect, 12);
     const int filterIconSize = filterRect.h - 12;
     if (filterIconSize > 0)
     {
@@ -52,9 +54,9 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         SDL_Color filterIconColor = colony::color::Mix(theme.muted, theme.heroTitle, 0.25f);
         SDL_Color filterIconFill = colony::color::Mix(theme.libraryCard, filterIconColor, 0.45f);
         SDL_SetRenderDrawColor(renderer, filterIconFill.r, filterIconFill.g, filterIconFill.b, filterIconFill.a);
-        SDL_RenderFillRect(renderer, &filterIconRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, filterIconRect, std::max(filterIconSize / 3, 4));
         SDL_SetRenderDrawColor(renderer, filterIconColor.r, filterIconColor.g, filterIconColor.b, filterIconColor.a);
-        SDL_RenderDrawRect(renderer, &filterIconRect);
+        colony::drawing::RenderRoundedRect(renderer, filterIconRect, std::max(filterIconSize / 3, 4));
         SDL_RenderDrawLine(
             renderer,
             filterIconRect.x + filterIconRect.w - 4,
@@ -110,13 +112,13 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         }
 
         SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-        SDL_RenderFillRect(renderer, &tileRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, tileRect, 14);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        SDL_RenderDrawRect(renderer, &tileRect);
+        colony::drawing::RenderRoundedRect(renderer, tileRect, 14);
 
         SDL_Rect accentStrip{tileRect.x, tileRect.y, 6, tileRect.h};
         SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
-        SDL_RenderFillRect(renderer, &accentStrip);
+        colony::drawing::RenderFilledRoundedRect(renderer, accentStrip, 3);
 
         SDL_Rect iconRect{
             tileRect.x + 18,
@@ -125,16 +127,16 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             56};
         SDL_Color iconFill = colony::color::Mix(programIt->second.accent, baseColor, 0.25f);
         SDL_SetRenderDrawColor(renderer, iconFill.r, iconFill.g, iconFill.b, iconFill.a);
-        SDL_RenderFillRect(renderer, &iconRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, iconRect, 14);
         SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
-        SDL_RenderDrawRect(renderer, &iconRect);
+        colony::drawing::RenderRoundedRect(renderer, iconRect, 14);
         SDL_Rect glyphRect{
             iconRect.x + iconRect.w / 2 - 10,
             iconRect.y + iconRect.h / 2 - 10,
             20,
             20};
         SDL_SetRenderDrawColor(renderer, theme.libraryCard.r, theme.libraryCard.g, theme.libraryCard.b, theme.libraryCard.a);
-        SDL_RenderDrawRect(renderer, &glyphRect);
+        colony::drawing::RenderRoundedRect(renderer, glyphRect, 6);
         SDL_RenderDrawLine(
             renderer,
             glyphRect.x,

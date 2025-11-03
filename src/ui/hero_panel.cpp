@@ -1,6 +1,7 @@
 #include "ui/hero_panel.hpp"
 
 #include "utils/color.hpp"
+#include "utils/drawing.hpp"
 
 #include <algorithm>
 
@@ -66,9 +67,9 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
             visuals.availability.height + 12};
         SDL_Color chipColor = colony::color::Mix(visuals.accent, theme.statusBar, 0.2f);
         SDL_SetRenderDrawColor(renderer, chipColor.r, chipColor.g, chipColor.b, chipColor.a);
-        SDL_RenderFillRect(renderer, &chipRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, chipRect, chipRect.h / 2);
         SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
-        SDL_RenderDrawRect(renderer, &chipRect);
+        colony::drawing::RenderRoundedRect(renderer, chipRect, chipRect.h / 2);
         SDL_Rect chipTextRect{
             chipRect.x + 14,
             chipRect.y + (chipRect.h - visuals.availability.height) / 2,
@@ -141,9 +142,9 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     SDL_Rect buttonRect{heroContentX, heroCursorY, buttonWidth, buttonHeight};
     SDL_Color buttonColor = colony::color::Mix(visuals.accent, theme.heroTitle, 0.15f);
     SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
-    SDL_RenderFillRect(renderer, &buttonRect);
+    colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 18);
     SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
-    SDL_RenderDrawRect(renderer, &buttonRect);
+    colony::drawing::RenderRoundedRect(renderer, buttonRect, 18);
 
     const bool hasButtonClip = buttonRect.w > 0 && buttonRect.h > 0;
     if (hasButtonClip)
@@ -161,9 +162,9 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
             iconBoxSize};
         SDL_Color iconFill = colony::color::Mix(visuals.accent, theme.heroTitle, 0.35f);
         SDL_SetRenderDrawColor(renderer, iconFill.r, iconFill.g, iconFill.b, iconFill.a);
-        SDL_RenderFillRect(renderer, &iconRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, iconRect, iconRect.h / 2);
         SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
-        SDL_RenderDrawRect(renderer, &iconRect);
+        colony::drawing::RenderRoundedRect(renderer, iconRect, iconRect.h / 2);
 
         SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
         SDL_Point arrowPoints[4] = {
@@ -201,9 +202,9 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
         }
         SDL_Rect chipRect{chipCursorX, heroCursorY, texture.width + 26, texture.height + 12};
         SDL_SetRenderDrawColor(renderer, theme.statusBar.r, theme.statusBar.g, theme.statusBar.b, theme.statusBar.a);
-        SDL_RenderFillRect(renderer, &chipRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, chipRect, chipRect.h / 2);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        SDL_RenderDrawRect(renderer, &chipRect);
+        colony::drawing::RenderRoundedRect(renderer, chipRect, chipRect.h / 2);
         SDL_Rect textRect{
             chipRect.x + 13,
             chipRect.y + (chipRect.h - texture.height) / 2,
@@ -230,9 +231,9 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
             heroRect.h - heroPaddingY * 2};
         SDL_Color patchBg = colony::color::Mix(theme.statusBar, visuals.accent, 0.12f);
         SDL_SetRenderDrawColor(renderer, patchBg.r, patchBg.g, patchBg.b, patchBg.a);
-        SDL_RenderFillRect(renderer, &patchRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, patchRect, 20);
         SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
-        SDL_RenderDrawRect(renderer, &patchRect);
+        colony::drawing::RenderRoundedRect(renderer, patchRect, 20);
 
         const bool hasPatchClip = patchRect.w > 0 && patchRect.h > 0;
         if (hasPatchClip)
@@ -306,7 +307,7 @@ void HeroPanelRenderer::RenderStatusBar(
 {
     SDL_Rect statusRect{heroRect.x, heroRect.y + heroRect.h - statusBarHeight, heroRect.w, statusBarHeight};
     SDL_SetRenderDrawColor(renderer, theme.statusBar.r, theme.statusBar.g, theme.statusBar.b, theme.statusBar.a);
-    SDL_RenderFillRect(renderer, &statusRect);
+    colony::drawing::RenderFilledRoundedRect(renderer, statusRect, 12);
     SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
     SDL_RenderDrawLine(renderer, statusRect.x, statusRect.y, statusRect.x + statusRect.w, statusRect.y);
 

@@ -1,6 +1,7 @@
 #include "ui/settings_panel.hpp"
 
 #include "utils/color.hpp"
+#include "utils/drawing.hpp"
 
 #include <algorithm>
 
@@ -74,9 +75,9 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         SDL_Color borderColor = isActive ? theme.heroTitle : theme.border;
 
         SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-        SDL_RenderFillRect(renderer, &cardRect);
+        colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 18);
         SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-        SDL_RenderDrawRect(renderer, &cardRect);
+        colony::drawing::RenderRoundedRect(renderer, cardRect, 18);
 
         const auto& option = options_[index];
         SDL_Rect labelRect{
@@ -94,9 +95,9 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         {
             SDL_Rect swatchRect{swatchX, swatchY, swatchWidth, swatchHeight};
             SDL_SetRenderDrawColor(renderer, swatchColor.r, swatchColor.g, swatchColor.b, swatchColor.a);
-            SDL_RenderFillRect(renderer, &swatchRect);
+            colony::drawing::RenderFilledRoundedRect(renderer, swatchRect, 8);
             SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-            SDL_RenderDrawRect(renderer, &swatchRect);
+            colony::drawing::RenderRoundedRect(renderer, swatchRect, 8);
             swatchX += swatchWidth + 12;
         }
 

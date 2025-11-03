@@ -1,0 +1,266 @@
+#include "ui/hero_panel.hpp"
+
+#include "utils/color.hpp"
+
+#include <algorithm>
+
+namespace colony::ui
+{
+
+HeroChrome BuildHeroChrome(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme)
+{
+    HeroChrome chrome;
+    chrome.capabilitiesLabel = colony::CreateTextTexture(renderer, labelFont, "CAPABILITIES", theme.muted);
+    chrome.updatesLabel = colony::CreateTextTexture(renderer, labelFont, "PATCH NOTES", theme.muted);
+    return chrome;
+}
+
+HeroRenderResult RenderHeroPanel(
+    SDL_Renderer* renderer,
+    const ThemeColors& theme,
+    const SDL_Rect& heroRect,
+    ProgramVisuals& visuals,
+    const HeroChrome& chrome,
+    TTF_Font* heroBodyFont,
+    TTF_Font* patchTitleFont,
+    TTF_Font* patchBodyFont)
+{
+    HeroRenderResult result;
+
+    const int heroPaddingX = 56;
+    const int heroPaddingY = 58;
+    const int heroContentX = heroRect.x + heroPaddingX;
+    int heroCursorY = heroRect.y + heroPaddingY;
+    const int heroContentWidth = heroRect.w - heroPaddingX * 2;
+    const int heroColumnsGap = 32;
+    int patchPanelWidth = heroRect.w >= 960 ? std::min(340, heroContentWidth / 2) : 0;
+    int textColumnWidth = heroContentWidth - (patchPanelWidth > 0 ? (patchPanelWidth + heroColumnsGap) : 0);
+    if (textColumnWidth < 360)
+    {
+        patchPanelWidth = 0;
+        textColumnWidth = heroContentWidth;
+    }
+
+    const SDL_Color highlightColor = colony::color::Mix(visuals.accent, theme.heroBody, 0.25f);
+    RebuildDescription(visuals, renderer, heroBodyFont, textColumnWidth, theme.heroBody);
+    RebuildHighlights(visuals, renderer, heroBodyFont, textColumnWidth, highlightColor);
+    if (patchPanelWidth > 0)
+    {
+        RebuildSections(visuals, renderer, patchTitleFont, patchBodyFont, patchPanelWidth - 32, theme.heroTitle, theme.heroBody);
+    }
+
+    if (visuals.availability.texture)
+    {
+        SDL_Rect chipRect{
+            heroContentX,
+            heroCursorY,
+            visuals.availability.width + 28,
+            visuals.availability.height + 12};
+        SDL_Color chipColor = colony::color::Mix(visuals.accent, theme.statusBar, 0.2f);
+        SDL_SetRenderDrawColor(renderer, chipColor.r, chipColor.g, chipColor.b, chipColor.a);
+        SDL_RenderFillRect(renderer, &chipRect);
+        SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawRect(renderer, &chipRect);
+        SDL_Rect chipTextRect{
+            chipRect.x + 14,
+            chipRect.y + (chipRect.h - visuals.availability.height) / 2,
+            visuals.availability.width,
+            visuals.availability.height};
+        colony::RenderTexture(renderer, visuals.availability, chipTextRect);
+        heroCursorY += chipRect.h + 18;
+    }
+
+    if (visuals.heroTitle.texture)
+    {
+        SDL_Rect titleRect{heroContentX, heroCursorY, visuals.heroTitle.width, visuals.heroTitle.height};
+        colony::RenderTexture(renderer, visuals.heroTitle, titleRect);
+        heroCursorY += titleRect.h + 18;
+    }
+
+    if (visuals.heroTagline.texture)
+    {
+        SDL_Rect taglineRect{heroContentX, heroCursorY, visuals.heroTagline.width, visuals.heroTagline.height};
+        colony::RenderTexture(renderer, visuals.heroTagline, taglineRect);
+        heroCursorY += taglineRect.h + 24;
+    }
+
+    const int descriptionSpacing = 18;
+    const int baseLineSkip = heroBodyFont ? TTF_FontLineSkip(heroBodyFont) : 0;
+    for (const auto& paragraphLines : visuals.descriptionLines)
+    {
+        for (std::size_t lineIndex = 0; lineIndex < paragraphLines.size(); ++lineIndex)
+        {
+            const auto& lineTexture = paragraphLines[lineIndex];
+            SDL_Rect lineRect{heroContentX, heroCursorY, lineTexture.width, lineTexture.height};
+            colony::RenderTexture(renderer, lineTexture, lineRect);
+            heroCursorY += lineRect.h;
+            if (lineIndex + 1 < paragraphLines.size())
+            {
+                const int spacing = baseLineSkip > 0 ? std::max(0, baseLineSkip - lineTexture.height) : 6;
+                heroCursorY += spacing;
+            }
+        }
+        heroCursorY += descriptionSpacing;
+    }
+
+    if (!visuals.highlightLines.empty())
+    {
+        if (chrome.capabilitiesLabel.texture)
+        {
+            SDL_Rect labelRect{heroContentX, heroCursorY, chrome.capabilitiesLabel.width, chrome.capabilitiesLabel.height};
+            colony::RenderTexture(renderer, chrome.capabilitiesLabel, labelRect);
+            heroCursorY += labelRect.h + 12;
+        }
+
+        const int bulletIndent = 24;
+        for (const auto& lines : visuals.highlightLines)
+        {
+            for (const auto& line : lines)
+            {
+                const int bulletX = heroContentX + (line.indent ? bulletIndent : 0);
+                SDL_Rect lineRect{bulletX, heroCursorY, line.texture.width, line.texture.height};
+                colony::RenderTexture(renderer, line.texture, lineRect);
+                heroCursorY += lineRect.h + 4;
+            }
+            heroCursorY += 8;
+        }
+    }
+
+    heroCursorY += 16;
+
+    const int buttonWidth = 240;
+    const int buttonHeight = 64;
+    SDL_Rect buttonRect{heroContentX, heroCursorY, buttonWidth, buttonHeight};
+    SDL_Color buttonColor = colony::color::Mix(visuals.accent, theme.heroTitle, 0.15f);
+    SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
+    SDL_RenderFillRect(renderer, &buttonRect);
+    SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawRect(renderer, &buttonRect);
+    if (visuals.actionLabel.texture)
+    {
+        SDL_Rect buttonTextRect{
+            buttonRect.x + (buttonRect.w - visuals.actionLabel.width) / 2,
+            buttonRect.y + (buttonRect.h - visuals.actionLabel.height) / 2,
+            visuals.actionLabel.width,
+            visuals.actionLabel.height};
+        colony::RenderTexture(renderer, visuals.actionLabel, buttonTextRect);
+    }
+    result.actionButtonRect = buttonRect;
+
+    heroCursorY += buttonRect.h + 22;
+
+    int chipCursorX = heroContentX;
+    const int chipSpacing = 12;
+    auto drawMetaChip = [&](const colony::TextTexture& texture) {
+        if (!texture.texture)
+        {
+            return;
+        }
+        SDL_Rect chipRect{chipCursorX, heroCursorY, texture.width + 26, texture.height + 12};
+        SDL_SetRenderDrawColor(renderer, theme.statusBar.r, theme.statusBar.g, theme.statusBar.b, theme.statusBar.a);
+        SDL_RenderFillRect(renderer, &chipRect);
+        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+        SDL_RenderDrawRect(renderer, &chipRect);
+        SDL_Rect textRect{
+            chipRect.x + 13,
+            chipRect.y + (chipRect.h - texture.height) / 2,
+            texture.width,
+            texture.height};
+        colony::RenderTexture(renderer, texture, textRect);
+        chipCursorX += chipRect.w + chipSpacing;
+    };
+    drawMetaChip(visuals.version);
+    drawMetaChip(visuals.installState);
+    drawMetaChip(visuals.lastLaunched);
+
+    if (patchPanelWidth > 0 && !visuals.sections.empty())
+    {
+        SDL_Rect patchRect{
+            heroRect.x + heroRect.w - heroPaddingX - patchPanelWidth,
+            heroRect.y + heroPaddingY,
+            patchPanelWidth,
+            heroRect.h - heroPaddingY * 2};
+        SDL_Color patchBg = colony::color::Mix(theme.statusBar, visuals.accent, 0.12f);
+        SDL_SetRenderDrawColor(renderer, patchBg.r, patchBg.g, patchBg.b, patchBg.a);
+        SDL_RenderFillRect(renderer, &patchRect);
+        SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawRect(renderer, &patchRect);
+
+        int patchCursorX = patchRect.x + 24;
+        int patchCursorY = patchRect.y + 24;
+        if (chrome.updatesLabel.texture)
+        {
+            SDL_Rect labelRect{patchCursorX, patchCursorY, chrome.updatesLabel.width, chrome.updatesLabel.height};
+            colony::RenderTexture(renderer, chrome.updatesLabel, labelRect);
+            patchCursorY += labelRect.h + 12;
+        }
+
+        const int bulletIndent = 20;
+        for (const auto& section : visuals.sections)
+        {
+            if (section.title.texture)
+            {
+                SDL_Rect titleRect{patchCursorX, patchCursorY, section.title.width, section.title.height};
+                colony::RenderTexture(renderer, section.title, titleRect);
+                patchCursorY += titleRect.h + 12;
+            }
+
+            for (const auto& optionLines : section.lines)
+            {
+                for (const auto& line : optionLines)
+                {
+                    SDL_Rect lineRect{
+                        patchCursorX + (line.indent ? bulletIndent : 0),
+                        patchCursorY,
+                        line.texture.width,
+                        line.texture.height};
+                    colony::RenderTexture(renderer, line.texture, lineRect);
+                    patchCursorY += line.texture.height + 4;
+                }
+                patchCursorY += 10;
+            }
+
+            patchCursorY += 12;
+        }
+    }
+
+    return result;
+}
+
+void RenderSettingsPanel(
+    SDL_Renderer* renderer,
+    const ThemeColors& theme,
+    const SDL_Rect& heroRect,
+    const SettingsPanel& panel,
+    std::string_view activeSchemeId,
+    SettingsPanel::RenderResult& outResult)
+{
+    SDL_Rect contentRect{heroRect.x + 56, heroRect.y + 58, heroRect.w - 112, heroRect.h - 116};
+    outResult = panel.Render(renderer, contentRect, theme, activeSchemeId);
+}
+
+void RenderStatusBar(
+    SDL_Renderer* renderer,
+    const ThemeColors& theme,
+    const SDL_Rect& heroRect,
+    int statusBarHeight,
+    const ProgramVisuals* visuals)
+{
+    SDL_Rect statusRect{heroRect.x, heroRect.y + heroRect.h - statusBarHeight, heroRect.w, statusBarHeight};
+    SDL_SetRenderDrawColor(renderer, theme.statusBar.r, theme.statusBar.g, theme.statusBar.b, theme.statusBar.a);
+    SDL_RenderFillRect(renderer, &statusRect);
+    SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+    SDL_RenderDrawLine(renderer, statusRect.x, statusRect.y, statusRect.x + statusRect.w, statusRect.y);
+
+    if (visuals != nullptr && visuals->statusBar.texture)
+    {
+        SDL_Rect textRect{
+            statusRect.x + 24,
+            statusRect.y + (statusRect.h - visuals->statusBar.height) / 2,
+            visuals->statusBar.width,
+            visuals->statusBar.height};
+        colony::RenderTexture(renderer, visuals->statusBar, textRect);
+    }
+}
+
+} // namespace colony::ui

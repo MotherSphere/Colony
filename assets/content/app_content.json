@@ -28,6 +28,13 @@
       "programs": [
         "AURORA_CORE"
       ]
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "programs": [
+        "SETTINGS"
+      ]
     }
   ],
   "views": {
@@ -60,7 +67,10 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 2 hours ago",
       "accentColor": "#4BC2FF",
-      "heroGradient": ["#12284F", "#08121F"]
+      "heroGradient": [
+        "#12284F",
+        "#08121F"
+      ]
     },
     "RELAY_MATRIX": {
       "heading": "Relay Matrix",
@@ -91,7 +101,10 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched yesterday",
       "accentColor": "#7A7CFF",
-      "heroGradient": ["#1D1F55", "#090A1E"]
+      "heroGradient": [
+        "#1D1F55",
+        "#090A1E"
+      ]
     },
     "FORGE_WORKSHOP": {
       "heading": "Forge Workshop",
@@ -122,7 +135,10 @@
       "availability": "Update available",
       "lastLaunched": "Launched 4 days ago",
       "accentColor": "#FF9E66",
-      "heroGradient": ["#331C07", "#140B03"]
+      "heroGradient": [
+        "#331C07",
+        "#140B03"
+      ]
     },
     "SPECTRA_LAB": {
       "heading": "Spectra Lab",
@@ -153,7 +169,10 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 5 hours ago",
       "accentColor": "#4BE8C6",
-      "heroGradient": ["#0E2F2B", "#041412"]
+      "heroGradient": [
+        "#0E2F2B",
+        "#041412"
+      ]
     },
     "ARCHIVE_VAULT": {
       "heading": "Archive Vault",
@@ -184,7 +203,10 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 3 days ago",
       "accentColor": "#F5D066",
-      "heroGradient": ["#2F2A0E", "#141104"]
+      "heroGradient": [
+        "#2F2A0E",
+        "#141104"
+      ]
     },
     "AURORA_CORE": {
       "heading": "Aurora Core",
@@ -215,7 +237,35 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 6 hours ago",
       "accentColor": "#7FDBFF",
-      "heroGradient": ["#0F1B35", "#050910"]
+      "heroGradient": [
+        "#0F1B35",
+        "#050910"
+      ]
+    },
+    "SETTINGS": {
+      "heading": "Settings Console",
+      "tagline": "Personalize the Colony interface to match your mission tempo.",
+      "paragraphs": [
+        "Choose from curated color harmonies tuned for clarity in dim command decks or bright observation bays.",
+        "Switch schemes at any time to align with the crew mood or the operations cycle."
+      ],
+      "heroHighlights": [
+        "Unified palette preview across navigation, library, and hero panels",
+        "Instant theme application without restarting the console",
+        "Catppuccin, Gruvbox, Solarized, Everblush, Cyberdream, and One Dark presets"
+      ],
+      "sections": [],
+      "primaryActionLabel": "Apply theme",
+      "statusMessage": "Select a palette to update the interface chroma.",
+      "version": "Theme pack v1.0",
+      "installState": "Built-in",
+      "availability": "Ready",
+      "lastLaunched": "Updated moments ago",
+      "accentColor": "#7FDBFF",
+      "heroGradient": [
+        "#1A1D29",
+        "#090B12"
+      ]
     }
   }
 }

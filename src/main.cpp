@@ -424,7 +424,7 @@ int main(int argc, char** argv)
                 renderer.get(),
                 theme,
                 heroRect,
-                *visualsIt,
+                visualsIt->second,
                 heroChrome,
                 heroBodyFont.get(),
                 patchTitleFont.get(),

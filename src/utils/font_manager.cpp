@@ -81,15 +81,11 @@ bool DownloadToFile(const std::string& url, const std::filesystem::path& destina
         }
     }
 
-#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
     std::unique_ptr<httplib::Client> client;
-    if (scheme == "https")
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+    if (scheme == "https" || scheme == "http")
     {
-        client.reset(new httplib::SSLClient(host));
-    }
-    else if (scheme == "http")
-    {
-        client = std::make_unique<httplib::Client>(host);
+        client = std::make_unique<httplib::Client>(scheme + "://" + host);
     }
     else
     {
@@ -100,7 +96,7 @@ bool DownloadToFile(const std::string& url, const std::filesystem::path& destina
     {
         return false;
     }
-    std::unique_ptr<httplib::Client> client = std::make_unique<httplib::Client>(host);
+    client = std::make_unique<httplib::Client>(host);
 #endif
 
     client->set_follow_location(true);

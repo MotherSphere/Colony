@@ -7,23 +7,20 @@
 namespace colony::ui
 {
 
-HeroChrome BuildHeroChrome(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme)
+void HeroPanelRenderer::Build(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme)
 {
-    HeroChrome chrome;
-    chrome.capabilitiesLabel = colony::CreateTextTexture(renderer, labelFont, "CAPABILITIES", theme.muted);
-    chrome.updatesLabel = colony::CreateTextTexture(renderer, labelFont, "PATCH NOTES", theme.muted);
-    return chrome;
+    chrome_.capabilitiesLabel = colony::CreateTextTexture(renderer, labelFont, "CAPABILITIES", theme.muted);
+    chrome_.updatesLabel = colony::CreateTextTexture(renderer, labelFont, "PATCH NOTES", theme.muted);
 }
 
-HeroRenderResult RenderHeroPanel(
+HeroRenderResult HeroPanelRenderer::RenderHero(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& heroRect,
     ProgramVisuals& visuals,
-    const HeroChrome& chrome,
     TTF_Font* heroBodyFont,
     TTF_Font* patchTitleFont,
-    TTF_Font* patchBodyFont)
+    TTF_Font* patchBodyFont) const
 {
     HeroRenderResult result;
 
@@ -105,10 +102,10 @@ HeroRenderResult RenderHeroPanel(
 
     if (!visuals.highlightLines.empty())
     {
-        if (chrome.capabilitiesLabel.texture)
+        if (chrome_.capabilitiesLabel.texture)
         {
-            SDL_Rect labelRect{heroContentX, heroCursorY, chrome.capabilitiesLabel.width, chrome.capabilitiesLabel.height};
-            colony::RenderTexture(renderer, chrome.capabilitiesLabel, labelRect);
+            SDL_Rect labelRect{heroContentX, heroCursorY, chrome_.capabilitiesLabel.width, chrome_.capabilitiesLabel.height};
+            colony::RenderTexture(renderer, chrome_.capabilitiesLabel, labelRect);
             heroCursorY += labelRect.h + 12;
         }
 
@@ -188,10 +185,10 @@ HeroRenderResult RenderHeroPanel(
 
         int patchCursorX = patchRect.x + 24;
         int patchCursorY = patchRect.y + 24;
-        if (chrome.updatesLabel.texture)
+        if (chrome_.updatesLabel.texture)
         {
-            SDL_Rect labelRect{patchCursorX, patchCursorY, chrome.updatesLabel.width, chrome.updatesLabel.height};
-            colony::RenderTexture(renderer, chrome.updatesLabel, labelRect);
+            SDL_Rect labelRect{patchCursorX, patchCursorY, chrome_.updatesLabel.width, chrome_.updatesLabel.height};
+            colony::RenderTexture(renderer, chrome_.updatesLabel, labelRect);
             patchCursorY += labelRect.h + 12;
         }
 
@@ -227,24 +224,24 @@ HeroRenderResult RenderHeroPanel(
     return result;
 }
 
-void RenderSettingsPanel(
+void HeroPanelRenderer::RenderSettings(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& heroRect,
     const SettingsPanel& panel,
     std::string_view activeSchemeId,
-    SettingsPanel::RenderResult& outResult)
+    SettingsPanel::RenderResult& outResult) const
 {
     SDL_Rect contentRect{heroRect.x + 56, heroRect.y + 58, heroRect.w - 112, heroRect.h - 116};
     outResult = panel.Render(renderer, contentRect, theme, activeSchemeId);
 }
 
-void RenderStatusBar(
+void HeroPanelRenderer::RenderStatusBar(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& heroRect,
     int statusBarHeight,
-    const ProgramVisuals* visuals)
+    const ProgramVisuals* visuals) const
 {
     SDL_Rect statusRect{heroRect.x, heroRect.y + heroRect.h - statusBarHeight, heroRect.w, statusBarHeight};
     SDL_SetRenderDrawColor(renderer, theme.statusBar.r, theme.statusBar.g, theme.statusBar.b, theme.statusBar.a);

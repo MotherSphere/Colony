@@ -11,42 +11,48 @@
 namespace colony::ui
 {
 
-struct HeroChrome
-{
-    colony::TextTexture capabilitiesLabel;
-    colony::TextTexture updatesLabel;
-};
-
-HeroChrome BuildHeroChrome(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme);
-
 struct HeroRenderResult
 {
     std::optional<SDL_Rect> actionButtonRect;
 };
 
-HeroRenderResult RenderHeroPanel(
-    SDL_Renderer* renderer,
-    const ThemeColors& theme,
-    const SDL_Rect& heroRect,
-    ProgramVisuals& visuals,
-    const HeroChrome& chrome,
-    TTF_Font* heroBodyFont,
-    TTF_Font* patchTitleFont,
-    TTF_Font* patchBodyFont);
+class HeroPanelRenderer
+{
+  public:
+    void Build(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme);
 
-void RenderSettingsPanel(
-    SDL_Renderer* renderer,
-    const ThemeColors& theme,
-    const SDL_Rect& heroRect,
-    const SettingsPanel& panel,
-    std::string_view activeSchemeId,
-    SettingsPanel::RenderResult& outResult);
+    HeroRenderResult RenderHero(
+        SDL_Renderer* renderer,
+        const ThemeColors& theme,
+        const SDL_Rect& heroRect,
+        ProgramVisuals& visuals,
+        TTF_Font* heroBodyFont,
+        TTF_Font* patchTitleFont,
+        TTF_Font* patchBodyFont) const;
 
-void RenderStatusBar(
-    SDL_Renderer* renderer,
-    const ThemeColors& theme,
-    const SDL_Rect& heroRect,
-    int statusBarHeight,
-    const ProgramVisuals* visuals);
+    void RenderSettings(
+        SDL_Renderer* renderer,
+        const ThemeColors& theme,
+        const SDL_Rect& heroRect,
+        const SettingsPanel& panel,
+        std::string_view activeSchemeId,
+        SettingsPanel::RenderResult& outResult) const;
+
+    void RenderStatusBar(
+        SDL_Renderer* renderer,
+        const ThemeColors& theme,
+        const SDL_Rect& heroRect,
+        int statusBarHeight,
+        const ProgramVisuals* visuals) const;
+
+  private:
+    struct HeroChrome
+    {
+        colony::TextTexture capabilitiesLabel;
+        colony::TextTexture updatesLabel;
+    };
+
+    HeroChrome chrome_;
+};
 
 } // namespace colony::ui

@@ -8,13 +8,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 
-add_executable(ecosystem_app
-    src/main.cpp
-    src/content_loader.cpp
+add_library(colony_core
+    src/core/content_loader.cpp
     src/controllers/navigation_controller.cpp
-    src/utils/color.cpp
-    src/utils/font_manager.cpp
-    src/utils/text_wrapping.cpp
+)
+
+target_include_directories(colony_core PUBLIC src third_party)
+
+add_library(colony_ui
     src/ui/theme.cpp
     src/ui/program_visuals.cpp
     src/ui/navigation.cpp
@@ -22,11 +23,22 @@ add_executable(ecosystem_app
     src/ui/hero_panel.cpp
     src/ui/settings_panel.cpp
     src/views/simple_text_view.cpp
+    src/views/view_registry.cpp
+    src/views/view_factory.cpp
+    src/utils/color.cpp
+    src/utils/font_manager.cpp
+    src/utils/text_wrapping.cpp
 )
 
-target_include_directories(ecosystem_app PRIVATE src third_party)
+target_include_directories(colony_ui PUBLIC src third_party)
+target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 
-target_link_libraries(ecosystem_app PRIVATE SDL2::SDL2 SDL2_ttf::SDL2_ttf)
+add_executable(ecosystem_app
+    src/main.cpp
+    src/app/application.cpp
+)
+
+target_link_libraries(ecosystem_app PRIVATE colony_core colony_ui)
 
 find_package(OpenSSL QUIET)
 if(OpenSSL_FOUND)
@@ -43,3 +55,10 @@ if(MSVC)
 else()
     target_compile_options(ecosystem_app PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+enable_testing()
+
+add_executable(content_loader_tests tests/content_loader_tests.cpp)
+target_include_directories(content_loader_tests PRIVATE src third_party)
+target_link_libraries(content_loader_tests PRIVATE colony_core)
+add_test(NAME content_loader_tests COMMAND content_loader_tests)

@@ -1,9 +1,9 @@
 #pragma once
 
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <array>
 
 namespace colony
 {
@@ -51,7 +51,5 @@ struct AppContent
     std::vector<Channel> channels;
     std::unordered_map<std::string, ViewContent> views;
 };
-
-AppContent LoadContentFromFile(const std::string& filePath);
 
 } // namespace colony

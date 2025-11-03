@@ -1,6 +1,6 @@
 #pragma once
 
-#include "content_loader.hpp"
+#include "core/content.hpp"
 #include "utils/text.hpp"
 
 #include <SDL2/SDL.h>

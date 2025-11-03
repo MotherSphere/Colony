@@ -1,4 +1,4 @@
-#include "content_loader.hpp"
+#include "core/content_loader.hpp"
 
 #include "json.hpp"
 
@@ -10,7 +10,97 @@ namespace colony
 {
 namespace
 {
-ViewContent ParseViewContent(const std::string& viewId, const nlohmann::json& json)
+const char* kViewsKey = "views";
+const char* kChannelsKey = "channels";
+const char* kUserKey = "user";
+const char* kBrandKey = "brand";
+
+std::ifstream OpenFile(const std::string& filePath)
+{
+    std::ifstream input{filePath};
+    if (!input.is_open())
+    {
+        throw std::runtime_error("Failed to open content file: " + filePath);
+    }
+    return input;
+}
+
+} // namespace
+
+AppContent ContentValidator::LoadFromFile(const std::string& filePath) const
+{
+    auto input = OpenFile(filePath);
+    const nlohmann::json document = nlohmann::json::parse(input);
+    return ParseDocument(document);
+}
+
+AppContent ContentValidator::ParseDocument(const nlohmann::json& document) const
+{
+    AppContent content;
+    content.brandName = document.value(kBrandKey, "COLONY");
+
+    ParseUserSection(document, content);
+    ParseViewsSection(document, content);
+    ParseChannelsSection(document, content);
+
+    return content;
+}
+
+void ContentValidator::ParseUserSection(const nlohmann::json& document, AppContent& content) const
+{
+    if (!document.contains(kUserKey))
+    {
+        return;
+    }
+
+    const auto& userJson = document[kUserKey];
+    if (!userJson.is_object())
+    {
+        throw std::runtime_error("Content file field \"user\" must be an object.");
+    }
+
+    if (userJson.contains("name"))
+    {
+        if (!userJson["name"].is_string())
+        {
+            throw std::runtime_error("User name must be a string.");
+        }
+        content.user.name = userJson["name"].get<std::string>();
+    }
+
+    if (userJson.contains("status"))
+    {
+        if (!userJson["status"].is_string())
+        {
+            throw std::runtime_error("User status must be a string.");
+        }
+        content.user.status = userJson["status"].get<std::string>();
+    }
+}
+
+void ContentValidator::ParseViewsSection(const nlohmann::json& document, AppContent& content) const
+{
+    if (!document.contains(kViewsKey) || !document[kViewsKey].is_object())
+    {
+        throw std::runtime_error("Content file missing \"views\" object.");
+    }
+
+    if (document[kViewsKey].empty())
+    {
+        throw std::runtime_error("Content file must declare at least one view.");
+    }
+
+    for (const auto& [id, value] : document[kViewsKey].items())
+    {
+        if (!value.is_object())
+        {
+            throw std::runtime_error("View \"" + id + "\" must be a JSON object.");
+        }
+        content.views.emplace(id, ParseViewContent(id, value));
+    }
+}
+
+ViewContent ContentValidator::ParseViewContent(const std::string& viewId, const nlohmann::json& json) const
 {
     if (!json.contains("heading") || !json["heading"].is_string() || json["heading"].get<std::string>().empty())
     {
@@ -133,69 +223,15 @@ ViewContent ParseViewContent(const std::string& viewId, const nlohmann::json& js
 
     return content;
 }
-} // namespace
 
-AppContent LoadContentFromFile(const std::string& filePath)
+void ContentValidator::ParseChannelsSection(const nlohmann::json& document, AppContent& content) const
 {
-    std::ifstream input{filePath};
-    if (!input.is_open())
-    {
-        throw std::runtime_error("Failed to open content file: " + filePath);
-    }
-
-    nlohmann::json document = nlohmann::json::parse(input);
-
-    AppContent content;
-    content.brandName = document.value("brand", "COLONY");
-
-    if (document.contains("user"))
-    {
-        const auto& userJson = document["user"];
-        if (!userJson.is_object())
-        {
-            throw std::runtime_error("Content file field \"user\" must be an object.");
-        }
-        if (userJson.contains("name"))
-        {
-            if (!userJson["name"].is_string())
-            {
-                throw std::runtime_error("User name must be a string.");
-            }
-            content.user.name = userJson["name"].get<std::string>();
-        }
-        if (userJson.contains("status"))
-        {
-            if (!userJson["status"].is_string())
-            {
-                throw std::runtime_error("User status must be a string.");
-            }
-            content.user.status = userJson["status"].get<std::string>();
-        }
-    }
-
-    if (!document.contains("views") || !document["views"].is_object())
-    {
-        throw std::runtime_error("Content file missing \"views\" object.");
-    }
-    if (document["views"].empty())
-    {
-        throw std::runtime_error("Content file must declare at least one view.");
-    }
-    for (const auto& [id, value] : document["views"].items())
-    {
-        if (!value.is_object())
-        {
-            throw std::runtime_error("View \"" + id + "\" must be a JSON object.");
-        }
-        content.views.emplace(id, ParseViewContent(id, value));
-    }
-
-    if (!document.contains("channels") || !document["channels"].is_array())
+    if (!document.contains(kChannelsKey) || !document[kChannelsKey].is_array())
     {
         throw std::runtime_error("Content file missing \"channels\" array.");
     }
 
-    for (const auto& channelJson : document["channels"])
+    for (const auto& channelJson : document[kChannelsKey])
     {
         if (!channelJson.is_object())
         {
@@ -248,12 +284,17 @@ AppContent LoadContentFromFile(const std::string& filePath)
         {
             if (content.views.find(programId) == content.views.end())
             {
-                throw std::runtime_error("Channel \"" + channel.id + "\" references unknown program id \"" + programId + "\".");
+                throw std::runtime_error(
+                    "Channel \"" + channel.id + "\" references unknown program id \"" + programId + "\".");
             }
         }
     }
+}
 
-    return content;
+AppContent LoadContentFromFile(const std::string& filePath)
+{
+    ContentValidator validator;
+    return validator.LoadFromFile(filePath);
 }
 
 } // namespace colony

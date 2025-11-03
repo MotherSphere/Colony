@@ -7,7 +7,7 @@
 namespace colony::ui
 {
 
-NavigationChrome BuildNavigationChrome(
+void NavigationRail::Build(
     SDL_Renderer* renderer,
     TTF_Font* brandFont,
     TTF_Font* navFont,
@@ -15,40 +15,38 @@ NavigationChrome BuildNavigationChrome(
     const colony::AppContent& content,
     const ThemeColors& theme)
 {
-    NavigationChrome chrome;
-    chrome.brand = colony::CreateTextTexture(renderer, brandFont, content.brandName, theme.heroTitle);
-    chrome.channelLabels.reserve(content.channels.size());
+    chrome_.brand = colony::CreateTextTexture(renderer, brandFont, content.brandName, theme.heroTitle);
+    chrome_.channelLabels.clear();
+    chrome_.channelLabels.reserve(content.channels.size());
     for (const auto& channel : content.channels)
     {
-        chrome.channelLabels.emplace_back(colony::CreateTextTexture(renderer, navFont, channel.label, theme.navText));
+        chrome_.channelLabels.emplace_back(colony::CreateTextTexture(renderer, navFont, channel.label, theme.navText));
     }
-    chrome.userName = colony::CreateTextTexture(renderer, navFont, content.user.name, theme.heroTitle);
-    chrome.userStatus = colony::CreateTextTexture(renderer, metaFont, content.user.status, theme.muted);
-    return chrome;
+    chrome_.userName = colony::CreateTextTexture(renderer, navFont, content.user.name, theme.heroTitle);
+    chrome_.userStatus = colony::CreateTextTexture(renderer, metaFont, content.user.status, theme.muted);
 }
 
-std::vector<SDL_Rect> RenderNavigationRail(
+std::vector<SDL_Rect> NavigationRail::Render(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& navRailRect,
     int statusBarHeight,
-    const NavigationChrome& chrome,
     const colony::AppContent& content,
     const std::vector<int>& channelSelections,
     int activeChannelIndex,
-    const std::unordered_map<std::string, ProgramVisuals>& programVisuals)
+    const std::unordered_map<std::string, ProgramVisuals>& programVisuals) const
 {
     std::vector<SDL_Rect> buttonRects(content.channels.size());
 
     const int navPadding = 28;
-    if (chrome.brand.texture)
+    if (chrome_.brand.texture)
     {
         SDL_Rect brandRect{
-            navRailRect.x + (navRailRect.w - chrome.brand.width) / 2,
+            navRailRect.x + (navRailRect.w - chrome_.brand.width) / 2,
             navPadding,
-            chrome.brand.width,
-            chrome.brand.height};
-        colony::RenderTexture(renderer, chrome.brand, brandRect);
+            chrome_.brand.width,
+            chrome_.brand.height};
+        colony::RenderTexture(renderer, chrome_.brand, brandRect);
     }
 
     auto channelAccentColor = [&](int index) {
@@ -67,7 +65,7 @@ std::vector<SDL_Rect> RenderNavigationRail(
         return theme.channelBadge;
     };
 
-    int channelStartY = navPadding + (chrome.brand.height > 0 ? chrome.brand.height + 32 : 48);
+    int channelStartY = navPadding + (chrome_.brand.height > 0 ? chrome_.brand.height + 32 : 48);
     const int channelButtonSize = 48;
     const int channelSpacing = 32;
 
@@ -87,21 +85,21 @@ std::vector<SDL_Rect> RenderNavigationRail(
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
         SDL_RenderDrawRect(renderer, &buttonRect);
 
-        if (i < chrome.channelLabels.size() && chrome.channelLabels[i].texture)
+        if (i < chrome_.channelLabels.size() && chrome_.channelLabels[i].texture)
         {
             SDL_Rect labelRect{
-                navRailRect.x + (navRailRect.w - chrome.channelLabels[i].width) / 2,
+                navRailRect.x + (navRailRect.w - chrome_.channelLabels[i].width) / 2,
                 buttonRect.y + buttonRect.h + 6,
-                chrome.channelLabels[i].width,
-                chrome.channelLabels[i].height};
-            colony::RenderTexture(renderer, chrome.channelLabels[i], labelRect);
+                chrome_.channelLabels[i].width,
+                chrome_.channelLabels[i].height};
+            colony::RenderTexture(renderer, chrome_.channelLabels[i], labelRect);
         }
 
         buttonRects[i] = buttonRect;
         channelStartY += channelButtonSize + channelSpacing;
     }
 
-    if (chrome.userName.texture)
+    if (chrome_.userName.texture)
     {
         const int avatarSize = 14;
         SDL_Rect avatarRect{
@@ -113,20 +111,20 @@ std::vector<SDL_Rect> RenderNavigationRail(
         SDL_RenderFillRect(renderer, &avatarRect);
 
         SDL_Rect nameRect{
-            navRailRect.x + (navRailRect.w - chrome.userName.width) / 2,
+            navRailRect.x + (navRailRect.w - chrome_.userName.width) / 2,
             avatarRect.y + avatarRect.h + 8,
-            chrome.userName.width,
-            chrome.userName.height};
-        colony::RenderTexture(renderer, chrome.userName, nameRect);
+            chrome_.userName.width,
+            chrome_.userName.height};
+        colony::RenderTexture(renderer, chrome_.userName, nameRect);
 
-        if (chrome.userStatus.texture)
+        if (chrome_.userStatus.texture)
         {
             SDL_Rect statusRect{
-                navRailRect.x + (navRailRect.w - chrome.userStatus.width) / 2,
+                navRailRect.x + (navRailRect.w - chrome_.userStatus.width) / 2,
                 nameRect.y + nameRect.h + 4,
-                chrome.userStatus.width,
-                chrome.userStatus.height};
-            colony::RenderTexture(renderer, chrome.userStatus, statusRect);
+                chrome_.userStatus.width,
+                chrome_.userStatus.height};
+            colony::RenderTexture(renderer, chrome_.userStatus, statusRect);
         }
     }
 

@@ -7,23 +7,20 @@
 namespace colony::ui
 {
 
-LibraryChrome BuildLibraryChrome(SDL_Renderer* renderer, TTF_Font* bodyFont, const ThemeColors& theme)
+void LibraryPanelRenderer::Build(SDL_Renderer* renderer, TTF_Font* bodyFont, const ThemeColors& theme)
 {
-    LibraryChrome chrome;
-    chrome.filterLabel = colony::CreateTextTexture(renderer, bodyFont, "Installed programs", theme.muted);
-    return chrome;
+    chrome_.filterLabel = colony::CreateTextTexture(renderer, bodyFont, "Installed programs", theme.muted);
 }
 
-LibraryRenderResult RenderLibraryPanel(
+LibraryRenderResult LibraryPanelRenderer::Render(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& libraryRect,
-    const LibraryChrome& chrome,
     const colony::AppContent& content,
     int activeChannelIndex,
     const std::vector<int>& channelSelections,
     const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
-    TTF_Font* channelFont)
+    TTF_Font* channelFont) const
 {
     LibraryRenderResult result;
     const auto& activeChannel = content.channels[activeChannelIndex];
@@ -44,14 +41,14 @@ LibraryRenderResult RenderLibraryPanel(
     SDL_RenderFillRect(renderer, &filterRect);
     SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
     SDL_RenderDrawRect(renderer, &filterRect);
-    if (chrome.filterLabel.texture)
+    if (chrome_.filterLabel.texture)
     {
         SDL_Rect filterLabelRect{
             filterRect.x + 12,
-            filterRect.y + (filterRect.h - chrome.filterLabel.height) / 2,
-            chrome.filterLabel.width,
-            chrome.filterLabel.height};
-        colony::RenderTexture(renderer, chrome.filterLabel, filterLabelRect);
+            filterRect.y + (filterRect.h - chrome_.filterLabel.height) / 2,
+            chrome_.filterLabel.width,
+            chrome_.filterLabel.height};
+        colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
     }
     libraryCursorY += filterRect.h + 24;
 

@@ -118,7 +118,7 @@ SDL_Color Mix(const SDL_Color& a, const SDL_Color& b, float t)
 
 void RenderVerticalGradient(SDL_Renderer* renderer, const SDL_Rect& area, SDL_Color top, SDL_Color bottom)
 {
-    if (renderer == nullptr || area.h <= 0)
+    if (renderer == nullptr || area.h <= 0 || area.w <= 0)
     {
         return;
     }
@@ -128,7 +128,7 @@ void RenderVerticalGradient(SDL_Renderer* renderer, const SDL_Rect& area, SDL_Co
         const float t = area.h > 1 ? static_cast<float>(offset) / static_cast<float>(area.h - 1) : 0.0f;
         const SDL_Color color = Mix(top, bottom, t);
         SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-        SDL_RenderDrawLine(renderer, area.x, area.y + offset, area.x + area.w, area.y + offset);
+        SDL_RenderDrawLine(renderer, area.x, area.y + offset, area.x + area.w - 1, area.y + offset);
     }
 }
 

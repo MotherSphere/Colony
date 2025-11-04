@@ -617,7 +617,14 @@ std::filesystem::path Application::ResolveContentPath()
 
 bool Application::PointInRect(const SDL_Rect& rect, int x, int y) const
 {
-    return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+    if (rect.w <= 0 || rect.h <= 0)
+    {
+        return false;
+    }
+
+    const int maxX = rect.x + rect.w;
+    const int maxY = rect.y + rect.h;
+    return x >= rect.x && x < maxX && y >= rect.y && y < maxY;
 }
 
 } // namespace colony

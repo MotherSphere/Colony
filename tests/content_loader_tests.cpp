@@ -2,10 +2,16 @@
 #include "doctest/doctest.h"
 
 #include "core/content_loader.hpp"
+#define private public
+#include "app/application.hpp"
+#undef private
+#include "utils/color.hpp"
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <string_view>
+#include <SDL2/SDL.h>
 
 namespace
 {
@@ -18,6 +24,40 @@ std::filesystem::path WriteTempContent(std::string_view name, std::string_view j
     output << json;
     return filePath;
 }
+
+std::string BuildDocument(std::string_view viewSection, std::string_view channelsSection, std::string_view extra = "")
+{
+    std::string document = "{\n    \"brand\": \"Test Colony\"";
+    if (!extra.empty())
+    {
+        document.append(",\n    ");
+        document.append(extra);
+    }
+    document.append(",\n    \"views\": ");
+    document.append(viewSection);
+    document.append(",\n    \"channels\": ");
+    document.append(channelsSection);
+    document.append("\n}");
+    return document;
+}
+
+const char* kValidViewSection = R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "paragraphs": ["Paragraph"],
+        "sections": [
+            {
+                "title": "Section",
+                "options": ["Option"]
+            }
+        ]
+    }
+})";
+
+const char* kValidChannelsSection = R"([
+    {"id": "alpha", "label": "Alpha", "programs": ["PROGRAM"]}
+])";
 }
 
 TEST_CASE("LoadContentFromFile parses minimal valid document")
@@ -68,4 +108,487 @@ TEST_CASE("LoadContentFromFile detects invalid view heading")
         colony::LoadContentFromFile(path.string()),
         doctest::Contains("requires a non-empty heading"),
         std::runtime_error);
+}
+
+TEST_CASE("Application PointInRect honors exclusive bounds and dimensions")
+{
+    colony::Application app;
+    SDL_Rect rect{10, 20, 5, 6};
+
+    CHECK(app.PointInRect(rect, 10, 20));
+    CHECK(app.PointInRect(rect, 14, 25));
+    CHECK_FALSE(app.PointInRect(rect, 15, 25));
+    CHECK_FALSE(app.PointInRect(rect, 10, 26));
+
+    SDL_Rect emptyWidth{0, 0, 0, 10};
+    CHECK_FALSE(app.PointInRect(emptyWidth, 0, 0));
+
+    SDL_Rect emptyHeight{0, 0, 5, 0};
+    CHECK_FALSE(app.PointInRect(emptyHeight, 0, 0));
+}
+
+TEST_CASE("RenderVerticalGradient draws within bounds")
+{
+    REQUIRE(SDL_Init(SDL_INIT_VIDEO) == 0);
+
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, 4, 4, 32, SDL_PIXELFORMAT_RGBA32);
+    REQUIRE(surface != nullptr);
+
+    SDL_Renderer* renderer = SDL_CreateSoftwareRenderer(surface);
+    REQUIRE(renderer != nullptr);
+
+    auto clearSurface = [&]() {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(renderer);
+    };
+
+    clearSurface();
+
+    const SDL_Rect area{1, 0, 2, 4};
+    colony::color::RenderVerticalGradient(renderer, area, SDL_Color{255, 0, 0, 255}, SDL_Color{0, 0, 255, 255});
+    SDL_RenderPresent(renderer);
+
+    auto getPixel = [&](int x, int y) {
+        Uint32* pixels = static_cast<Uint32*>(surface->pixels);
+        const int pitch = surface->pitch / static_cast<int>(sizeof(Uint32));
+        return pixels[y * pitch + x];
+    };
+
+    const Uint32 insidePixel = getPixel(area.x, area.y);
+    const Uint32 outsidePixel = getPixel(area.x + area.w, area.y);
+
+    CHECK(insidePixel != outsidePixel);
+    CHECK(outsidePixel == 0);
+
+    clearSurface();
+    const SDL_Rect zeroWidthArea{0, 0, 0, 4};
+    colony::color::RenderVerticalGradient(renderer, zeroWidthArea, SDL_Color{255, 255, 255, 255}, SDL_Color{0, 0, 0, 255});
+    SDL_RenderPresent(renderer);
+    CHECK(getPixel(0, 0) == 0);
+
+    SDL_DestroyRenderer(renderer);
+    SDL_FreeSurface(surface);
+    SDL_Quit();
+}
+
+TEST_CASE("LoadContentFromFile validates user section")
+{
+    SUBCASE("user field must be an object")
+    {
+        const auto path = WriteTempContent(
+            "colony_user_not_object.json",
+            BuildDocument(kValidViewSection, kValidChannelsSection, "\"user\": 123"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Content file field \"user\" must be an object."),
+            std::runtime_error);
+    }
+
+    SUBCASE("user name must be a string")
+    {
+        const auto path = WriteTempContent(
+            "colony_user_name_not_string.json",
+            BuildDocument(kValidViewSection, kValidChannelsSection, R"("user": {"name": 42})"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("User name must be a string."),
+            std::runtime_error);
+    }
+
+    SUBCASE("user status must be a string")
+    {
+        const auto path = WriteTempContent(
+            "colony_user_status_not_string.json",
+            BuildDocument(kValidViewSection, kValidChannelsSection, R"("user": {"name": "Ada", "status": []})"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("User status must be a string."),
+            std::runtime_error);
+    }
+}
+
+TEST_CASE("LoadContentFromFile validates view sections")
+{
+    SUBCASE("views object must not be empty")
+    {
+        const auto path = WriteTempContent(
+            "colony_views_empty.json",
+            BuildDocument("{}", kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Content file must declare at least one view."),
+            std::runtime_error);
+    }
+
+    SUBCASE("view value must be an object")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_not_object.json",
+            BuildDocument(R"({"PROGRAM": []})", kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("View \"PROGRAM\" must be a JSON object."),
+            std::runtime_error);
+    }
+
+    SUBCASE("heroGradient must be two color strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_bad_gradient.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "heroGradient": ["#fff"]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("must declare heroGradient as an array of two hex colors."),
+            std::runtime_error);
+    }
+
+    SUBCASE("heroGradient entries must be strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_gradient_not_strings.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "heroGradient": ["#fff", 7]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("heroGradient entries must be strings."),
+            std::runtime_error);
+    }
+
+    SUBCASE("paragraphs must be string array")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_paragraphs_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "paragraphs": "invalid"
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("must declare paragraphs as an array."),
+            std::runtime_error);
+    }
+
+    SUBCASE("paragraph entries must be strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_paragraph_entry_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "paragraphs": ["valid", 3]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("contains a non-string paragraph entry."),
+            std::runtime_error);
+    }
+
+    SUBCASE("heroHighlights must be array of strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_highlights_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "heroHighlights": "invalid"
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("must declare heroHighlights as an array."),
+            std::runtime_error);
+    }
+
+    SUBCASE("heroHighlights entries must be strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_highlights_entry_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "heroHighlights": ["one", 2]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("heroHighlights must contain only strings."),
+            std::runtime_error);
+    }
+
+    SUBCASE("sections must be array")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_sections_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "sections": {}
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("must declare sections as an array."),
+            std::runtime_error);
+    }
+
+    SUBCASE("section entries must be objects")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_section_entry_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "sections": ["invalid"]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("has a section that is not an object."),
+            std::runtime_error);
+    }
+
+    SUBCASE("section must declare non-empty title")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_section_title_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "sections": [
+            {"title": "", "options": ["one"]}
+        ]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("requires each section to declare a non-empty title."),
+            std::runtime_error);
+    }
+
+    SUBCASE("section must declare options array")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_section_options_missing.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "sections": [
+            {"title": "Section", "options": "invalid"}
+        ]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("requires each section to declare an array of options."),
+            std::runtime_error);
+    }
+
+    SUBCASE("section options must be strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_view_section_option_invalid.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch",
+        "sections": [
+            {"title": "Section", "options": [1]}
+        ]
+    }
+})",
+                kValidChannelsSection));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("has a section option that is not a string."),
+            std::runtime_error);
+    }
+}
+
+TEST_CASE("LoadContentFromFile validates channels")
+{
+    SUBCASE("channels array required")
+    {
+        const auto path = WriteTempContent(
+            "colony_channels_missing.json",
+            BuildDocument(kValidViewSection, "null"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Content file missing \"channels\" array."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channel entry must be object")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_entry_invalid.json",
+            BuildDocument(kValidViewSection, R"(["invalid"])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Each channel entry must be an object."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channel must include non-empty id")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_id_missing.json",
+            BuildDocument(kValidViewSection, R"([
+    {"label": "Alpha", "programs": ["PROGRAM"]}
+])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Each channel must include a non-empty id."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channel must include non-empty label")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_label_missing.json",
+            BuildDocument(kValidViewSection, R"([
+    {"id": "alpha", "programs": ["PROGRAM"]}
+])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Each channel must include a non-empty label."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channel programs must be array")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_programs_missing.json",
+            BuildDocument(kValidViewSection, R"([
+    {"id": "alpha", "label": "Alpha", "programs": "invalid"}
+])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("requires a programs array."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channel program entries must be non-empty strings")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_program_invalid.json",
+            BuildDocument(kValidViewSection, R"([
+    {"id": "alpha", "label": "Alpha", "programs": [""]}
+])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("has an invalid program entry."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channel must declare at least one program")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_programs_empty.json",
+            BuildDocument(kValidViewSection, R"([
+    {"id": "alpha", "label": "Alpha", "programs": []}
+])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("must declare at least one program id."),
+            std::runtime_error);
+    }
+
+    SUBCASE("must declare at least one channel")
+    {
+        const auto path = WriteTempContent(
+            "colony_channels_empty.json",
+            BuildDocument(kValidViewSection, "[]"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("Content file must declare at least one channel."),
+            std::runtime_error);
+    }
+
+    SUBCASE("channels may not reference unknown program ids")
+    {
+        const auto path = WriteTempContent(
+            "colony_channel_unknown_program.json",
+            BuildDocument(
+                R"({
+    "PROGRAM": {
+        "heading": "Program Heading",
+        "primaryActionLabel": "Launch"
+    }
+})",
+                R"([
+    {"id": "alpha", "label": "Alpha", "programs": ["UNKNOWN"]}
+])"));
+
+        CHECK_THROWS_WITH_AS(
+            colony::LoadContentFromFile(path.string()),
+            doctest::Contains("references unknown program id"),
+            std::runtime_error);
+    }
 }

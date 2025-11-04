@@ -154,17 +154,18 @@ TEST_CASE("RenderVerticalGradient draws within bounds")
         return pixels[y * pitch + x];
     };
 
+    const Uint32 clearedPixel = SDL_MapRGBA(surface->format, 0, 0, 0, SDL_ALPHA_OPAQUE);
     const Uint32 insidePixel = getPixel(area.x, area.y);
     const Uint32 outsidePixel = getPixel(area.x + area.w, area.y);
 
     CHECK(insidePixel != outsidePixel);
-    CHECK(outsidePixel == 0);
+    CHECK(outsidePixel == clearedPixel);
 
     clearSurface();
     const SDL_Rect zeroWidthArea{0, 0, 0, 4};
     colony::color::RenderVerticalGradient(renderer, zeroWidthArea, SDL_Color{255, 255, 255, 255}, SDL_Color{0, 0, 0, 255});
     SDL_RenderPresent(renderer);
-    CHECK(getPixel(0, 0) == 0);
+    CHECK(getPixel(0, 0) == clearedPixel);
 
     SDL_DestroyRenderer(renderer);
     SDL_FreeSurface(surface);

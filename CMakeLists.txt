@@ -34,12 +34,18 @@ add_library(colony_ui
 target_include_directories(colony_ui PUBLIC src third_party)
 target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 
-add_executable(ecosystem_app
-    src/main.cpp
+add_library(colony_app
     src/app/application.cpp
 )
 
-target_link_libraries(ecosystem_app PRIVATE colony_core colony_ui)
+target_include_directories(colony_app PUBLIC src third_party)
+target_link_libraries(colony_app PUBLIC colony_ui)
+
+add_executable(ecosystem_app
+    src/main.cpp
+)
+
+target_link_libraries(ecosystem_app PRIVATE colony_app)
 
 find_package(OpenSSL QUIET)
 if(OpenSSL_FOUND)
@@ -61,5 +67,5 @@ enable_testing()
 
 add_executable(content_loader_tests tests/content_loader_tests.cpp)
 target_include_directories(content_loader_tests PRIVATE src third_party)
-target_link_libraries(content_loader_tests PRIVATE colony_core)
+target_link_libraries(content_loader_tests PRIVATE colony_app)
 add_test(NAME content_loader_tests COMMAND content_loader_tests)

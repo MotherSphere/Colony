@@ -412,16 +412,32 @@ void Application::HandleMouseClick(int x, int y)
 
     if (activeProgramId_ == kSettingsProgramId)
     {
-        for (const auto& [schemeId, rect] : settingsRenderResult_.optionRects)
+        for (const auto& region : settingsRenderResult_.interactiveRegions)
         {
-            if (PointInRect(rect, x, y))
+            if (!PointInRect(region.rect, x, y))
             {
-                if (themeManager_.SetActiveScheme(schemeId))
+                continue;
+            }
+
+            switch (region.type)
+            {
+            case ui::SettingsPanel::RenderResult::InteractionType::ThemeSelection:
+                if (themeManager_.SetActiveScheme(region.id))
                 {
                     RebuildTheme();
                 }
-                return;
+                break;
+            case ui::SettingsPanel::RenderResult::InteractionType::LanguageSelection:
+                activeLanguageId_ = region.id;
+                break;
+            case ui::SettingsPanel::RenderResult::InteractionType::Toggle:
+                if (auto it = basicToggleStates_.find(region.id); it != basicToggleStates_.end())
+                {
+                    it->second = !it->second;
+                }
+                break;
             }
+            return;
         }
     }
     else if (heroActionRect_.has_value() && PointInRect(*heroActionRect_, x, y))
@@ -523,7 +539,7 @@ void Application::RenderFrame()
     programTileRects_ = libraryResult.tileRects;
 
     heroActionRect_.reset();
-    settingsRenderResult_.optionRects.clear();
+    settingsRenderResult_.interactiveRegions.clear();
     settingsRenderResult_.contentHeight = 0;
 
     if (activeProgramId_ == kSettingsProgramId)
@@ -534,6 +550,8 @@ void Application::RenderFrame()
             heroRect,
             settingsPanel_,
             themeManager_.ActiveScheme().id,
+            activeLanguageId_,
+            basicToggleStates_,
             settingsRenderResult_);
     }
     else if (activeVisuals != nullptr)

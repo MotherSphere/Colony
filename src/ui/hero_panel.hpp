@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <optional>
+#include <unordered_map>
 
 namespace colony::ui
 {
@@ -36,6 +37,8 @@ class HeroPanelRenderer
         const SDL_Rect& heroRect,
         const SettingsPanel& panel,
         std::string_view activeSchemeId,
+        std::string_view activeLanguageId,
+        const std::unordered_map<std::string, bool>& toggleStates,
         SettingsPanel::RenderResult& outResult) const;
 
     void RenderStatusBar(

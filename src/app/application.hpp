@@ -92,6 +92,13 @@ class Application
     std::vector<SDL_Rect> programTileRects_;
     std::optional<SDL_Rect> heroActionRect_;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
+    std::string activeLanguageId_ = "en";
+    std::unordered_map<std::string, bool> basicToggleStates_{
+        {"notifications", true},
+        {"sound", true},
+        {"auto_updates", true},
+        {"reduced_motion", false},
+    };
 
     NavigationController navigationController_;
     ViewRegistry viewRegistry_;

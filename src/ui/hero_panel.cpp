@@ -292,10 +292,12 @@ void HeroPanelRenderer::RenderSettings(
     const SDL_Rect& heroRect,
     const SettingsPanel& panel,
     std::string_view activeSchemeId,
+    std::string_view activeLanguageId,
+    const std::unordered_map<std::string, bool>& toggleStates,
     SettingsPanel::RenderResult& outResult) const
 {
     SDL_Rect contentRect{heroRect.x + 56, heroRect.y + 58, heroRect.w - 112, heroRect.h - 116};
-    outResult = panel.Render(renderer, contentRect, theme, activeSchemeId);
+    outResult = panel.Render(renderer, contentRect, theme, activeSchemeId, activeLanguageId, toggleStates);
 }
 
 void HeroPanelRenderer::RenderStatusBar(

@@ -9,6 +9,8 @@
 #include <array>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -28,7 +30,21 @@ class SettingsPanel
 
     struct RenderResult
     {
-        std::vector<std::pair<std::string, SDL_Rect>> optionRects;
+        enum class InteractionType
+        {
+            ThemeSelection,
+            LanguageSelection,
+            Toggle
+        };
+
+        struct InteractiveRegion
+        {
+            std::string id;
+            InteractionType type;
+            SDL_Rect rect{0, 0, 0, 0};
+        };
+
+        std::vector<InteractiveRegion> interactiveRegions;
         int contentHeight = 0;
     };
 
@@ -36,10 +52,12 @@ class SettingsPanel
         SDL_Renderer* renderer,
         const SDL_Rect& bounds,
         const ThemeColors& theme,
-        std::string_view activeSchemeId) const;
+        std::string_view activeSchemeId,
+        std::string_view activeLanguageId,
+        const std::unordered_map<std::string, bool>& toggleStates) const;
 
   private:
-    struct Option
+    struct ThemeOption
     {
         std::string id;
         colony::TextTexture label;
@@ -47,9 +65,30 @@ class SettingsPanel
         mutable SDL_Rect rect{0, 0, 0, 0};
     };
 
-    colony::TextTexture title_;
-    colony::TextTexture subtitle_;
-    std::vector<Option> options_;
+    struct LanguageOption
+    {
+        std::string id;
+        colony::TextTexture name;
+        colony::TextTexture nativeName;
+    };
+
+    struct ToggleOption
+    {
+        std::string id;
+        colony::TextTexture label;
+        colony::TextTexture description;
+    };
+
+    colony::TextTexture appearanceTitle_;
+    colony::TextTexture appearanceSubtitle_;
+    colony::TextTexture languageTitle_;
+    colony::TextTexture languageSubtitle_;
+    colony::TextTexture generalTitle_;
+    colony::TextTexture generalSubtitle_;
+
+    std::vector<ThemeOption> themeOptions_;
+    std::vector<LanguageOption> languages_;
+    std::vector<ToggleOption> toggles_;
 };
 
 } // namespace colony::ui

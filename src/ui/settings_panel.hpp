@@ -45,12 +45,14 @@ class SettingsPanel
         };
 
         std::vector<InteractiveRegion> interactiveRegions;
+        SDL_Rect viewport{0, 0, 0, 0};
         int contentHeight = 0;
     };
 
     RenderResult Render(
         SDL_Renderer* renderer,
         const SDL_Rect& bounds,
+        int scrollOffset,
         const ThemeColors& theme,
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,

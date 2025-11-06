@@ -94,7 +94,6 @@ class Application
     std::optional<SDL_Rect> heroActionRect_;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
-    std::string activeSettingsCategory_ = std::string(ui::SettingsPanel::kAppearanceCategoryId);
     std::string activeLanguageId_ = "en";
     std::unordered_map<std::string, bool> basicToggleStates_{
         {"notifications", true},

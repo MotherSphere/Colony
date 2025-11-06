@@ -233,13 +233,6 @@ void Application::RebuildTheme()
         theme_.heroTitle,
         theme_.heroBody,
         themeManager_);
-    if (
-        activeSettingsCategory_ != ui::SettingsPanel::kAppearanceCategoryId
-        && activeSettingsCategory_ != ui::SettingsPanel::kLanguageCategoryId
-        && activeSettingsCategory_ != ui::SettingsPanel::kGeneralCategoryId)
-    {
-        activeSettingsCategory_ = std::string(ui::SettingsPanel::kAppearanceCategoryId);
-    }
     settingsScrollOffset_ = 0;
 
     RebuildProgramVisuals();
@@ -433,13 +426,6 @@ void Application::HandleMouseClick(int x, int y)
 
             switch (region.type)
             {
-            case ui::SettingsPanel::RenderResult::InteractionType::CategorySelection:
-                if (activeSettingsCategory_ != region.id)
-                {
-                    activeSettingsCategory_ = region.id;
-                    settingsScrollOffset_ = 0;
-                }
-                break;
             case ui::SettingsPanel::RenderResult::InteractionType::ThemeSelection:
                 if (themeManager_.SetActiveScheme(region.id))
                 {
@@ -660,7 +646,6 @@ void Application::RenderFrame()
             heroRect,
             settingsPanel_,
             settingsScrollOffset_,
-            activeSettingsCategory_,
             themeManager_.ActiveScheme().id,
             activeLanguageId_,
             basicToggleStates_,

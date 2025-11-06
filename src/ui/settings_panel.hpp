@@ -28,10 +28,15 @@ class SettingsPanel
         SDL_Color bodyColor,
         const ThemeManager& themeManager);
 
+    static inline constexpr std::string_view kAppearanceCategoryId = "appearance";
+    static inline constexpr std::string_view kLanguageCategoryId = "language";
+    static inline constexpr std::string_view kGeneralCategoryId = "general";
+
     struct RenderResult
     {
         enum class InteractionType
         {
+            CategorySelection,
             ThemeSelection,
             LanguageSelection,
             Toggle
@@ -54,11 +59,20 @@ class SettingsPanel
         const SDL_Rect& bounds,
         int scrollOffset,
         const ThemeColors& theme,
+        std::string_view activeCategoryId,
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,
         const std::unordered_map<std::string, bool>& toggleStates) const;
 
   private:
+    struct Category
+    {
+        std::string id;
+        colony::TextTexture label;
+        colony::TextTexture subtitle;
+        SDL_Color accent{};
+    };
+
     struct ThemeOption
     {
         std::string id;
@@ -87,6 +101,8 @@ class SettingsPanel
     colony::TextTexture languageSubtitle_;
     colony::TextTexture generalTitle_;
     colony::TextTexture generalSubtitle_;
+
+    std::vector<Category> categories_;
 
     std::vector<ThemeOption> themeOptions_;
     std::vector<LanguageOption> languages_;

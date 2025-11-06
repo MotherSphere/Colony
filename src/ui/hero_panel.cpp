@@ -4,6 +4,7 @@
 #include "utils/drawing.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace colony::ui
 {
@@ -235,13 +236,51 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
         SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
         colony::drawing::RenderRoundedRect(renderer, patchRect, 20);
 
+        const int contentPadding = 24;
+        const int viewportHeight = std::max(0, patchRect.h - contentPadding * 2);
+        int contentHeight = 0;
+
+        if (chrome_.updatesLabel.texture)
+        {
+            contentHeight += chrome_.updatesLabel.height;
+            contentHeight += 12;
+        }
+
+        for (const auto& section : visuals.sections)
+        {
+            if (section.title.texture)
+            {
+                contentHeight += section.title.height;
+                contentHeight += 12;
+            }
+
+            for (const auto& optionLines : section.lines)
+            {
+                for (const auto& line : optionLines)
+                {
+                    contentHeight += line.texture.height;
+                    contentHeight += 4;
+                }
+                contentHeight += 10;
+            }
+
+            contentHeight += 12;
+        }
+
+        const int maxScroll = std::max(0, contentHeight - viewportHeight);
+        visuals.sectionsContentHeight = contentHeight;
+        visuals.sectionsViewportContentHeight = viewportHeight;
+        visuals.sectionsViewport = patchRect;
+        visuals.sectionsScrollOffset = std::clamp(visuals.sectionsScrollOffset, 0, maxScroll);
+
         const bool hasPatchClip = patchRect.w > 0 && patchRect.h > 0;
         if (hasPatchClip)
         {
             SDL_RenderSetClipRect(renderer, &patchRect);
         }
-        int patchCursorX = patchRect.x + 24;
-        int patchCursorY = patchRect.y + 24;
+
+        int patchCursorX = patchRect.x + contentPadding;
+        int patchCursorY = patchRect.y + contentPadding - visuals.sectionsScrollOffset;
         if (chrome_.updatesLabel.texture)
         {
             SDL_Rect labelRect{patchCursorX, patchCursorY, chrome_.updatesLabel.width, chrome_.updatesLabel.height};
@@ -281,6 +320,54 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
         {
             SDL_RenderSetClipRect(renderer, nullptr);
         }
+
+        int mouseX = 0;
+        int mouseY = 0;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        auto pointInRect = [](const SDL_Rect& rect, int x, int y) {
+            if (rect.w <= 0 || rect.h <= 0)
+            {
+                return false;
+            }
+            const int maxX = rect.x + rect.w;
+            const int maxY = rect.y + rect.h;
+            return x >= rect.x && x < maxX && y >= rect.y && y < maxY;
+        };
+
+        const bool hovered = pointInRect(patchRect, mouseX, mouseY);
+        if (hovered && maxScroll > 0)
+        {
+            const int trackMargin = 16;
+            const int trackWidth = 6;
+            const int trackHeight = std::max(0, patchRect.h - trackMargin * 2);
+            if (trackHeight > 0)
+            {
+                const int trackX = patchRect.x + patchRect.w - trackMargin - trackWidth;
+                const int trackY = patchRect.y + trackMargin;
+
+                SDL_Rect trackRect{trackX, trackY, trackWidth, trackHeight};
+                SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+                SDL_RenderFillRect(renderer, &trackRect);
+
+                const int thumbMinHeight = 24;
+                const int rawThumbHeight = static_cast<int>(std::round(
+                    static_cast<float>(trackHeight) * viewportHeight / static_cast<float>(contentHeight)));
+                const int thumbHeight = std::clamp(rawThumbHeight, thumbMinHeight, trackHeight);
+                const float scrollRatio = static_cast<float>(visuals.sectionsScrollOffset) / static_cast<float>(maxScroll);
+                const int thumbTravel = std::max(0, trackHeight - thumbHeight);
+                const int thumbOffset = static_cast<int>(std::round(scrollRatio * thumbTravel));
+                SDL_Rect thumbRect{trackX, trackY + thumbOffset, trackWidth, thumbHeight};
+                SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
+                SDL_RenderFillRect(renderer, &thumbRect);
+            }
+        }
+    }
+    else
+    {
+        visuals.sectionsViewport = SDL_Rect{0, 0, 0, 0};
+        visuals.sectionsViewportContentHeight = 0;
+        visuals.sectionsContentHeight = 0;
+        visuals.sectionsScrollOffset = 0;
     }
 
     return result;

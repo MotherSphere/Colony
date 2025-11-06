@@ -37,6 +37,7 @@ class HeroPanelRenderer
         const SDL_Rect& heroRect,
         const SettingsPanel& panel,
         int scrollOffset,
+        std::string_view activeCategoryId,
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,
         const std::unordered_map<std::string, bool>& toggleStates,

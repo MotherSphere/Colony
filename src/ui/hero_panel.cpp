@@ -379,18 +379,27 @@ void HeroPanelRenderer::RenderSettings(
     const SDL_Rect& heroRect,
     const SettingsPanel& panel,
     int scrollOffset,
+    std::string_view activeCategoryId,
     std::string_view activeSchemeId,
     std::string_view activeLanguageId,
     const std::unordered_map<std::string, bool>& toggleStates,
     SettingsPanel::RenderResult& outResult) const
 {
-    SDL_Rect contentRect{heroRect.x + 56, heroRect.y + 58, heroRect.w - 112, heroRect.h - 116};
+    SDL_Rect contentRect{heroRect.x + 48, heroRect.y + 50, heroRect.w - 96, heroRect.h - 100};
     const bool hasClip = contentRect.w > 0 && contentRect.h > 0;
     if (hasClip)
     {
         SDL_RenderSetClipRect(renderer, &contentRect);
     }
-    outResult = panel.Render(renderer, contentRect, scrollOffset, theme, activeSchemeId, activeLanguageId, toggleStates);
+    outResult = panel.Render(
+        renderer,
+        contentRect,
+        scrollOffset,
+        theme,
+        activeCategoryId,
+        activeSchemeId,
+        activeLanguageId,
+        toggleStates);
     if (hasClip)
     {
         SDL_RenderSetClipRect(renderer, nullptr);

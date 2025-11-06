@@ -40,7 +40,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
 {
     std::vector<SDL_Rect> buttonRects(content.channels.size());
 
-    const int navPadding = 28;
+    const int navPadding = 24;
     if (chrome_.brand.texture)
     {
         SDL_Rect brandRect{
@@ -67,9 +67,9 @@ std::vector<SDL_Rect> NavigationRail::Render(
         return theme.channelBadge;
     };
 
-    int channelStartY = navPadding + (chrome_.brand.height > 0 ? chrome_.brand.height + 32 : 48);
-    const int channelButtonSize = 48;
-    const int channelSpacing = 32;
+    int channelStartY = navPadding + (chrome_.brand.height > 0 ? chrome_.brand.height + 26 : 40);
+    const int channelButtonSize = 46;
+    const int channelSpacing = 24;
 
     for (std::size_t i = 0; i < content.channels.size(); ++i)
     {
@@ -83,9 +83,57 @@ std::vector<SDL_Rect> NavigationRail::Render(
         SDL_Color baseColor = channelAccentColor(static_cast<int>(i));
         SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.15f) : baseColor;
         SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 14);
+            colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 14);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
         colony::drawing::RenderRoundedRect(renderer, buttonRect, 14);
+
+        SDL_Rect iconRect{buttonRect.x + 10, buttonRect.y + 10, buttonRect.w - 20, buttonRect.h - 20};
+        SDL_Color iconColor = colony::color::Mix(theme.navText, fillColor, 0.25f);
+        SDL_SetRenderDrawColor(renderer, iconColor.r, iconColor.g, iconColor.b, iconColor.a);
+        colony::drawing::RenderRoundedRect(renderer, iconRect, 10);
+        switch (i % 3)
+        {
+        case 0:
+        {
+            SDL_Point tip{iconRect.x + iconRect.w - 6, iconRect.y + iconRect.h / 2};
+            SDL_Point baseTop{iconRect.x + 6, iconRect.y + 6};
+            SDL_Point baseBottom{iconRect.x + 6, iconRect.y + iconRect.h - 6};
+            SDL_RenderDrawLine(renderer, baseTop.x, baseTop.y, tip.x, tip.y);
+            SDL_RenderDrawLine(renderer, tip.x, tip.y, baseBottom.x, baseBottom.y);
+            SDL_RenderDrawLine(renderer, baseBottom.x, baseBottom.y, baseTop.x, baseTop.y);
+            break;
+        }
+        case 1:
+        {
+            const int barWidth = 6;
+            const int gap = 4;
+            SDL_Rect bar1{iconRect.x + 4, iconRect.y + 6, barWidth, iconRect.h - 12};
+            SDL_Rect bar2{bar1.x + barWidth + gap, iconRect.y + 4, barWidth, iconRect.h - 8};
+            SDL_Rect bar3{bar2.x + barWidth + gap, iconRect.y + 10, barWidth, iconRect.h - 20};
+            colony::drawing::RenderFilledRoundedRect(renderer, bar1, 3);
+            colony::drawing::RenderFilledRoundedRect(renderer, bar2, 3);
+            colony::drawing::RenderFilledRoundedRect(renderer, bar3, 3);
+            break;
+        }
+        default:
+        {
+            SDL_Rect waveRect{iconRect.x + 6, iconRect.y + iconRect.h / 2 - 6, iconRect.w - 12, 12};
+            colony::drawing::RenderRoundedRect(renderer, waveRect, 6);
+            SDL_RenderDrawLine(
+                renderer,
+                waveRect.x,
+                waveRect.y + waveRect.h / 2,
+                waveRect.x + waveRect.w,
+                waveRect.y + waveRect.h / 2 - 4);
+            SDL_RenderDrawLine(
+                renderer,
+                waveRect.x,
+                waveRect.y + waveRect.h / 2,
+                waveRect.x + waveRect.w,
+                waveRect.y + waveRect.h / 2 + 4);
+            break;
+        }
+        }
 
         if (i < chrome_.channelLabels.size() && chrome_.channelLabels[i].texture)
         {

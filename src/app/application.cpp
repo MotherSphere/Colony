@@ -382,6 +382,9 @@ void Application::HandleEvent(const SDL_Event& event, bool& running)
             HandleMouseClick(event.button.x, event.button.y);
         }
         break;
+    case SDL_MOUSEWHEEL:
+        HandleMouseWheel(event.wheel);
+        break;
     case SDL_KEYDOWN:
         HandleKeyDown(event.key.keysym.sym);
         break;
@@ -445,6 +448,56 @@ void Application::HandleMouseClick(int x, int y)
         viewRegistry_.TriggerPrimaryAction(statusBuffer_);
         UpdateStatusMessage(statusBuffer_);
     }
+}
+
+void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
+{
+    if (activeProgramId_ == kSettingsProgramId)
+    {
+        return;
+    }
+
+    auto visualsIt = programVisuals_.find(activeProgramId_);
+    if (visualsIt == programVisuals_.end())
+    {
+        return;
+    }
+
+    auto& visuals = visualsIt->second;
+    if (visuals.sectionsViewport.w <= 0 || visuals.sectionsViewport.h <= 0)
+    {
+        return;
+    }
+
+    int mouseX = 0;
+    int mouseY = 0;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    if (!PointInRect(visuals.sectionsViewport, mouseX, mouseY))
+    {
+        return;
+    }
+
+    int wheelY = wheel.y;
+    if (wheel.direction == SDL_MOUSEWHEEL_FLIPPED)
+    {
+        wheelY = -wheelY;
+    }
+
+    if (wheelY == 0)
+    {
+        return;
+    }
+
+    const int viewportHeight = std::max(0, visuals.sectionsViewportContentHeight);
+    const int maxScroll = std::max(0, visuals.sectionsContentHeight - viewportHeight);
+    if (maxScroll <= 0)
+    {
+        return;
+    }
+
+    constexpr int kScrollStep = 48;
+    const int delta = -wheelY * kScrollStep;
+    visuals.sectionsScrollOffset = std::clamp(visuals.sectionsScrollOffset + delta, 0, maxScroll);
 }
 
 void Application::HandleKeyDown(SDL_Keycode key)

@@ -62,6 +62,7 @@ class Application
     [[nodiscard]] std::string GetActiveProgramId() const;
     void HandleEvent(const SDL_Event& event, bool& running);
     void HandleMouseClick(int x, int y);
+    void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
     void HandleKeyDown(SDL_Keycode key);
     void RenderFrame();
     void UpdateStatusMessage(const std::string& statusText);

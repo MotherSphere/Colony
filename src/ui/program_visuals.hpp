@@ -51,6 +51,11 @@ struct ProgramVisuals
         std::vector<std::vector<WrappedLine>> lines;
     };
     std::vector<PatchSection> sections;
+
+    SDL_Rect sectionsViewport{0, 0, 0, 0};
+    int sectionsScrollOffset = 0;
+    int sectionsContentHeight = 0;
+    int sectionsViewportContentHeight = 0;
 };
 
 ProgramVisuals BuildProgramVisuals(

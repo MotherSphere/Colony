@@ -233,6 +233,7 @@ void Application::RebuildTheme()
         theme_.heroTitle,
         theme_.heroBody,
         themeManager_);
+    settingsScrollOffset_ = 0;
 
     RebuildProgramVisuals();
     UpdateStatusMessage(statusBuffer_.empty() && !activeProgramId_.empty()
@@ -311,6 +312,7 @@ void Application::ActivateProgram(const std::string& programId)
 
     if (activeProgramId_ == kSettingsProgramId)
     {
+        settingsScrollOffset_ = 0;
         viewRegistry_.DeactivateActive();
         UpdateStatusMessage(content_.views[activeProgramId_].statusMessage);
         UpdateViewContextAccent();
@@ -454,6 +456,39 @@ void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
 {
     if (activeProgramId_ == kSettingsProgramId)
     {
+        if (settingsRenderResult_.viewport.w <= 0 || settingsRenderResult_.viewport.h <= 0)
+        {
+            return;
+        }
+
+        int mouseX = 0;
+        int mouseY = 0;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        if (!PointInRect(settingsRenderResult_.viewport, mouseX, mouseY))
+        {
+            return;
+        }
+
+        int wheelY = wheel.y;
+        if (wheel.direction == SDL_MOUSEWHEEL_FLIPPED)
+        {
+            wheelY = -wheelY;
+        }
+
+        if (wheelY == 0)
+        {
+            return;
+        }
+
+        const int maxScroll = std::max(0, settingsRenderResult_.contentHeight - settingsRenderResult_.viewport.h);
+        if (maxScroll <= 0)
+        {
+            return;
+        }
+
+        constexpr int kScrollStep = 48;
+        const int delta = -wheelY * kScrollStep;
+        settingsScrollOffset_ = std::clamp(settingsScrollOffset_ + delta, 0, maxScroll);
         return;
     }
 
@@ -592,20 +627,35 @@ void Application::RenderFrame()
     programTileRects_ = libraryResult.tileRects;
 
     heroActionRect_.reset();
+    SDL_Rect previousSettingsViewport = settingsRenderResult_.viewport;
+    const int previousSettingsContentHeight = settingsRenderResult_.contentHeight;
+
     settingsRenderResult_.interactiveRegions.clear();
     settingsRenderResult_.contentHeight = 0;
+    settingsRenderResult_.viewport = SDL_Rect{0, 0, 0, 0};
 
     if (activeProgramId_ == kSettingsProgramId)
     {
+        const int previousViewportHeight = previousSettingsViewport.h;
+        const int previousMaxScroll = std::max(0, previousSettingsContentHeight - previousViewportHeight);
+        settingsScrollOffset_ = std::clamp(settingsScrollOffset_, 0, previousMaxScroll);
+
         heroPanel_.RenderSettings(
             renderer_.get(),
             theme_,
             heroRect,
             settingsPanel_,
+            settingsScrollOffset_,
             themeManager_.ActiveScheme().id,
             activeLanguageId_,
             basicToggleStates_,
             settingsRenderResult_);
+
+        if (settingsRenderResult_.viewport.w > 0 && settingsRenderResult_.viewport.h > 0)
+        {
+            const int maxScroll = std::max(0, settingsRenderResult_.contentHeight - settingsRenderResult_.viewport.h);
+            settingsScrollOffset_ = std::clamp(settingsScrollOffset_, 0, maxScroll);
+        }
     }
     else if (activeVisuals != nullptr)
     {
@@ -618,6 +668,11 @@ void Application::RenderFrame()
             fonts_.patchTitle.get(),
             fonts_.patchBody.get());
         heroActionRect_ = heroResult.actionButtonRect;
+    }
+
+    if (activeProgramId_ != kSettingsProgramId)
+    {
+        settingsScrollOffset_ = 0;
     }
 
     heroPanel_.RenderStatusBar(renderer_.get(), theme_, heroRect, kStatusBarHeight, activeVisuals);

@@ -8,14 +8,39 @@
 #undef private
 #include "utils/color.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <random>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <SDL2/SDL.h>
 
 namespace
 {
+std::filesystem::path GenerateUniqueTempPath(std::string_view prefix)
+{
+    const auto tempDir = std::filesystem::temp_directory_path();
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<std::uint64_t> dist;
+
+    for (int attempt = 0; attempt < 16; ++attempt)
+    {
+        std::ostringstream builder;
+        builder << prefix << '-' << std::hex << dist(gen);
+        auto candidate = tempDir / builder.str();
+        if (!std::filesystem::exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    throw std::runtime_error("Failed to generate unique temporary path");
+}
+
 std::filesystem::path WriteTempContent(std::string_view name, std::string_view json)
 {
     const auto tempDir = std::filesystem::temp_directory_path();
@@ -214,8 +239,7 @@ TEST_CASE("LoadContentFromFile validates user section")
 
 TEST_CASE("LocalizationManager loads translations with fallback and YAML support")
 {
-    const std::filesystem::path tempRoot = std::filesystem::temp_directory_path()
-        / std::filesystem::unique_path("colony_localization_test-%%%%-%%%%");
+    const std::filesystem::path tempRoot = GenerateUniqueTempPath("colony_localization_test");
     REQUIRE(std::filesystem::create_directories(tempRoot));
 
     auto writeFile = [&](std::string_view name, std::string_view contents) {

@@ -32,7 +32,9 @@ class LibraryPanelRenderer
         int activeChannelIndex,
         const std::vector<int>& channelSelections,
         const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
-        TTF_Font* channelFont) const;
+        TTF_Font* channelFont,
+        double timeSeconds,
+        double deltaSeconds) const;
 
   private:
     struct LibraryChrome

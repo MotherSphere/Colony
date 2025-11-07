@@ -1,9 +1,12 @@
 #include "ui/navigation.hpp"
 
+#include "ui/layout.hpp"
+
 #include "utils/color.hpp"
 #include "utils/drawing.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace colony::ui
 {
@@ -30,11 +33,12 @@ std::vector<SDL_Rect> NavigationRail::Render(
     const colony::AppContent& content,
     const std::vector<int>& channelSelections,
     int activeChannelIndex,
-    const std::unordered_map<std::string, ProgramVisuals>& programVisuals) const
+    const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
+    double timeSeconds) const
 {
     std::vector<SDL_Rect> buttonRects(content.channels.size());
 
-    const int navPadding = 28;
+    const int navPadding = Scale(20);
     if (chrome_.brand.texture)
     {
         SDL_Rect brandRect{
@@ -61,24 +65,42 @@ std::vector<SDL_Rect> NavigationRail::Render(
         return theme.channelBadge;
     };
 
-    int channelStartY = navPadding + (chrome_.brand.height > 0 ? chrome_.brand.height + 32 : 48);
-    const int channelButtonSize = 48;
-    const int channelSpacing = 32;
+    int channelStartY = navPadding + (chrome_.brand.height > 0 ? chrome_.brand.height + Scale(24) : Scale(38));
+    const int channelButtonSize = Scale(40);
+    const int channelSpacing = Scale(26);
 
     const auto renderChannelButton = [&](int index, int y) {
         const bool isActive = static_cast<int>(index) == activeChannelIndex;
+        const float wave = static_cast<float>(std::sin(timeSeconds * 1.4 + index));
+        const int bobOffset = static_cast<int>(std::round(wave * Scale(3)));
+        const float glow = static_cast<float>(0.35 + 0.35 * std::sin(timeSeconds * 2.0 + index));
         SDL_Rect buttonRect{
             navRailRect.x + (navRailRect.w - channelButtonSize) / 2,
-            y,
+            y + bobOffset,
             channelButtonSize,
             channelButtonSize};
 
         SDL_Color baseColor = channelAccentColor(index);
-        SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.15f) : baseColor;
+        SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.25f + glow * 0.2f)
+                                       : colony::color::Mix(baseColor, theme.navRail, 0.15f + glow * 0.15f);
         SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
         colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 14);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
         colony::drawing::RenderRoundedRect(renderer, buttonRect, 14);
+
+        if (isActive)
+        {
+            SDL_Rect haloRect = buttonRect;
+            haloRect.x -= Scale(4);
+            haloRect.y -= Scale(4);
+            haloRect.w += Scale(8);
+            haloRect.h += Scale(8);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
+            SDL_Color haloColor = colony::color::Mix(fillColor, theme.heroTitle, 0.5f);
+            SDL_SetRenderDrawColor(renderer, haloColor.r, haloColor.g, haloColor.b, 48);
+            colony::drawing::RenderFilledRoundedRect(renderer, haloRect, 18);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        }
 
         buttonRects[static_cast<std::size_t>(index)] = buttonRect;
         return y + channelButtonSize + channelSpacing;

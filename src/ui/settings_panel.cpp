@@ -1,5 +1,6 @@
 #include "ui/settings_panel.hpp"
 
+#include "ui/layout.hpp"
 #include "utils/color.hpp"
 #include "utils/drawing.hpp"
 
@@ -97,7 +98,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
     };
 
     int cursorY = bounds.y;
-    const int horizontalPadding = 32;
+    const int horizontalPadding = Scale(26);
     const int availableWidth = bounds.w - horizontalPadding * 2;
 
     const auto drawSectionHeader = [&](const colony::TextTexture& title, const colony::TextTexture& subtitle) {
@@ -105,23 +106,23 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         {
             SDL_Rect titleRect{bounds.x + horizontalPadding, cursorY, title.width, title.height};
             colony::RenderTexture(renderer, title, offsetRect(titleRect));
-            cursorY += titleRect.h + 10;
+            cursorY += titleRect.h + Scale(8);
         }
 
         if (subtitle.texture)
         {
             SDL_Rect subtitleRect{bounds.x + horizontalPadding, cursorY, subtitle.width, subtitle.height};
             colony::RenderTexture(renderer, subtitle, offsetRect(subtitleRect));
-            cursorY += subtitleRect.h + 24;
+            cursorY += subtitleRect.h + Scale(18);
         }
     };
 
     drawSectionHeader(appearanceTitle_, appearanceSubtitle_);
 
-    const int themeCardSpacing = 20;
-    const int themeColumns = availableWidth >= 640 ? 2 : 1;
+    const int themeCardSpacing = Scale(16);
+    const int themeColumns = availableWidth >= Scale(540) ? 2 : 1;
     const int themeCardWidth = themeColumns == 1 ? availableWidth : (availableWidth - themeCardSpacing) / 2;
-    const int themeCardHeight = 108;
+    const int themeCardHeight = Scale(90);
 
     for (std::size_t index = 0; index < themeOptions_.size(); ++index)
     {
@@ -144,16 +145,18 @@ SettingsPanel::RenderResult SettingsPanel::Render(
 
         const auto& option = themeOptions_[index];
         SDL_Rect labelRect{
-            logicalCardRect.x + 20,
-            logicalCardRect.y + 18,
+            logicalCardRect.x + Scale(16),
+            logicalCardRect.y + Scale(14),
             option.label.width,
             option.label.height};
         colony::RenderTexture(renderer, option.label, offsetRect(labelRect));
 
-        const int swatchWidth = (logicalCardRect.w - 40 - 12 * 2) / 3;
-        const int swatchHeight = 28;
-        int swatchX = logicalCardRect.x + 20;
-        const int swatchY = logicalCardRect.y + logicalCardRect.h - swatchHeight - 20;
+        const int swatchSpacing = Scale(10);
+        const int swatchInset = Scale(16);
+        const int swatchWidth = (logicalCardRect.w - 2 * swatchInset - swatchSpacing * 2) / 3;
+        const int swatchHeight = Scale(24);
+        int swatchX = logicalCardRect.x + swatchInset;
+        const int swatchY = logicalCardRect.y + logicalCardRect.h - swatchHeight - swatchInset;
         for (const SDL_Color& swatchColor : option.swatch)
         {
             SDL_Rect swatchRect{swatchX, swatchY, swatchWidth, swatchHeight};
@@ -162,7 +165,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             colony::drawing::RenderFilledRoundedRect(renderer, swatchDrawRect, 8);
             SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
             colony::drawing::RenderRoundedRect(renderer, swatchDrawRect, 8);
-            swatchX += swatchWidth + 12;
+            swatchX += swatchWidth + swatchSpacing;
         }
 
         addInteractiveRegion(option.id, RenderResult::InteractionType::ThemeSelection, cardRect);
@@ -177,12 +180,12 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         }
     }
 
-    cursorY += 12;
+    cursorY += Scale(10);
 
     drawSectionHeader(languageTitle_, languageSubtitle_);
 
-    const int languageCardHeight = 74;
-    const int languageCardSpacing = 16;
+    const int languageCardHeight = Scale(62);
+    const int languageCardSpacing = Scale(14);
     for (const auto& language : languages_)
     {
         SDL_Rect logicalCardRect{bounds.x + horizontalPadding, cursorY, availableWidth, languageCardHeight};
@@ -197,13 +200,13 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         colony::drawing::RenderRoundedRect(renderer, cardRect, 14);
 
-        const int contentX = logicalCardRect.x + 20;
-        int contentY = logicalCardRect.y + 16;
+        const int contentX = logicalCardRect.x + Scale(16);
+        int contentY = logicalCardRect.y + Scale(14);
         if (language.name.texture)
         {
             SDL_Rect nameRect{contentX, contentY, language.name.width, language.name.height};
             colony::RenderTexture(renderer, language.name, offsetRect(nameRect));
-            contentY += language.name.height + 4;
+            contentY += language.name.height + Scale(4);
         }
 
         if (language.nativeName.texture)
@@ -212,9 +215,9 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             colony::RenderTexture(renderer, language.nativeName, offsetRect(nativeRect));
         }
 
-        const int radioSize = 24;
+        const int radioSize = Scale(22);
         SDL_Rect radioRect{
-            logicalCardRect.x + logicalCardRect.w - radioSize - 20,
+            logicalCardRect.x + logicalCardRect.w - radioSize - Scale(16),
             logicalCardRect.y + (logicalCardRect.h - radioSize) / 2,
             radioSize,
             radioSize};
@@ -223,7 +226,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         colony::drawing::RenderRoundedRect(renderer, drawRadioRect, radioSize / 2);
         if (isActive)
         {
-            SDL_Rect innerRect{radioRect.x + 6, radioRect.y + 6, radioRect.w - 12, radioRect.h - 12};
+            SDL_Rect innerRect{radioRect.x + Scale(5), radioRect.y + Scale(5), radioRect.w - Scale(10), radioRect.h - Scale(10)};
             SDL_Rect drawInnerRect = offsetRect(innerRect);
             SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
             colony::drawing::RenderFilledRoundedRect(renderer, drawInnerRect, drawInnerRect.w / 2);
@@ -234,12 +237,12 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         cursorY += languageCardHeight + languageCardSpacing;
     }
 
-    cursorY += 12;
+    cursorY += Scale(10);
 
     drawSectionHeader(generalTitle_, generalSubtitle_);
 
-    const int toggleCardHeight = 92;
-    const int toggleCardSpacing = 16;
+    const int toggleCardHeight = Scale(78);
+    const int toggleCardSpacing = Scale(14);
     for (const auto& toggle : toggles_)
     {
         SDL_Rect logicalCardRect{bounds.x + horizontalPadding, cursorY, availableWidth, toggleCardHeight};
@@ -249,13 +252,13 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
         colony::drawing::RenderRoundedRect(renderer, cardRect, 14);
 
-        const int contentX = logicalCardRect.x + 20;
-        int contentY = logicalCardRect.y + 18;
+        const int contentX = logicalCardRect.x + Scale(16);
+        int contentY = logicalCardRect.y + Scale(14);
         if (toggle.label.texture)
         {
             SDL_Rect labelRect{contentX, contentY, toggle.label.width, toggle.label.height};
             colony::RenderTexture(renderer, toggle.label, offsetRect(labelRect));
-            contentY += toggle.label.height + 6;
+            contentY += toggle.label.height + Scale(4);
         }
 
         if (toggle.description.texture)
@@ -264,10 +267,10 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             colony::RenderTexture(renderer, toggle.description, offsetRect(descriptionRect));
         }
 
-        const int switchWidth = 64;
-        const int switchHeight = 32;
+        const int switchWidth = Scale(54);
+        const int switchHeight = Scale(26);
         SDL_Rect switchRect{
-            logicalCardRect.x + logicalCardRect.w - switchWidth - 24,
+            logicalCardRect.x + logicalCardRect.w - switchWidth - Scale(18),
             logicalCardRect.y + (logicalCardRect.h - switchHeight) / 2,
             switchWidth,
             switchHeight};
@@ -280,10 +283,10 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
         colony::drawing::RenderRoundedRect(renderer, drawSwitchRect, switchHeight / 2);
 
-        const int handleSize = switchHeight - 8;
+        const int handleSize = switchHeight - Scale(6);
         SDL_Rect handleRect{
-            isEnabled ? switchRect.x + switchRect.w - handleSize - 4 : switchRect.x + 4,
-            switchRect.y + 4,
+            isEnabled ? switchRect.x + switchRect.w - handleSize - Scale(3) : switchRect.x + Scale(3),
+            switchRect.y + Scale(3),
             handleSize,
             handleSize};
         SDL_Rect drawHandleRect = offsetRect(handleRect);

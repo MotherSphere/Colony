@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_ttf REQUIRED)
+find_package(SDL2 QUIET)
+find_package(SDL2_ttf QUIET)
 find_package(OpenSSL REQUIRED Crypto)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SODIUM REQUIRED libsodium)
@@ -14,6 +14,22 @@ add_library(SODIUM::SODIUM INTERFACE IMPORTED)
 set_target_properties(SODIUM::SODIUM PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${SODIUM_INCLUDE_DIRS}"
     INTERFACE_LINK_LIBRARIES "${SODIUM_LIBRARIES}")
+
+if(NOT SDL2_FOUND)
+    pkg_check_modules(SDL2 REQUIRED sdl2)
+    add_library(SDL2::SDL2 INTERFACE IMPORTED)
+    set_target_properties(SDL2::SDL2 PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${SDL2_INCLUDE_DIRS}"
+        INTERFACE_LINK_LIBRARIES "${SDL2_LIBRARIES}")
+endif()
+
+if(NOT SDL2_ttf_FOUND)
+    pkg_check_modules(SDL2_ttf REQUIRED SDL2_ttf)
+    add_library(SDL2_ttf::SDL2_ttf INTERFACE IMPORTED)
+    set_target_properties(SDL2_ttf::SDL2_ttf PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${SDL2_ttf_INCLUDE_DIRS}"
+        INTERFACE_LINK_LIBRARIES "${SDL2_ttf_LIBRARIES}")
+endif()
 
 add_library(colony_core
     src/core/content_loader.cpp
@@ -44,6 +60,11 @@ target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf
 
 add_library(colony_app
     src/app/application.cpp
+    src/programs/archive/crypto/aes_gcm.cpp
+    src/programs/archive/crypto/argon2id.cpp
+    src/programs/archive/crypto/hkdf.cpp
+    src/programs/archive/vault/Entry.cpp
+    src/programs/archive/vault/Repository.cpp
 )
 
 target_include_directories(colony_app PUBLIC src third_party)

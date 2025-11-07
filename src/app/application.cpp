@@ -223,6 +223,16 @@ bool Application::LoadContent()
         }
 
         content_ = result.content;
+        try
+        {
+            const auto catalogPath = contentRoot_.parent_path() / "catalogs/program_modules.json";
+            programCatalog_ = LoadProgramCatalog(catalogPath);
+        }
+        catch (const std::exception& ex)
+        {
+            std::cerr << ex.what() << '\n';
+            programCatalog_ = ProgramCatalog{};
+        }
         lastContentWriteTime_ = QueryLatestWriteTime(contentRoot_);
     }
     catch (const std::exception& ex)
@@ -238,6 +248,7 @@ bool Application::LoadContent()
     }
 
     channelSelections_.assign(content_.channels.size(), 0);
+    RebuildProgramLaunchers();
     return true;
 }
 
@@ -372,6 +383,53 @@ void Application::RebuildProgramVisuals()
                 theme_.heroGradientFallbackStart,
                 theme_.heroGradientFallbackEnd));
     }
+}
+
+void Application::RebuildProgramLaunchers()
+{
+    programLaunchers_.clear();
+
+    if (programCatalog_.Modules().empty())
+    {
+        return;
+    }
+
+    for (const auto& [programId, descriptor] : programCatalog_.Modules())
+    {
+        if (descriptor.launcher == "archive.app")
+        {
+            programLaunchers_[programId] = [this]() {
+                const auto toggleBefore = preferences_.toggleStates.find("archive.onboarding_complete");
+                const bool hadToggle = toggleBefore != preferences_.toggleStates.end();
+                const bool toggleValue = hadToggle ? toggleBefore->second : false;
+                const std::string previousProgram = preferences_.lastProgramId;
+
+                archiveApp_.Launch(BuildLaunchContext());
+
+                const auto toggleAfter = preferences_.toggleStates.find("archive.onboarding_complete");
+                const bool hasToggleNow = toggleAfter != preferences_.toggleStates.end();
+                const bool toggleValueNow = hasToggleNow ? toggleAfter->second : false;
+
+                if (previousProgram != preferences_.lastProgramId || hadToggle != hasToggleNow
+                    || toggleValue != toggleValueNow)
+                {
+                    MarkPreferencesDirty();
+                }
+            };
+        }
+    }
+}
+
+programs::LaunchContext Application::BuildLaunchContext()
+{
+    programs::LaunchContext context;
+    context.window = window_.get();
+    context.renderer = renderer_.get();
+    context.localization = &localizationManager_;
+    context.preferences = &preferences_;
+    context.preferencesPath = preferencesPath_;
+    context.contentRoot = contentRoot_;
+    return context;
 }
 
 void Application::ActivateChannel(int index)
@@ -838,9 +896,14 @@ void Application::UpdateViewContextAccent()
 
 void Application::HandlePrimaryActionLaunch()
 {
-    if (activeProgramId_ == "ARCHIVE_VAULT")
+    if (activeProgramId_.empty())
     {
-        archiveApp_.launch();
+        return;
+    }
+
+    if (const auto it = programLaunchers_.find(activeProgramId_); it != programLaunchers_.end())
+    {
+        it->second();
     }
 }
 

@@ -4,7 +4,6 @@
 #include "utils/drawing.hpp"
 
 #include <algorithm>
-#include <cmath>
 
 namespace colony::ui
 {
@@ -90,21 +89,28 @@ std::vector<SDL_Rect> NavigationRail::Render(
         if (i < chrome_.channelLabels.size() && chrome_.channelLabels[i].texture)
         {
             const auto& label = chrome_.channelLabels[i];
-            const float availableWidth = static_cast<float>(std::max(navRailRect.w - 16, 0));
-            float scale = 1.0f;
-            if (availableWidth > 0.0f && label.width > availableWidth)
-            {
-                scale = availableWidth / static_cast<float>(label.width);
-            }
-
-            const int labelWidth = static_cast<int>(std::round(label.width * scale));
-            const int labelHeight = std::max(1, static_cast<int>(std::round(label.height * scale)));
+            const int labelWidth = label.width;
+            const int labelHeight = label.height;
             SDL_Rect labelRect{
                 navRailRect.x + (navRailRect.w - labelWidth) / 2,
                 buttonRect.y + buttonRect.h + 6,
                 labelWidth,
                 labelHeight};
+
+            const int availableWidth = std::max(navRailRect.w - 16, 0);
+            SDL_Rect clipRect{navRailRect.x + 8, labelRect.y, availableWidth, labelRect.h};
+            const bool useClip = availableWidth > 0 && labelWidth > availableWidth;
+            if (useClip)
+            {
+                SDL_RenderSetClipRect(renderer, &clipRect);
+            }
+
             colony::RenderTexture(renderer, label, labelRect);
+
+            if (useClip)
+            {
+                SDL_RenderSetClipRect(renderer, nullptr);
+            }
         }
 
         buttonRects[i] = buttonRect;

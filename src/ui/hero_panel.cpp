@@ -138,8 +138,30 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
 
     heroCursorY += 16;
 
-    const int buttonWidth = textColumnWidth > 0 ? std::min(textColumnWidth, 240) : 240;
     const int buttonHeight = 64;
+    int buttonWidth = textColumnWidth > 0 ? std::min(textColumnWidth, 240) : 240;
+    const int iconBoxSize = std::min(26, buttonHeight - 20);
+    if (visuals.actionLabel.texture)
+    {
+        const int textRightPadding = 24;
+        const int textLeftPadding = 24;
+        const int iconLeftPadding = 18;
+        const int iconToTextSpacing = 12;
+        int labelOffset = textLeftPadding;
+        if (iconBoxSize > 0)
+        {
+            labelOffset = iconLeftPadding + iconBoxSize + iconToTextSpacing;
+        }
+        const int requiredWidth = labelOffset + visuals.actionLabel.width + textRightPadding;
+        if (textColumnWidth > 0)
+        {
+            buttonWidth = std::clamp(requiredWidth, buttonWidth, textColumnWidth);
+        }
+        else
+        {
+            buttonWidth = std::max(buttonWidth, requiredWidth);
+        }
+    }
     SDL_Rect buttonRect{heroContentX, heroCursorY, buttonWidth, buttonHeight};
     SDL_Color buttonColor = colony::color::Mix(visuals.accent, theme.heroTitle, 0.15f);
     SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
@@ -152,7 +174,6 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     {
         SDL_RenderSetClipRect(renderer, &buttonRect);
     }
-    const int iconBoxSize = std::min(26, buttonHeight - 20);
     int buttonLabelLeft = buttonRect.x + 24;
     if (iconBoxSize > 0)
     {

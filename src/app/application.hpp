@@ -3,9 +3,7 @@
 #include "controllers/navigation_controller.hpp"
 #include "core/content.hpp"
 #include "core/localization_manager.hpp"
-#include "core/program_catalog.hpp"
 #include "programs/archive/ArchiveApp.hpp"
-#include "programs/launch_contract.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/library_panel.hpp"
 #include "ui/navigation.hpp"
@@ -24,7 +22,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -64,8 +61,6 @@ class Application
     void InitializeViews();
     void RebuildTheme();
     void RebuildProgramVisuals();
-    void RebuildProgramLaunchers();
-    programs::LaunchContext BuildLaunchContext();
     void ActivateChannel(int index);
     void ActivateProgram(const std::string& programId);
     void ActivateProgramInChannel(int programIndex);
@@ -96,7 +91,6 @@ class Application
     FontResources fonts_;
 
     AppContent content_;
-    ProgramCatalog programCatalog_{};
     LocalizationManager localizationManager_{};
     ui::ThemeManager themeManager_;
     ui::ThemeColors theme_{};
@@ -142,7 +136,6 @@ class Application
     bool preferencesDirty_ = false;
 
     programs::archive::ArchiveApp archiveApp_{};
-    std::unordered_map<std::string, std::function<void()>> programLaunchers_{};
 
     static constexpr int kWindowWidth = 1600;
     static constexpr int kWindowHeight = 900;

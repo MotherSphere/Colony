@@ -543,7 +543,6 @@ void Application::HandleMouseClick(int x, int y)
     }
     else if (heroActionRect_.has_value() && PointInRect(*heroActionRect_, x, y))
     {
-        HandlePrimaryActionLaunch();
         viewRegistry_.TriggerPrimaryAction(statusBuffer_);
         UpdateStatusMessage(statusBuffer_);
     }
@@ -833,14 +832,6 @@ void Application::UpdateViewContextAccent()
     else
     {
         viewContext_.accentColor = theme_.channelBadge;
-    }
-}
-
-void Application::HandlePrimaryActionLaunch()
-{
-    if (activeProgramId_ == "ARCHIVE_VAULT")
-    {
-        archiveApp_.launch();
     }
 }
 

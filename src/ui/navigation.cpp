@@ -17,14 +17,9 @@ void NavigationRail::Build(
     const ThemeColors& theme)
 {
     chrome_.brand = colony::CreateTextTexture(renderer, brandFont, content.brandName, theme.heroTitle);
-    chrome_.channelLabels.clear();
-    chrome_.channelLabels.reserve(content.channels.size());
-    for (const auto& channel : content.channels)
-    {
-        chrome_.channelLabels.emplace_back(colony::CreateTextTexture(renderer, navFont, channel.label, theme.navText));
-    }
-    chrome_.userName = colony::CreateTextTexture(renderer, navFont, content.user.name, theme.heroTitle);
-    chrome_.userStatus = colony::CreateTextTexture(renderer, metaFont, content.user.status, theme.muted);
+
+    (void)navFont;
+    (void)metaFont;
 }
 
 std::vector<SDL_Rect> NavigationRail::Render(
@@ -70,80 +65,42 @@ std::vector<SDL_Rect> NavigationRail::Render(
     const int channelButtonSize = 48;
     const int channelSpacing = 32;
 
-    for (std::size_t i = 0; i < content.channels.size(); ++i)
-    {
-        const bool isActive = static_cast<int>(i) == activeChannelIndex;
+    const auto renderChannelButton = [&](int index, int y) {
+        const bool isActive = static_cast<int>(index) == activeChannelIndex;
         SDL_Rect buttonRect{
             navRailRect.x + (navRailRect.w - channelButtonSize) / 2,
-            channelStartY,
+            y,
             channelButtonSize,
             channelButtonSize};
 
-        SDL_Color baseColor = channelAccentColor(static_cast<int>(i));
+        SDL_Color baseColor = channelAccentColor(index);
         SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.15f) : baseColor;
         SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
         colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 14);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
         colony::drawing::RenderRoundedRect(renderer, buttonRect, 14);
 
-        if (i < chrome_.channelLabels.size() && chrome_.channelLabels[i].texture)
+        buttonRects[static_cast<std::size_t>(index)] = buttonRect;
+        return y + channelButtonSize + channelSpacing;
+    };
+
+    int settingsChannelIndex = -1;
+    for (std::size_t i = 0; i < content.channels.size(); ++i)
+    {
+        if (content.channels[i].id == "settings")
         {
-            const auto& label = chrome_.channelLabels[i];
-            const int labelWidth = label.width;
-            const int labelHeight = label.height;
-            SDL_Rect labelRect{
-                navRailRect.x + (navRailRect.w - labelWidth) / 2,
-                buttonRect.y + buttonRect.h + 6,
-                labelWidth,
-                labelHeight};
-
-            const int availableWidth = std::max(navRailRect.w - 16, 0);
-            SDL_Rect clipRect{navRailRect.x + 8, labelRect.y, availableWidth, labelRect.h};
-            const bool useClip = availableWidth > 0 && labelWidth > availableWidth;
-            if (useClip)
-            {
-                SDL_RenderSetClipRect(renderer, &clipRect);
-            }
-
-            colony::RenderTexture(renderer, label, labelRect);
-
-            if (useClip)
-            {
-                SDL_RenderSetClipRect(renderer, nullptr);
-            }
+            settingsChannelIndex = static_cast<int>(i);
+            continue;
         }
 
-        buttonRects[i] = buttonRect;
-        channelStartY += channelButtonSize + channelSpacing;
+        channelStartY = renderChannelButton(static_cast<int>(i), channelStartY);
     }
 
-    if (chrome_.userName.texture)
+    if (settingsChannelIndex != -1)
     {
-        const int avatarSize = 14;
-        SDL_Rect avatarRect{
-            navRailRect.x + (navRailRect.w - avatarSize) / 2,
-            navRailRect.y + navRailRect.h - statusBarHeight - 40,
-            avatarSize,
-            avatarSize};
-        SDL_SetRenderDrawColor(renderer, 90, 214, 102, SDL_ALPHA_OPAQUE);
-        colony::drawing::RenderFilledRoundedRect(renderer, avatarRect, avatarSize / 2);
-
-        SDL_Rect nameRect{
-            navRailRect.x + (navRailRect.w - chrome_.userName.width) / 2,
-            avatarRect.y + avatarRect.h + 8,
-            chrome_.userName.width,
-            chrome_.userName.height};
-        colony::RenderTexture(renderer, chrome_.userName, nameRect);
-
-        if (chrome_.userStatus.texture)
-        {
-            SDL_Rect statusRect{
-                navRailRect.x + (navRailRect.w - chrome_.userStatus.width) / 2,
-                nameRect.y + nameRect.h + 4,
-                chrome_.userStatus.width,
-                chrome_.userStatus.height};
-            colony::RenderTexture(renderer, chrome_.userStatus, statusRect);
-        }
+        const int settingsTargetY = navRailRect.y + navRailRect.h - statusBarHeight - channelButtonSize - navPadding;
+        const int settingsY = std::max(channelStartY, settingsTargetY);
+        renderChannelButton(settingsChannelIndex, settingsY);
     }
 
     return buttonRects;

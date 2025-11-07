@@ -38,9 +38,6 @@ class NavigationRail
     struct NavigationChrome
     {
         colony::TextTexture brand;
-        std::vector<colony::TextTexture> channelLabels;
-        colony::TextTexture userName;
-        colony::TextTexture userStatus;
     };
 
     NavigationChrome chrome_;

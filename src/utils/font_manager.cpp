@@ -19,6 +19,10 @@ namespace colony::fonts
 namespace
 {
 constexpr char kFontFileName[] = "DejaVuSans.ttf";
+constexpr std::array<const char*, 3> kPreferredFonts{
+    "NotoSansCJK-Regular.ttc",
+    "NotoSans-Regular.ttf",
+    kFontFileName};
 constexpr std::array<const char*, 3> kSupportedFontExtensions{".ttf", ".otf", ".ttc"};
 constexpr char kBundledFontDirectory[] = "assets/fonts";
 constexpr char kFontDownloadUrl[] =
@@ -277,10 +281,25 @@ std::string ResolveFontPath()
         }
     }
 
+    auto pathExists = [](const std::filesystem::path& path) {
+        std::error_code error;
+        return std::filesystem::exists(path, error);
+    };
+
+    for (const auto* preferred : kPreferredFonts)
+    {
+        for (const auto& candidate : deduplicated)
+        {
+            if (candidate.filename() == preferred && pathExists(candidate))
+            {
+                return candidate.string();
+            }
+        }
+    }
+
     for (const auto& candidate : deduplicated)
     {
-        std::error_code error;
-        if (std::filesystem::exists(candidate, error))
+        if (pathExists(candidate))
         {
             return candidate.string();
         }

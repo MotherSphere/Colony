@@ -50,6 +50,9 @@ add_library(colony_app
     src/app/application.cpp
     src/programs/archive/ArchiveApp.cpp
     src/programs/archive/ArchiveStateMachine.cpp
+    src/programs/archive/crypto/aes_gcm.cpp
+    src/programs/archive/crypto/argon2id.cpp
+    src/programs/archive/crypto/hkdf.cpp
 )
 
 target_include_directories(colony_app PUBLIC src third_party)

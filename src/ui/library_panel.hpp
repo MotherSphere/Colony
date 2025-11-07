@@ -18,6 +18,8 @@ namespace colony::ui
 struct LibraryRenderResult
 {
     std::vector<SDL_Rect> tileRects;
+    SDL_Rect addButtonRect{0, 0, 0, 0};
+    bool addButtonVisible = false;
 };
 
 class LibraryPanelRenderer

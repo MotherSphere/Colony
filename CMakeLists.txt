@@ -55,6 +55,7 @@ add_library(colony_app
     src/programs/archive/crypto/hkdf.cpp
     src/programs/archive/vault/Entry.cpp
     src/programs/archive/vault/Repository.cpp
+    third_party/tinyfiledialogs/tinyfiledialogs.c
 )
 
 target_include_directories(colony_app PUBLIC src third_party)

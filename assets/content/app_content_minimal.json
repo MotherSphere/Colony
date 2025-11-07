@@ -1,14 +1,29 @@
 {
-  "brand": "COLONY",
-  "navigation": ["HOME"],
+  "brand": "Colony Launcher",
+  "channels": [
+    {
+      "id": "research",
+      "label": "Research Bay",
+      "programs": ["ARCHIVE_VAULT"]
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "programs": ["SETTINGS"]
+    }
+  ],
   "views": {
-    "HOME": {
-      "heading": "Diagnostics",
-      "paragraphs": [
-        "Review baseline habitat vitals before dispatching the next survey team."
-      ],
-      "primaryActionLabel": "Acknowledge",
-      "statusMessage": "Initial ping acknowledged. Awaiting further input."
+    "ARCHIVE_VAULT": {
+      "heading": "Archive Vault",
+      "primaryActionLabel": "Launch Archive",
+      "paragraphs": ["Secure and organize every recovered artifact."],
+      "statusMessage": "Ready to launch"
+    },
+    "SETTINGS": {
+      "heading": "Settings Console",
+      "primaryActionLabel": "Apply theme",
+      "paragraphs": ["Tune appearance and localization preferences."],
+      "statusMessage": "Customize your experience"
     }
   }
 }

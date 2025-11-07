@@ -140,8 +140,9 @@
         "#140B03"
       ]
     },
-    "SPECTRA_LAB": {
-      "heading": "Spectra Lab",
+      "SPECTRA_LAB": {
+        "type": "chart",
+        "heading": "Spectra Lab",
       "tagline": "Analyze biosignatures and environmental samples in real time.",
       "paragraphs": [
         "Spectra Lab fuses chromatograph data, drone assays, and station diagnostics into a living research timeline.",
@@ -169,13 +170,19 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 5 hours ago",
       "accentColor": "#4BE8C6",
-      "heroGradient": [
-        "#0E2F2B",
-        "#041412"
-      ]
-    },
-    "ARCHIVE_VAULT": {
-      "heading": "Archive Vault",
+        "heroGradient": [
+          "#0E2F2B",
+          "#041412"
+        ],
+        "chart": [
+          { "label": "Cryo Samples", "value": 68 },
+          { "label": "Atmos Reads", "value": 42 },
+          { "label": "Organic Scans", "value": 55 }
+        ]
+      },
+      "ARCHIVE_VAULT": {
+        "type": "media",
+        "heading": "Archive Vault",
       "tagline": "Index trade ledgers, cultural briefs, and decrypted relics.",
       "paragraphs": [
         "Archive Vault layers revision control over every recovered asset, from star charts to oral histories.",
@@ -203,11 +210,25 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 3 days ago",
       "accentColor": "#F5D066",
-      "heroGradient": [
-        "#2F2A0E",
-        "#141104"
-      ]
-    },
+        "heroGradient": [
+          "#2F2A0E",
+          "#141104"
+        ],
+        "media": [
+          {
+            "title": "Trade Accord 73A",
+            "description": "Recovered treaty scanned from diplomatic archive shards."
+          },
+          {
+            "title": "Relic Diagnostic Log",
+            "description": "Spectral readings attached to decrypted vault objects."
+          },
+          {
+            "title": "Cultural Field Brief",
+            "description": "Transcribed oral histories tagged with location metadata."
+          }
+        ]
+      },
     "AURORA_CORE": {
       "heading": "Aurora Core",
       "tagline": "Calibrate environmental controls and life-support matrices.",

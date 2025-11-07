@@ -56,11 +56,15 @@ int Application::Run()
         return EXIT_FAILURE;
     }
 
+    LoadPreferences();
+
     if (!LoadContent())
     {
         SDL_Quit();
         return EXIT_FAILURE;
     }
+
+    ApplyPreferences();
 
     if (!InitializeLocalization())
     {
@@ -105,8 +109,10 @@ int Application::Run()
         }
 
         RenderFrame(reduceMotion ? 0.0 : deltaSeconds);
+        MaybeReloadContent(deltaSeconds);
     }
 
+    SavePreferences();
     SDL_Quit();
     return EXIT_SUCCESS;
 }
@@ -196,7 +202,28 @@ bool Application::LoadContent()
 {
     try
     {
-        content_ = LoadContentFromFile(ResolveContentPath().string());
+        if (contentRoot_.empty())
+        {
+            contentRoot_ = ResolveContentPath();
+        }
+
+        const auto result = LoadContentCatalog(contentRoot_);
+        for (const auto& diagnostic : result.diagnostics)
+        {
+            if (diagnostic.isError)
+            {
+                std::cerr << "[content] " << diagnostic.filePath << ": " << diagnostic.message << '\n';
+            }
+        }
+
+        if (result.HasErrors() && result.content.channels.empty())
+        {
+            std::cerr << "Unable to load any valid content from " << contentRoot_ << '\n';
+            return false;
+        }
+
+        content_ = result.content;
+        lastContentWriteTime_ = QueryLatestWriteTime(contentRoot_);
     }
     catch (const std::exception& ex)
     {
@@ -247,7 +274,11 @@ void Application::InitializeNavigation()
 
     navigationController_.SetEntries(std::move(entries));
     navigationController_.OnSelectionChanged([this](int index) { ActivateChannel(index); });
-    ActivateChannel(navigationController_.ActiveIndex());
+    const int preferredIndex = std::clamp(activeChannelIndex_, 0, static_cast<int>(content_.channels.size()) - 1);
+    if (!navigationController_.Activate(preferredIndex))
+    {
+        ActivateChannel(navigationController_.ActiveIndex());
+    }
 }
 
 void Application::InitializeViews()
@@ -258,14 +289,16 @@ void Application::InitializeViews()
         {
             continue;
         }
-        viewRegistry_.Register(viewFactory_.CreateSimpleTextView(id));
+        viewRegistry_.Register(viewFactory_.CreateView(id, view.type));
     }
     viewRegistry_.BindContent(content_);
 }
 
 void Application::RebuildTheme()
 {
-    theme_ = themeManager_.ActiveScheme().colors;
+    const auto& scheme = themeManager_.ActiveScheme();
+    theme_ = scheme.colors;
+    themeAnimations_ = scheme.animations;
 
     const auto localize = [this](std::string_view key) { return GetLocalizedString(key); };
 
@@ -286,6 +319,7 @@ void Application::RebuildTheme()
         theme_.heroTitle,
         theme_.heroBody,
         themeManager_,
+        localizationManager_.AvailableLanguages(),
         localize);
     settingsScrollOffset_ = 0;
 
@@ -348,6 +382,7 @@ void Application::ActivateChannel(int index)
     }
 
     activeChannelIndex_ = index;
+    preferences_.lastChannelIndex = activeChannelIndex_;
     const std::string programId = GetActiveProgramId();
     ActivateProgram(programId);
 }
@@ -363,6 +398,7 @@ void Application::ActivateProgram(const std::string& programId)
     }
 
     activeProgramId_ = programId;
+    preferences_.lastProgramId = activeProgramId_;
 
     if (activeProgramId_ == kSettingsProgramId)
     {
@@ -370,6 +406,7 @@ void Application::ActivateProgram(const std::string& programId)
         viewRegistry_.DeactivateActive();
         UpdateStatusMessage(content_.views[activeProgramId_].statusMessage);
         UpdateViewContextAccent();
+        MarkPreferencesDirty();
         return;
     }
 
@@ -385,6 +422,7 @@ void Application::ActivateProgram(const std::string& programId)
     }
 
     UpdateViewContextAccent();
+    MarkPreferencesDirty();
 }
 
 void Application::ActivateProgramInChannel(int programIndex)
@@ -484,6 +522,8 @@ void Application::HandleMouseClick(int x, int y)
                 if (themeManager_.SetActiveScheme(region.id))
                 {
                     RebuildTheme();
+                    preferences_.themeId = themeManager_.ActiveScheme().id;
+                    MarkPreferencesDirty();
                 }
                 break;
             case ui::SettingsPanel::RenderResult::InteractionType::LanguageSelection:
@@ -493,6 +533,8 @@ void Application::HandleMouseClick(int x, int y)
                 if (auto it = basicToggleStates_.find(region.id); it != basicToggleStates_.end())
                 {
                     it->second = !it->second;
+                    preferences_.toggleStates[region.id] = it->second;
+                    MarkPreferencesDirty();
                 }
                 break;
             }
@@ -624,10 +666,12 @@ void Application::RenderFrame(double deltaSeconds)
     SDL_SetRenderDrawColor(renderer_.get(), theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
     SDL_RenderClear(renderer_.get());
 
-    const double timeSeconds = animationTimeSeconds_;
+    const auto layout = ui::ComputeLayoutMetrics(outputWidth, outputHeight);
+    const double scaledTime = animationTimeSeconds_ * layout.motionScale;
+    const double timeSeconds = scaledTime;
 
-    const int navRailWidth = ui::Scale(88);
-    const int libraryWidth = std::clamp(outputWidth / 4, ui::Scale(280), ui::Scale(320));
+    const int navRailWidth = layout.navRailWidth;
+    const int libraryWidth = layout.libraryWidth;
     SDL_Rect navRailRect{0, 0, navRailWidth, outputHeight};
     SDL_SetRenderDrawColor(renderer_.get(), theme_.navRail.r, theme_.navRail.g, theme_.navRail.b, theme_.navRail.a);
     SDL_RenderFillRect(renderer_.get(), &navRailRect);
@@ -641,27 +685,30 @@ void Application::RenderFrame(double deltaSeconds)
         theme_.libraryBackground.a);
     SDL_RenderFillRect(renderer_.get(), &libraryRect);
 
-    const SDL_Rect heroRect{navRailWidth + libraryWidth, 0, outputWidth - navRailWidth - libraryWidth, outputHeight};
+    const SDL_Rect heroRect{navRailWidth + libraryWidth, 0, std::max(0, outputWidth - navRailWidth - libraryWidth), outputHeight};
     const auto visualsIt = programVisuals_.find(activeProgramId_);
     const ui::ProgramVisuals* activeVisuals = visualsIt != programVisuals_.end() ? &visualsIt->second : nullptr;
+    const float period = std::max(themeAnimations_.heroPulsePeriod, 1.0f);
+    const float normalizedTime = static_cast<float>(std::fmod(scaledTime, period) / period);
+    const float easedPulse = ui::EvaluateEasing(themeAnimations_.heroPulseEasing, normalizedTime);
+    const float accentBlend = 0.15f + 0.35f * easedPulse;
+    const float fallbackBlend = 0.2f * easedPulse;
     if (activeVisuals != nullptr)
     {
-        const float gradientPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 0.6));
-        SDL_Color gradientStart = color::Mix(activeVisuals->gradientStart, activeVisuals->accent, 0.15f + 0.1f * gradientPulse);
-        SDL_Color gradientEnd = color::Mix(activeVisuals->gradientEnd, theme_.heroGradientFallbackEnd, 0.2f * gradientPulse);
+        SDL_Color gradientStart = color::Mix(activeVisuals->gradientStart, activeVisuals->accent, accentBlend);
+        SDL_Color gradientEnd = color::Mix(activeVisuals->gradientEnd, theme_.heroGradientFallbackEnd, fallbackBlend);
         color::RenderVerticalGradient(renderer_.get(), heroRect, gradientStart, gradientEnd);
     }
     else
     {
-        const float gradientPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 0.8));
         SDL_Color gradientStart = color::Mix(
             theme_.heroGradientFallbackStart,
             theme_.channelBadge,
-            0.1f + 0.15f * gradientPulse);
+            0.1f + 0.25f * easedPulse);
         SDL_Color gradientEnd = color::Mix(
             theme_.heroGradientFallbackEnd,
             theme_.border,
-            0.1f * static_cast<float>(std::cos(timeSeconds * 0.6) * 0.5 + 0.5));
+            0.05f + 0.2f * easedPulse);
         color::RenderVerticalGradient(renderer_.get(), heroRect, gradientStart, gradientEnd);
     }
 
@@ -669,7 +716,7 @@ void Application::RenderFrame(double deltaSeconds)
     SDL_SetRenderDrawColor(renderer_.get(), theme_.border.r, theme_.border.g, theme_.border.b, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(renderer_.get(), &navDivider);
 
-    const int statusBarHeight = ui::Scale(kStatusBarHeight);
+    const int statusBarHeight = layout.statusBarHeight;
 
     channelButtonRects_ = navigationRail_.Render(
         renderer_.get(),
@@ -802,32 +849,167 @@ void Application::ChangeLanguage(const std::string& languageId)
     }
 
     activeLanguageId_ = languageId;
+    preferences_.languageId = languageId;
+    MarkPreferencesDirty();
+    RebuildTheme();
+}
+
+void Application::LoadPreferences()
+{
+    preferencesPath_ = preferences::DefaultPath();
+    preferences_ = preferences::Load(preferencesPath_);
+
+    if (!preferences_.languageId.empty())
+    {
+        activeLanguageId_ = preferences_.languageId;
+    }
+
+    for (const auto& [id, value] : preferences_.toggleStates)
+    {
+        if (auto it = basicToggleStates_.find(id); it != basicToggleStates_.end())
+        {
+            it->second = value;
+        }
+    }
+}
+
+void Application::ApplyPreferences()
+{
+    if (!preferences_.themeId.empty())
+    {
+        themeManager_.SetActiveScheme(preferences_.themeId);
+    }
+
+    if (!content_.channels.empty())
+    {
+        const int channelCount = static_cast<int>(content_.channels.size());
+        if (channelCount > 0)
+        {
+            activeChannelIndex_ = std::clamp(preferences_.lastChannelIndex, 0, channelCount - 1);
+        }
+
+        if (!preferences_.lastProgramId.empty())
+        {
+            for (std::size_t index = 0; index < content_.channels.size(); ++index)
+            {
+                const auto& channel = content_.channels[index];
+                const auto it = std::find(channel.programs.begin(), channel.programs.end(), preferences_.lastProgramId);
+                if (it != channel.programs.end())
+                {
+                    channelSelections_[index] = static_cast<int>(std::distance(channel.programs.begin(), it));
+                    activeChannelIndex_ = static_cast<int>(index);
+                    break;
+                }
+            }
+        }
+    }
+
+    preferencesDirty_ = false;
+}
+
+void Application::SavePreferences()
+{
+    if (preferencesPath_.empty())
+    {
+        preferencesPath_ = preferences::DefaultPath();
+    }
+
+    preferences_.themeId = themeManager_.ActiveScheme().id;
+    preferences_.languageId = activeLanguageId_;
+    preferences_.lastChannelIndex = activeChannelIndex_;
+    preferences_.lastProgramId = activeProgramId_;
+    preferences_.toggleStates = basicToggleStates_;
+
+    preferences::Save(preferences_, preferencesPath_);
+    preferencesDirty_ = false;
+}
+
+void Application::MarkPreferencesDirty()
+{
+    preferencesDirty_ = true;
+}
+
+void Application::MaybeReloadContent(double deltaSeconds)
+{
+    if (contentRoot_.empty())
+    {
+        return;
+    }
+
+    hotReloadAccumulatorSeconds_ += deltaSeconds;
+    if (hotReloadAccumulatorSeconds_ < 0.5)
+    {
+        return;
+    }
+    hotReloadAccumulatorSeconds_ = 0.0;
+
+    const auto latestWrite = QueryLatestWriteTime(contentRoot_);
+    if (latestWrite == std::filesystem::file_time_type{} || latestWrite <= lastContentWriteTime_)
+    {
+        return;
+    }
+
+    const int previousChannel = activeChannelIndex_;
+    const std::string previousProgram = activeProgramId_;
+
+    preferences_.lastChannelIndex = previousChannel;
+    preferences_.lastProgramId = previousProgram;
+
+    if (!LoadContent())
+    {
+        return;
+    }
+
+    lastContentWriteTime_ = latestWrite;
+    ApplyPreferences();
+    navigationController_ = NavigationController{};
+    viewRegistry_ = ViewRegistry{};
+    InitializeNavigation();
+    InitializeViews();
     RebuildTheme();
 }
 
 std::filesystem::path Application::ResolveContentPath()
 {
+    constexpr char kContentDirectory[] = "assets/content";
     constexpr char kContentFile[] = "assets/content/app_content.json";
 
-    std::filesystem::path candidate{kContentFile};
+    std::filesystem::path directory{kContentDirectory};
     std::error_code error;
-    if (std::filesystem::exists(candidate, error))
+    if (std::filesystem::is_directory(directory, error))
     {
-        return candidate;
+        return directory;
+    }
+
+    if (std::filesystem::is_regular_file(directory, error))
+    {
+        return directory.parent_path();
+    }
+
+    std::filesystem::path fileCandidate{kContentFile};
+    if (std::filesystem::is_regular_file(fileCandidate, error))
+    {
+        return fileCandidate.parent_path();
     }
 
     if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
     {
         std::filesystem::path base{basePath};
         SDL_free(basePath);
-        std::filesystem::path baseCandidate = base / kContentFile;
-        if (std::filesystem::exists(baseCandidate, error))
+        std::filesystem::path baseDirectory = base / kContentDirectory;
+        if (std::filesystem::is_directory(baseDirectory, error))
         {
-            return baseCandidate;
+            return baseDirectory;
+        }
+
+        std::filesystem::path baseFile = base / kContentFile;
+        if (std::filesystem::is_regular_file(baseFile, error))
+        {
+            return baseFile.parent_path();
         }
     }
 
-    return candidate;
+    return directory;
 }
 
 std::filesystem::path Application::ResolveLocalizationDirectory()

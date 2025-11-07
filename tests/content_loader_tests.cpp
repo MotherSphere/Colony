@@ -3,11 +3,14 @@
 
 #include "core/content_loader.hpp"
 #include "core/localization_manager.hpp"
+#include "utils/preferences.hpp"
 #define private public
 #include "app/application.hpp"
 #undef private
 #include "utils/color.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -111,6 +114,7 @@ TEST_CASE("LoadContentFromFile parses minimal valid document")
     CHECK(content.channels[0].programs.front() == "PROGRAM");
     REQUIRE(content.views.contains("PROGRAM"));
     CHECK(content.views.at("PROGRAM").heading == "Program Heading");
+    CHECK(content.views.at("PROGRAM").type == "text");
 }
 
 TEST_CASE("LoadContentFromFile detects invalid view heading")
@@ -134,6 +138,167 @@ TEST_CASE("LoadContentFromFile detects invalid view heading")
         colony::LoadContentFromFile(path.string()),
         doctest::Contains("requires a non-empty heading"),
         std::runtime_error);
+}
+
+TEST_CASE("LoadContentCatalog merges multiple files and reports diagnostics")
+{
+    const auto directory = GenerateUniqueTempPath("colony_catalog");
+    std::filesystem::create_directories(directory);
+
+    {
+        std::ofstream base{directory / "base.json"};
+        REQUIRE(base.is_open());
+        base << R"({
+            "brand": "Catalog",
+            "channels": [
+                {"id": "alpha", "label": "Alpha", "programs": ["TEXT", "CHART"]}
+            ],
+            "views": {
+                "TEXT": {
+                    "heading": "Text View",
+                    "primaryActionLabel": "Launch",
+                    "paragraphs": ["Body"]
+                }
+            }
+        })";
+    }
+
+    {
+        std::ofstream extra{directory / "extra.json"};
+        REQUIRE(extra.is_open());
+        extra << R"({
+            "views": {
+                "CHART": {
+                    "type": "chart",
+                    "heading": "Chart View",
+                    "primaryActionLabel": "Launch",
+                    "chart": [
+                        {"label": "A", "value": 10},
+                        {"label": "B", "value": 5}
+                    ]
+                }
+            }
+        })";
+    }
+
+    const auto result = colony::LoadContentCatalog(directory);
+    CHECK_FALSE(result.HasErrors());
+    REQUIRE(result.content.views.contains("TEXT"));
+    REQUIRE(result.content.views.contains("CHART"));
+    CHECK(result.content.views.at("CHART").type == "chart");
+    CHECK(result.content.views.at("CHART").chartData.size() == 2);
+    CHECK(result.diagnostics.size() >= 2);
+}
+
+TEST_CASE("LoadContentCatalog surfaces parsing errors")
+{
+    const auto directory = GenerateUniqueTempPath("colony_catalog_errors");
+    std::filesystem::create_directories(directory);
+
+    {
+        std::ofstream valid{directory / "valid.json"};
+        REQUIRE(valid.is_open());
+        valid << R"({
+            "brand": "Diagnostics",
+            "channels": [{"id": "beta", "label": "Beta", "programs": ["TEXT"]}],
+            "views": {
+                "TEXT": {"heading": "View", "primaryActionLabel": "Launch"}
+            }
+        })";
+    }
+
+    {
+        std::ofstream invalid{directory / "broken.json"};
+        REQUIRE(invalid.is_open());
+        invalid << R"({
+            "views": {
+                "BAD": {
+                    "primaryActionLabel": "Launch"
+                }
+            }
+        })";
+    }
+
+    const auto result = colony::LoadContentCatalog(directory);
+    CHECK(result.HasErrors());
+    CHECK(result.diagnostics.size() >= 2);
+    const bool containsError = std::any_of(result.diagnostics.begin(), result.diagnostics.end(), [](const auto& diagnostic) {
+        return diagnostic.isError;
+    });
+    CHECK(containsError);
+}
+
+TEST_CASE("QueryLatestWriteTime returns newest timestamp")
+{
+    const auto directory = GenerateUniqueTempPath("colony_timestamp");
+    std::filesystem::create_directories(directory);
+
+    const auto first = directory / "one.json";
+    const auto second = directory / "two.json";
+
+    {
+        std::ofstream output{first};
+        REQUIRE(output.is_open());
+        output << "{}";
+    }
+
+    {
+        std::ofstream output{second};
+        REQUIRE(output.is_open());
+        output << "{}";
+    }
+
+    const auto futureTime = std::filesystem::file_time_type::clock::now() + std::chrono::hours(1);
+    std::filesystem::last_write_time(second, futureTime);
+
+    const auto latest = colony::QueryLatestWriteTime(directory);
+    CHECK(latest == std::filesystem::last_write_time(second));
+}
+
+TEST_CASE("LocalizationManager enumerates available languages")
+{
+    const auto directory = GenerateUniqueTempPath("colony_lang");
+    std::filesystem::create_directories(directory);
+
+    {
+        std::ofstream english{directory / "en.json"};
+        REQUIRE(english.is_open());
+        english << R"({"hello": "world"})";
+    }
+
+    {
+        std::ofstream french{directory / "fr.yaml"};
+        REQUIRE(french.is_open());
+        french << "greeting: bonjour";
+    }
+
+    colony::LocalizationManager manager;
+    manager.SetResourceDirectory(directory);
+    const auto languages = manager.AvailableLanguages();
+    CHECK(std::find(languages.begin(), languages.end(), "en") != languages.end());
+    CHECK(std::find(languages.begin(), languages.end(), "fr") != languages.end());
+}
+
+TEST_CASE("Preferences roundtrip persists fields")
+{
+    const auto file = GenerateUniqueTempPath("colony_prefs.json");
+    std::filesystem::create_directories(file.parent_path());
+
+    colony::preferences::Preferences preferences;
+    preferences.themeId = "cyberdream";
+    preferences.languageId = "fr";
+    preferences.lastProgramId = "CHART";
+    preferences.lastChannelIndex = 2;
+    preferences.toggleStates = {{"sound", false}, {"auto_updates", true}};
+
+    colony::preferences::Save(preferences, file);
+    const auto loaded = colony::preferences::Load(file);
+
+    CHECK(loaded.themeId == preferences.themeId);
+    CHECK(loaded.languageId == preferences.languageId);
+    CHECK(loaded.lastProgramId == preferences.lastProgramId);
+    CHECK(loaded.lastChannelIndex == preferences.lastChannelIndex);
+    CHECK(loaded.toggleStates == preferences.toggleStates);
 }
 
 TEST_CASE("Application PointInRect honors exclusive bounds and dimensions")

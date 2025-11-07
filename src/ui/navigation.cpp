@@ -21,18 +21,7 @@ void NavigationRail::Build(
 {
     chrome_.brand = colony::CreateTextTexture(renderer, brandFont, content.brandName, theme.heroTitle);
 
-    chrome_.settingsLabel = {};
-    if (navFont)
-    {
-        const auto settingsIt = std::find_if(content.channels.begin(), content.channels.end(), [](const colony::Channel& channel) {
-            return channel.id == "settings";
-        });
-        if (settingsIt != content.channels.end())
-        {
-            chrome_.settingsLabel = colony::CreateTextTexture(renderer, navFont, settingsIt->label, theme.navText);
-        }
-    }
-
+    (void)navFont;
     (void)metaFont;
 }
 
@@ -113,16 +102,6 @@ std::vector<SDL_Rect> NavigationRail::Render(
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
 
-        if (content.channels[index].id == "settings" && chrome_.settingsLabel.texture)
-        {
-            SDL_Rect labelRect{
-                buttonRect.x + (buttonRect.w - chrome_.settingsLabel.width) / 2,
-                buttonRect.y + buttonRect.h + Scale(6),
-                chrome_.settingsLabel.width,
-                chrome_.settingsLabel.height};
-            colony::RenderTexture(renderer, chrome_.settingsLabel, labelRect);
-        }
-
         buttonRects[static_cast<std::size_t>(index)] = buttonRect;
         return y + channelButtonSize + channelSpacing;
     };
@@ -141,9 +120,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
 
     if (settingsChannelIndex != -1)
     {
-        const int settingsLabelPadding = chrome_.settingsLabel.texture ? chrome_.settingsLabel.height + Scale(12) : 0;
-        const int settingsTargetY =
-            navRailRect.y + navRailRect.h - statusBarHeight - channelButtonSize - navPadding - settingsLabelPadding;
+        const int settingsTargetY = navRailRect.y + navRailRect.h - statusBarHeight - channelButtonSize - navPadding;
         const int settingsY = std::max(channelStartY, settingsTargetY);
         renderChannelButton(settingsChannelIndex, settingsY);
     }

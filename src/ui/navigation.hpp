@@ -39,7 +39,6 @@ class NavigationRail
     struct NavigationChrome
     {
         colony::TextTexture brand;
-        colony::TextTexture settingsLabel;
     };
 
     NavigationChrome chrome_;

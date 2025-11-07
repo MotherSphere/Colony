@@ -3,17 +3,9 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 namespace colony::preferences
 {
-
-struct CustomProgram
-{
-    std::string id;
-    std::string name;
-    std::filesystem::path executable;
-};
 
 struct Preferences
 {
@@ -22,7 +14,6 @@ struct Preferences
     std::string lastProgramId;
     int lastChannelIndex = 0;
     std::unordered_map<std::string, bool> toggleStates;
-    std::vector<CustomProgram> customPrograms;
 };
 
 [[nodiscard]] Preferences Load(const std::filesystem::path& path);

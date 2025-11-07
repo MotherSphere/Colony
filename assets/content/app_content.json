@@ -1,15 +1,32 @@
 {
-  "brand": "Colony Launcher",
+  "brand": "",
   "user": {
     "name": "Operator Lyra",
     "status": "Online"
   },
   "channels": [
     {
+      "id": "operations",
+      "label": "Operations Deck",
+      "programs": [
+        "ATLAS_COMMAND",
+        "RELAY_MATRIX",
+        "FORGE_WORKSHOP"
+      ]
+    },
+    {
       "id": "research",
       "label": "Research Bay",
       "programs": [
+        "SPECTRA_LAB",
         "ARCHIVE_VAULT"
+      ]
+    },
+    {
+      "id": "systems",
+      "label": "Systems Control",
+      "programs": [
+        "AURORA_CORE"
       ]
     },
     {
@@ -21,9 +38,151 @@
     }
   ],
   "views": {
-    "ARCHIVE_VAULT": {
-      "type": "media",
-      "heading": "Archive Vault",
+    "ATLAS_COMMAND": {
+      "heading": "Atlas Command Suite",
+      "tagline": "Synchronize orbital operations across every colony.",
+      "paragraphs": [
+        "Atlas Command orchestrates mission queues, orbital telemetry, and cross-colony logistics from a single cockpit.",
+        "Plan sorties, stage supply drops, and stream diagnostics without leaving the command grid."
+      ],
+      "heroHighlights": [
+        "Mission scheduling with visual stage gating",
+        "Live satellite overlays and predictive telemetry",
+        "Incident triage AI that prioritizes response routes"
+      ],
+      "sections": [
+        {
+          "title": "2.6.0 Highlights",
+          "options": [
+            "Autonomous convoy routing now factors dust-storm forecasts.",
+            "Mission review exports include encrypted attachment bundles.",
+            "Command timeline now surfaces conflicting launch windows."
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch Atlas",
+      "statusMessage": "Atlas relays warming up. Command uplink handshake in progress.",
+      "version": "Version 2.6.0",
+      "installState": "Installed",
+      "availability": "Ready to launch",
+      "lastLaunched": "Launched 2 hours ago",
+      "accentColor": "#4BC2FF",
+      "heroGradient": [
+        "#12284F",
+        "#08121F"
+      ]
+    },
+    "RELAY_MATRIX": {
+      "heading": "Relay Matrix",
+      "tagline": "Direct every comms channel from a unified spectrum console.",
+      "paragraphs": [
+        "The Relay Matrix stabilizes long-haul transmissions and builds redundant fallback routes for critical signals.",
+        "Tune spectral bandwidth, map interference, and authorize burst uplinks before the stormfront hits."
+      ],
+      "heroHighlights": [
+        "Adaptive signal shaping with anomaly dampening",
+        "In-line packet inspection and quarantine staging",
+        "Telemetry playback with audio waveform overlays"
+      ],
+      "sections": [
+        {
+          "title": "1.9.3 Patch Notes",
+          "options": [
+            "Crosslink analyzer exposes jitter spikes in under 50ms.",
+            "Manual reroute panel adds drag-to-prioritize controls.",
+            "Spectrum heatmap now records and replays rolling 6-hour windows."
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch Relay",
+      "statusMessage": "Matrix buffers purged. Awaiting spectrum assignment.",
+      "version": "Version 1.9.3",
+      "installState": "Installed",
+      "availability": "Ready to launch",
+      "lastLaunched": "Launched yesterday",
+      "accentColor": "#7A7CFF",
+      "heroGradient": [
+        "#1D1F55",
+        "#090A1E"
+      ]
+    },
+    "FORGE_WORKSHOP": {
+      "heading": "Forge Workshop",
+      "tagline": "Prototype hardware configs and deploy them fleet-wide.",
+      "paragraphs": [
+        "Forge packages firmware, calibrations, and fabrication runs into resilient release bundles.",
+        "Integrate sensor suites, preview diagnostics, and roll back to certified baselines in seconds."
+      ],
+      "heroHighlights": [
+        "Blueprint diffing with per-module insights",
+        "Live hardware telemetry while flashing",
+        "Automated compliance checks and rollback snaps"
+      ],
+      "sections": [
+        {
+          "title": "3.2 Release",
+          "options": [
+            "Thermal profile simulator now covers additive manufacturing.",
+            "Rapid revert restores both firmware and calibration payloads.",
+            "Fleet tagging supports staged deployment cohorts."
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch Forge",
+      "statusMessage": "Workshop sandboxes compiling golden image artifacts.",
+      "version": "Version 3.2.0",
+      "installState": "Installed",
+      "availability": "Update available",
+      "lastLaunched": "Launched 4 days ago",
+      "accentColor": "#FF9E66",
+      "heroGradient": [
+        "#331C07",
+        "#140B03"
+      ]
+    },
+      "SPECTRA_LAB": {
+        "type": "chart",
+        "heading": "Spectra Lab",
+      "tagline": "Analyze biosignatures and environmental samples in real time.",
+      "paragraphs": [
+        "Spectra Lab fuses chromatograph data, drone assays, and station diagnostics into a living research timeline.",
+        "Compare samples side by side, annotate anomalies, and pipe results directly to field teams."
+      ],
+      "heroHighlights": [
+        "Sample overlays with spectral fingerprinting",
+        "Automated outlier flagging tuned per biome",
+        "Export pipelines to mission dossiers and knowledge base"
+      ],
+      "sections": [
+        {
+          "title": "4.1 Update",
+          "options": [
+            "Nanite assay ingest now decodes 30% faster on edge nodes.",
+            "Timeline scrubber supports cross-project overlays.",
+            "Shared annotations display author presence indicators."
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch Spectra",
+      "statusMessage": "Sequencing caches primed. Awaiting new sample batches.",
+      "version": "Version 4.1.0",
+      "installState": "Installed",
+      "availability": "Ready to launch",
+      "lastLaunched": "Launched 5 hours ago",
+      "accentColor": "#4BE8C6",
+        "heroGradient": [
+          "#0E2F2B",
+          "#041412"
+        ],
+        "chart": [
+          { "label": "Cryo Samples", "value": 68 },
+          { "label": "Atmos Reads", "value": 42 },
+          { "label": "Organic Scans", "value": 55 }
+        ]
+      },
+      "ARCHIVE_VAULT": {
+        "type": "media",
+        "heading": "Archive Vault",
       "tagline": "Index trade ledgers, cultural briefs, and decrypted relics.",
       "paragraphs": [
         "Archive Vault layers revision control over every recovered asset, from star charts to oral histories.",
@@ -51,23 +210,57 @@
       "availability": "Ready to launch",
       "lastLaunched": "Launched 3 days ago",
       "accentColor": "#F5D066",
-      "heroGradient": [
-        "#2F2A0E",
-        "#141104"
+        "heroGradient": [
+          "#2F2A0E",
+          "#141104"
+        ],
+        "media": [
+          {
+            "title": "Trade Accord 73A",
+            "description": "Recovered treaty scanned from diplomatic archive shards."
+          },
+          {
+            "title": "Relic Diagnostic Log",
+            "description": "Spectral readings attached to decrypted vault objects."
+          },
+          {
+            "title": "Cultural Field Brief",
+            "description": "Transcribed oral histories tagged with location metadata."
+          }
+        ]
+      },
+    "AURORA_CORE": {
+      "heading": "Aurora Core",
+      "tagline": "Calibrate environmental controls and life-support matrices.",
+      "paragraphs": [
+        "Aurora Core harmonizes power grids, atmospheric recyclers, and habitat climate across the colony network.",
+        "Forecast draw peaks, deploy load shedding scripts, and ensure every module stays in the green."
       ],
-      "media": [
+      "heroHighlights": [
+        "Real-time power lattice visualization",
+        "Predictive maintenance scoring for every module",
+        "Contingency macros with one-click failover"
+      ],
+      "sections": [
         {
-          "title": "Trade Accord 73A",
-          "description": "Recovered treaty scanned from diplomatic archive shards."
-        },
-        {
-          "title": "Relic Diagnostic Log",
-          "description": "Spectral readings attached to decrypted vault objects."
-        },
-        {
-          "title": "Cultural Field Brief",
-          "description": "Transcribed oral histories tagged with location metadata."
+          "title": "5.0 Systems Rollout",
+          "options": [
+            "Grid harmonics dashboard exposes transient surges instantly.",
+            "Life-support balancer can pin priority habitats during outages.",
+            "New holo overview maps multi-station performance at a glance."
+          ]
         }
+      ],
+      "primaryActionLabel": "Launch Aurora",
+      "statusMessage": "Core command lattice synced. Standby for load calibration.",
+      "version": "Version 5.0.0",
+      "installState": "Installed",
+      "availability": "Ready to launch",
+      "lastLaunched": "Launched 6 hours ago",
+      "accentColor": "#7FDBFF",
+      "heroGradient": [
+        "#0F1B35",
+        "#050910"
       ]
     },
     "SETTINGS": {

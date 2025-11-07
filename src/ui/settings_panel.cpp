@@ -15,21 +15,27 @@ void SettingsPanel::Build(
     TTF_Font* bodyFont,
     SDL_Color titleColor,
     SDL_Color bodyColor,
-    const ThemeManager& themeManager)
+    const ThemeManager& themeManager,
+    const std::function<std::string(std::string_view)>& localize)
 {
     themeOptions_.clear();
     languages_.clear();
     toggles_.clear();
 
-    appearanceTitle_ = colony::CreateTextTexture(renderer, titleFont, "Appearance", titleColor);
-    appearanceSubtitle_ = colony::CreateTextTexture(renderer, bodyFont, "Choose a preset palette for Colony", bodyColor);
+    appearanceTitle_ = colony::CreateTextTexture(renderer, titleFont, localize("settings.appearance.title"), titleColor);
+    appearanceSubtitle_ = colony::CreateTextTexture(renderer, bodyFont, localize("settings.appearance.subtitle"), bodyColor);
 
-    languageTitle_ = colony::CreateTextTexture(renderer, titleFont, "Language", titleColor);
-    languageSubtitle_ = colony::CreateTextTexture(renderer, bodyFont, "Switch the interface to your preferred language", bodyColor);
+    languageTitle_ = colony::CreateTextTexture(renderer, titleFont, localize("settings.language.title"), titleColor);
+    languageSubtitle_ =
+        colony::CreateTextTexture(renderer, bodyFont, localize("settings.language.subtitle"), bodyColor);
 
-    generalTitle_ = colony::CreateTextTexture(renderer, titleFont, "General", titleColor);
+    generalTitle_ = colony::CreateTextTexture(renderer, titleFont, localize("settings.general.title"), titleColor);
     const SDL_Color secondaryColor = colony::color::Mix(bodyColor, titleColor, 0.25f);
-    generalSubtitle_ = colony::CreateTextTexture(renderer, bodyFont, "Tune everyday preferences and comfort options", secondaryColor);
+    generalSubtitle_ = colony::CreateTextTexture(
+        renderer,
+        bodyFont,
+        localize("settings.general.subtitle"),
+        secondaryColor);
 
     for (const auto& scheme : themeManager.Schemes())
     {
@@ -40,33 +46,41 @@ void SettingsPanel::Build(
         themeOptions_.emplace_back(std::move(option));
     }
 
-    const auto makeLanguage = [&](std::string id, std::string name, std::string native) {
+    const auto makeLanguage = [&](std::string_view id) {
         LanguageOption option;
-        option.id = std::move(id);
-        option.name = colony::CreateTextTexture(renderer, bodyFont, name, titleColor);
-        option.nativeName = colony::CreateTextTexture(renderer, bodyFont, native, secondaryColor);
+        option.id = std::string{id};
+        std::string prefix = "settings.language.options.";
+        prefix.append(option.id);
+        const std::string nameKey = prefix + ".name";
+        const std::string nativeKey = prefix + ".native";
+        option.name = colony::CreateTextTexture(renderer, bodyFont, localize(nameKey), titleColor);
+        option.nativeName = colony::CreateTextTexture(renderer, bodyFont, localize(nativeKey), secondaryColor);
         languages_.emplace_back(std::move(option));
     };
 
-    makeLanguage("en", "English", "English");
-    makeLanguage("fr", "French", "Français");
-    makeLanguage("zh", "Chinese", "中文");
-    makeLanguage("de", "German", "Deutsch");
-    makeLanguage("ar", "Arabic", "العربية");
-    makeLanguage("hi", "Hindi", "हिन्दी");
+    makeLanguage("en");
+    makeLanguage("fr");
+    makeLanguage("zh");
+    makeLanguage("de");
+    makeLanguage("ar");
+    makeLanguage("hi");
 
-    const auto makeToggle = [&](std::string id, std::string label, std::string description) {
+    const auto makeToggle = [&](std::string_view id) {
         ToggleOption option;
-        option.id = std::move(id);
-        option.label = colony::CreateTextTexture(renderer, bodyFont, label, titleColor);
-        option.description = colony::CreateTextTexture(renderer, bodyFont, description, secondaryColor);
+        option.id = std::string{id};
+        std::string prefix = "settings.toggles.";
+        prefix.append(option.id);
+        const std::string labelKey = prefix + ".label";
+        const std::string descriptionKey = prefix + ".description";
+        option.label = colony::CreateTextTexture(renderer, bodyFont, localize(labelKey), titleColor);
+        option.description = colony::CreateTextTexture(renderer, bodyFont, localize(descriptionKey), secondaryColor);
         toggles_.emplace_back(std::move(option));
     };
 
-    makeToggle("notifications", "Enable notifications", "Show alerts when new colony drops arrive");
-    makeToggle("sound", "Enable interface sounds", "Play a soft chime when navigating the UI");
-    makeToggle("auto_updates", "Auto-update channels", "Refresh channel content whenever Colony launches");
-    makeToggle("reduced_motion", "Reduce motion", "Limit hero animations for sensitive users");
+    makeToggle("notifications");
+    makeToggle("sound");
+    makeToggle("auto_updates");
+    makeToggle("reduced_motion");
 }
 
 SettingsPanel::RenderResult SettingsPanel::Render(

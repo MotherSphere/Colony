@@ -10,10 +10,15 @@
 namespace colony::ui
 {
 
-void HeroPanelRenderer::Build(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme)
+void HeroPanelRenderer::Build(
+    SDL_Renderer* renderer,
+    TTF_Font* labelFont,
+    const ThemeColors& theme,
+    const std::function<std::string(std::string_view)>& localize)
 {
-    chrome_.capabilitiesLabel = colony::CreateTextTexture(renderer, labelFont, "CAPABILITIES", theme.muted);
-    chrome_.updatesLabel = colony::CreateTextTexture(renderer, labelFont, "PATCH NOTES", theme.muted);
+    chrome_.capabilitiesLabel =
+        colony::CreateTextTexture(renderer, labelFont, localize("hero.capabilities"), theme.muted);
+    chrome_.updatesLabel = colony::CreateTextTexture(renderer, labelFont, localize("hero.patch_notes"), theme.muted);
 }
 
 HeroRenderResult HeroPanelRenderer::RenderHero(

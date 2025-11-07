@@ -7,6 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <array>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -26,7 +27,8 @@ class SettingsPanel
         TTF_Font* bodyFont,
         SDL_Color titleColor,
         SDL_Color bodyColor,
-        const ThemeManager& themeManager);
+        const ThemeManager& themeManager,
+        const std::function<std::string(std::string_view)>& localize);
 
     struct RenderResult
     {

@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <optional>
+#include <functional>
 #include <unordered_map>
 
 namespace colony::ui
@@ -20,7 +21,11 @@ struct HeroRenderResult
 class HeroPanelRenderer
 {
   public:
-    void Build(SDL_Renderer* renderer, TTF_Font* labelFont, const ThemeColors& theme);
+    void Build(
+        SDL_Renderer* renderer,
+        TTF_Font* labelFont,
+        const ThemeColors& theme,
+        const std::function<std::string(std::string_view)>& localize);
 
     HeroRenderResult RenderHero(
         SDL_Renderer* renderer,

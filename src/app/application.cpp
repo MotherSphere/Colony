@@ -62,6 +62,12 @@ int Application::Run()
         return EXIT_FAILURE;
     }
 
+    if (!InitializeLocalization())
+    {
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
     InitializeNavigation();
     InitializeViews();
     RebuildTheme();
@@ -207,6 +213,28 @@ bool Application::LoadContent()
     return true;
 }
 
+bool Application::InitializeLocalization()
+{
+    localizationManager_.SetResourceDirectory(ResolveLocalizationDirectory());
+    localizationManager_.SetFallbackLanguage("en");
+
+    if (!localizationManager_.LoadLanguage(activeLanguageId_))
+    {
+        std::cerr << "Failed to load localization for language '" << activeLanguageId_ << "'." << '\n';
+        if (activeLanguageId_ != localizationManager_.FallbackLanguage()
+            && localizationManager_.LoadLanguage(localizationManager_.FallbackLanguage()))
+        {
+            activeLanguageId_ = localizationManager_.FallbackLanguage();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void Application::InitializeNavigation()
 {
     std::vector<std::string> entries;
@@ -238,6 +266,8 @@ void Application::RebuildTheme()
 {
     theme_ = themeManager_.ActiveScheme().colors;
 
+    const auto localize = [this](std::string_view key) { return GetLocalizedString(key); };
+
     navigationRail_.Build(
         renderer_.get(),
         fonts_.brand.get(),
@@ -246,15 +276,16 @@ void Application::RebuildTheme()
         content_,
         theme_);
 
-    libraryPanel_.Build(renderer_.get(), fonts_.tileMeta.get(), theme_);
-    heroPanel_.Build(renderer_.get(), fonts_.tileMeta.get(), theme_);
+    libraryPanel_.Build(renderer_.get(), fonts_.tileMeta.get(), theme_, localize);
+    heroPanel_.Build(renderer_.get(), fonts_.tileMeta.get(), theme_, localize);
     settingsPanel_.Build(
         renderer_.get(),
         fonts_.heroTitle.get(),
         fonts_.heroBody.get(),
         theme_.heroTitle,
         theme_.heroBody,
-        themeManager_);
+        themeManager_,
+        localize);
     settingsScrollOffset_ = 0;
 
     RebuildProgramVisuals();
@@ -455,7 +486,7 @@ void Application::HandleMouseClick(int x, int y)
                 }
                 break;
             case ui::SettingsPanel::RenderResult::InteractionType::LanguageSelection:
-                activeLanguageId_ = region.id;
+                ChangeLanguage(region.id);
                 break;
             case ui::SettingsPanel::RenderResult::InteractionType::Toggle:
                 if (auto it = basicToggleStates_.find(region.id); it != basicToggleStates_.end())
@@ -756,6 +787,23 @@ void Application::UpdateViewContextAccent()
     }
 }
 
+void Application::ChangeLanguage(const std::string& languageId)
+{
+    if (languageId.empty() || languageId == activeLanguageId_)
+    {
+        return;
+    }
+
+    if (!localizationManager_.LoadLanguage(languageId))
+    {
+        std::cerr << "Unable to load localization for language '" << languageId << "'." << '\n';
+        return;
+    }
+
+    activeLanguageId_ = languageId;
+    RebuildTheme();
+}
+
 std::filesystem::path Application::ResolveContentPath()
 {
     constexpr char kContentFile[] = "assets/content/app_content.json";
@@ -781,6 +829,31 @@ std::filesystem::path Application::ResolveContentPath()
     return candidate;
 }
 
+std::filesystem::path Application::ResolveLocalizationDirectory()
+{
+    constexpr char kLocalizationDir[] = "assets/content/i18n";
+
+    std::filesystem::path candidate{kLocalizationDir};
+    std::error_code error;
+    if (std::filesystem::is_directory(candidate, error))
+    {
+        return candidate;
+    }
+
+    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
+    {
+        std::filesystem::path base{basePath};
+        SDL_free(basePath);
+        std::filesystem::path baseCandidate = base / kLocalizationDir;
+        if (std::filesystem::is_directory(baseCandidate, error))
+        {
+            return baseCandidate;
+        }
+    }
+
+    return candidate;
+}
+
 bool Application::PointInRect(const SDL_Rect& rect, int x, int y) const
 {
     if (rect.w <= 0 || rect.h <= 0)
@@ -791,6 +864,16 @@ bool Application::PointInRect(const SDL_Rect& rect, int x, int y) const
     const int maxX = rect.x + rect.w;
     const int maxY = rect.y + rect.h;
     return x >= rect.x && x < maxX && y >= rect.y && y < maxY;
+}
+
+std::string Application::GetLocalizedString(std::string_view key) const
+{
+    return localizationManager_.GetString(key);
+}
+
+std::string Application::GetLocalizedString(std::string_view key, std::string_view fallback) const
+{
+    return localizationManager_.GetStringOrDefault(key, fallback);
 }
 
 } // namespace colony

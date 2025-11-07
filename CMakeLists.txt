@@ -10,6 +10,7 @@ find_package(SDL2_ttf REQUIRED)
 
 add_library(colony_core
     src/core/content_loader.cpp
+    src/core/localization_manager.cpp
     src/controllers/navigation_controller.cpp
 )
 

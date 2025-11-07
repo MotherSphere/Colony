@@ -30,8 +30,6 @@ add_library(colony_ui
     src/ui/library_panel.cpp
     src/ui/hero_panel.cpp
     src/ui/settings_panel.cpp
-    src/views/chart_view.cpp
-    src/views/media_view.cpp
     src/views/simple_text_view.cpp
     src/views/view_registry.cpp
     src/views/view_factory.cpp
@@ -39,7 +37,6 @@ add_library(colony_ui
     src/utils/color.cpp
     src/utils/font_manager.cpp
     src/utils/text_wrapping.cpp
-    src/utils/preferences.cpp
 )
 
 target_include_directories(colony_ui PUBLIC src third_party)

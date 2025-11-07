@@ -3,10 +3,8 @@
 #include "json.hpp"
 
 #include <array>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <string_view>
 #include <vector>
 
@@ -122,39 +120,6 @@ bool LocalizationManager::LoadLanguage(const std::string& languageId)
     activeLanguageId_ = languageId;
     activeStrings_ = std::move(newStrings);
     return true;
-}
-
-std::vector<std::string> LocalizationManager::AvailableLanguages() const
-{
-    std::vector<std::string> languages;
-    if (resourceDirectory_.empty())
-    {
-        return languages;
-    }
-
-    std::error_code error;
-    if (!std::filesystem::is_directory(resourceDirectory_, error))
-    {
-        return languages;
-    }
-
-    std::set<std::string> uniqueIds;
-    for (const auto& entry : std::filesystem::directory_iterator(resourceDirectory_))
-    {
-        if (!entry.is_regular_file())
-        {
-            continue;
-        }
-        const auto extension = entry.path().extension().string();
-        if (extension != ".json" && extension != ".yaml" && extension != ".yml")
-        {
-            continue;
-        }
-        uniqueIds.insert(entry.path().stem().string());
-    }
-
-    languages.assign(uniqueIds.begin(), uniqueIds.end());
-    return languages;
 }
 
 std::string LocalizationManager::GetString(std::string_view key) const

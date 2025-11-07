@@ -28,7 +28,6 @@ class SettingsPanel
         SDL_Color titleColor,
         SDL_Color bodyColor,
         const ThemeManager& themeManager,
-        const std::vector<std::string>& languages,
         const std::function<std::string(std::string_view)>& localize);
 
     struct RenderResult

@@ -10,7 +10,6 @@
 #include "ui/settings_panel.hpp"
 #include "ui/theme.hpp"
 #include "utils/sdl_wrappers.hpp"
-#include "utils/preferences.hpp"
 #include "views/view_factory.hpp"
 #include "views/view_registry.hpp"
 
@@ -72,11 +71,6 @@ class Application
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
-    void LoadPreferences();
-    void ApplyPreferences();
-    void SavePreferences();
-    void MarkPreferencesDirty();
-    void MaybeReloadContent(double deltaSeconds);
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -92,7 +86,6 @@ class Application
     LocalizationManager localizationManager_{};
     ui::ThemeManager themeManager_;
     ui::ThemeColors theme_{};
-    ui::ColorScheme::ThemeAnimations themeAnimations_{};
 
     ui::NavigationRail navigationRail_;
     ui::LibraryPanelRenderer libraryPanel_;
@@ -126,15 +119,9 @@ class Application
     double animationTimeSeconds_ = 0.0;
     Uint64 lastFrameCounter_ = 0;
 
-    std::filesystem::path contentRoot_;
-    std::filesystem::file_time_type lastContentWriteTime_{};
-    double hotReloadAccumulatorSeconds_ = 0.0;
-    preferences::Preferences preferences_{};
-    std::filesystem::path preferencesPath_{};
-    bool preferencesDirty_ = false;
-
     static constexpr int kWindowWidth = 1600;
     static constexpr int kWindowHeight = 900;
+    static constexpr int kStatusBarHeight = 52;
     static constexpr char kSettingsProgramId[] = "SETTINGS";
 };
 

@@ -2,14 +2,9 @@
 
 #include "json.hpp"
 
-#include <array>
-#include <filesystem>
 #include <fstream>
-#include <optional>
 #include <stdexcept>
-#include <unordered_map>
 #include <utility>
-#include <vector>
 
 namespace colony
 {
@@ -19,9 +14,6 @@ const char* kViewsKey = "views";
 const char* kChannelsKey = "channels";
 const char* kUserKey = "user";
 const char* kBrandKey = "brand";
-const char* kTypeKey = "type";
-const char* kChartKey = "chart";
-const char* kMediaKey = "media";
 
 std::ifstream OpenFile(const std::string& filePath)
 {
@@ -110,9 +102,6 @@ void ContentValidator::ParseViewsSection(const nlohmann::json& document, AppCont
 
 ViewContent ContentValidator::ParseViewContent(const std::string& viewId, const nlohmann::json& json) const
 {
-    ViewContent content;
-    content.type = json.value(kTypeKey, "text");
-
     if (!json.contains("heading") || !json["heading"].is_string() || json["heading"].get<std::string>().empty())
     {
         throw std::runtime_error("View \"" + viewId + "\" requires a non-empty heading.");
@@ -123,6 +112,7 @@ ViewContent ContentValidator::ParseViewContent(const std::string& viewId, const 
         throw std::runtime_error("View \"" + viewId + "\" requires a non-empty primaryActionLabel.");
     }
 
+    ViewContent content;
     content.heading = json["heading"].get<std::string>();
     content.primaryActionLabel = json["primaryActionLabel"].get<std::string>();
     content.statusMessage = json.value("statusMessage", "");
@@ -231,59 +221,6 @@ ViewContent ContentValidator::ParseViewContent(const std::string& viewId, const 
         }
     }
 
-    if (json.contains(kChartKey))
-    {
-        if (!json[kChartKey].is_array())
-        {
-            throw std::runtime_error("View \"" + viewId + "\" chart must be an array of objects.");
-        }
-        for (const auto& datumJson : json[kChartKey])
-        {
-            if (!datumJson.is_object())
-            {
-                throw std::runtime_error("View \"" + viewId + "\" chart entries must be objects.");
-            }
-            if (!datumJson.contains("label") || !datumJson["label"].is_string())
-            {
-                throw std::runtime_error("View \"" + viewId + "\" chart entry missing string label.");
-            }
-            ChartDatum datum;
-            datum.label = datumJson["label"].get<std::string>();
-            datum.value = datumJson.value("value", 0.0);
-            content.chartData.emplace_back(std::move(datum));
-        }
-    }
-
-    if (json.contains(kMediaKey))
-    {
-        if (!json[kMediaKey].is_array())
-        {
-            throw std::runtime_error("View \"" + viewId + "\" media must be an array of objects.");
-        }
-        for (const auto& mediaJson : json[kMediaKey])
-        {
-            if (!mediaJson.is_object())
-            {
-                throw std::runtime_error("View \"" + viewId + "\" media entries must be objects.");
-            }
-            if (!mediaJson.contains("title") || !mediaJson["title"].is_string())
-            {
-                throw std::runtime_error("View \"" + viewId + "\" media entry missing string title.");
-            }
-            MediaItem item;
-            item.title = mediaJson["title"].get<std::string>();
-            if (mediaJson.contains("description"))
-            {
-                if (!mediaJson["description"].is_string())
-                {
-                    throw std::runtime_error("View \"" + viewId + "\" media description must be a string.");
-                }
-                item.description = mediaJson["description"].get<std::string>();
-            }
-            content.mediaItems.emplace_back(std::move(item));
-        }
-    }
-
     return content;
 }
 
@@ -358,274 +295,6 @@ AppContent LoadContentFromFile(const std::string& filePath)
 {
     ContentValidator validator;
     return validator.LoadFromFile(filePath);
-}
-
-namespace
-{
-struct AggregatedCatalog
-{
-    std::optional<std::string> brandName;
-    nlohmann::json user = nlohmann::json::object();
-    nlohmann::json views = nlohmann::json::object();
-    nlohmann::json channels = nlohmann::json::array();
-    std::unordered_map<std::string, std::size_t> channelIndexById;
-
-    void MergeUser(const nlohmann::json& userJson)
-    {
-        if (!userJson.is_object())
-        {
-            return;
-        }
-
-        for (const auto& [key, value] : userJson.items())
-        {
-            if (!value.is_string())
-            {
-                continue;
-            }
-            const std::string text = value.get<std::string>();
-            if (!text.empty())
-            {
-                user[key] = text;
-            }
-        }
-    }
-
-    void MergeViews(const nlohmann::json& viewsJson)
-    {
-        if (!viewsJson.is_object())
-        {
-            return;
-        }
-
-        for (const auto& [id, value] : viewsJson.items())
-        {
-            views[id] = value;
-        }
-    }
-
-    void MergeChannels(const nlohmann::json& channelsJson)
-    {
-        if (!channelsJson.is_array())
-        {
-            return;
-        }
-
-        for (const auto& channelJson : channelsJson)
-        {
-            if (!channelJson.is_object())
-            {
-                channels.push_back(channelJson);
-                continue;
-            }
-
-            const auto idIt = channelJson.find("id");
-            if (idIt != channelJson.end() && idIt->is_string())
-            {
-                const std::string id = idIt->get<std::string>();
-                if (!id.empty())
-                {
-                    const auto existing = channelIndexById.find(id);
-                    if (existing != channelIndexById.end())
-                    {
-                        channels[existing->second] = channelJson;
-                    }
-                    else
-                    {
-                        const std::size_t index = channels.size();
-                        channelIndexById.emplace(id, index);
-                        channels.push_back(channelJson);
-                    }
-                    continue;
-                }
-            }
-
-            channels.push_back(channelJson);
-        }
-    }
-
-    void MergeDocument(const nlohmann::json& document)
-    {
-        if (document.contains(kBrandKey) && document[kBrandKey].is_string())
-        {
-            const std::string brand = document[kBrandKey].get<std::string>();
-            if (!brand.empty())
-            {
-                brandName = brand;
-            }
-        }
-
-        if (document.contains(kUserKey))
-        {
-            MergeUser(document[kUserKey]);
-        }
-        if (document.contains(kViewsKey))
-        {
-            MergeViews(document[kViewsKey]);
-        }
-        if (document.contains(kChannelsKey))
-        {
-            MergeChannels(document[kChannelsKey]);
-        }
-    }
-
-    [[nodiscard]] nlohmann::json ToDocument() const
-    {
-        nlohmann::json document = nlohmann::json::object();
-        if (brandName.has_value())
-        {
-            document[kBrandKey] = *brandName;
-        }
-        if (!user.empty())
-        {
-            document[kUserKey] = user;
-        }
-        document[kViewsKey] = views;
-        document[kChannelsKey] = channels;
-        return document;
-    }
-};
-
-bool IsContentFile(const std::filesystem::path& path)
-{
-    static constexpr std::array<const char*, 3> kExtensions{".json", ".yaml", ".yml"};
-    const std::string extension = path.extension().string();
-    for (const char* candidate : kExtensions)
-    {
-        if (extension == candidate)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-} // namespace
-
-ContentCatalogLoadResult LoadContentCatalog(const std::filesystem::path& directory)
-{
-    ContentCatalogLoadResult result;
-
-    std::error_code error;
-    if (std::filesystem::is_regular_file(directory, error))
-    {
-        try
-        {
-            result.content = LoadContentFromFile(directory.string());
-        }
-        catch (const std::exception& ex)
-        {
-            result.diagnostics.push_back(ContentLoadDiagnostic{
-                .filePath = directory.string(),
-                .message = ex.what(),
-                .isError = true,
-            });
-        }
-        return result;
-    }
-
-    if (!std::filesystem::is_directory(directory, error))
-    {
-        result.diagnostics.push_back(ContentLoadDiagnostic{
-            .filePath = directory.string(),
-            .message = "Content directory does not exist or is inaccessible.",
-            .isError = true,
-        });
-        return result;
-    }
-
-    ContentValidator validator;
-    AggregatedCatalog aggregated;
-    bool loadedAnyFile = false;
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(directory))
-    {
-        if (!entry.is_regular_file())
-        {
-            continue;
-        }
-        const auto& path = entry.path();
-        if (!IsContentFile(path))
-        {
-            continue;
-        }
-
-        try
-        {
-            auto input = OpenFile(path.string());
-            const nlohmann::json document = nlohmann::json::parse(input);
-            aggregated.MergeDocument(document);
-            loadedAnyFile = true;
-            result.diagnostics.push_back(ContentLoadDiagnostic{
-                .filePath = path.string(),
-                .message = "Loaded",
-                .isError = false,
-            });
-        }
-        catch (const std::exception& ex)
-        {
-            result.diagnostics.push_back(ContentLoadDiagnostic{
-                .filePath = path.string(),
-                .message = ex.what(),
-                .isError = true,
-            });
-        }
-    }
-
-    if (loadedAnyFile)
-    {
-        try
-        {
-            const nlohmann::json mergedDocument = aggregated.ToDocument();
-            result.content = validator.ParseDocument(mergedDocument);
-        }
-        catch (const std::exception& ex)
-        {
-            result.diagnostics.push_back(ContentLoadDiagnostic{
-                .filePath = directory.string(),
-                .message = ex.what(),
-                .isError = true,
-            });
-        }
-    }
-
-    return result;
-}
-
-std::filesystem::file_time_type QueryLatestWriteTime(const std::filesystem::path& directory)
-{
-    std::filesystem::file_time_type latest{};
-    bool hasWriteTime = false;
-    std::error_code error;
-
-    if (std::filesystem::is_regular_file(directory, error))
-    {
-        return std::filesystem::last_write_time(directory, error);
-    }
-
-    if (!std::filesystem::is_directory(directory, error))
-    {
-        return latest;
-    }
-
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(directory))
-    {
-        if (!entry.is_regular_file())
-        {
-            continue;
-        }
-        const std::filesystem::file_time_type writeTime = entry.last_write_time(error);
-        if (error)
-        {
-            continue;
-        }
-        if (!hasWriteTime || writeTime > latest)
-        {
-            latest = writeTime;
-            hasWriteTime = true;
-        }
-    }
-
-    return hasWriteTime ? latest : std::filesystem::file_time_type{};
 }
 
 } // namespace colony

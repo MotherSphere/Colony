@@ -5,7 +5,6 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 namespace colony
 {
@@ -23,7 +22,6 @@ class LocalizationManager
     [[nodiscard]] const std::string& FallbackLanguage() const noexcept { return fallbackLanguageId_; }
 
     bool LoadLanguage(const std::string& languageId);
-    [[nodiscard]] std::vector<std::string> AvailableLanguages() const;
 
     [[nodiscard]] std::string GetString(std::string_view key) const;
     [[nodiscard]] std::string GetStringOrDefault(std::string_view key, std::string_view fallback) const;

@@ -119,10 +119,11 @@ SettingsPanel::RenderResult SettingsPanel::Render(
 
     drawSectionHeader(appearanceTitle_, appearanceSubtitle_);
 
-    const int themeCardSpacing = Scale(16);
-    const int themeColumns = availableWidth >= Scale(540) ? 2 : 1;
-    const int themeCardWidth = themeColumns == 1 ? availableWidth : (availableWidth - themeCardSpacing) / 2;
-    const int themeCardHeight = Scale(90);
+    const int themeCardSpacing = Scale(6);
+    const int themeColumns = availableWidth >= Scale(720) ? 3 : (availableWidth >= Scale(480) ? 2 : 1);
+    const int totalThemeSpacing = themeCardSpacing * std::max(0, themeColumns - 1);
+    const int themeCardWidth = themeColumns == 1 ? availableWidth : (availableWidth - totalThemeSpacing) / themeColumns;
+    const int themeCardHeight = Scale(72);
 
     for (std::size_t index = 0; index < themeOptions_.size(); ++index)
     {
@@ -145,16 +146,16 @@ SettingsPanel::RenderResult SettingsPanel::Render(
 
         const auto& option = themeOptions_[index];
         SDL_Rect labelRect{
-            logicalCardRect.x + Scale(16),
-            logicalCardRect.y + Scale(14),
+            logicalCardRect.x + Scale(12),
+            logicalCardRect.y + Scale(10),
             option.label.width,
             option.label.height};
         colony::RenderTexture(renderer, option.label, offsetRect(labelRect));
 
-        const int swatchSpacing = Scale(10);
-        const int swatchInset = Scale(16);
+        const int swatchSpacing = Scale(4);
+        const int swatchInset = Scale(12);
         const int swatchWidth = (logicalCardRect.w - 2 * swatchInset - swatchSpacing * 2) / 3;
-        const int swatchHeight = Scale(24);
+        const int swatchHeight = Scale(18);
         int swatchX = logicalCardRect.x + swatchInset;
         const int swatchY = logicalCardRect.y + logicalCardRect.h - swatchHeight - swatchInset;
         for (const SDL_Color& swatchColor : option.swatch)
@@ -180,7 +181,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         }
     }
 
-    cursorY += Scale(10);
+    cursorY += Scale(6);
 
     drawSectionHeader(languageTitle_, languageSubtitle_);
 

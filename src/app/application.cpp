@@ -7,26 +7,12 @@
 #include "utils/font_manager.hpp"
 #include "utils/text.hpp"
 
-extern "C"
-{
-#include "tinyfiledialogs/tinyfiledialogs.h"
-}
-
 #include <algorithm>
-#include <array>
-#include <cctype>
 #include <cmath>
-#include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <optional>
-#include <cstring>
-#include <sstream>
 #include <stdexcept>
 #include <system_error>
-#include <thread>
-#include <unordered_set>
-#include <string_view>
 
 namespace colony
 {
@@ -40,97 +26,6 @@ bool SDLCallSucceeded(int result)
         return false;
     }
     return true;
-}
-
-bool IsCustomProgramId(std::string_view id)
-{
-    return id.rfind("CUSTOM_", 0) == 0;
-}
-
-std::string SanitizeIdentifier(std::string_view name)
-{
-    std::string result;
-    result.reserve(name.size() + 8);
-    bool lastUnderscore = false;
-    for (char ch : name)
-    {
-        unsigned char uch = static_cast<unsigned char>(ch);
-        if (std::isalnum(uch) != 0)
-        {
-            lastUnderscore = false;
-            result.push_back(static_cast<char>(std::toupper(uch)));
-        }
-        else if (!lastUnderscore)
-        {
-            result.push_back('_');
-            lastUnderscore = true;
-        }
-    }
-    if (result.empty())
-    {
-        result = "APP";
-    }
-    if (std::isdigit(static_cast<unsigned char>(result.front())) != 0)
-    {
-        result.insert(result.begin(), 'A');
-        result.insert(result.begin(), 'P');
-        result.insert(result.begin(), 'P');
-        result.insert(result.begin(), '_');
-    }
-
-    return result;
-}
-
-std::string GenerateCustomProgramId(std::string_view name, const std::unordered_set<std::string>& existingIds)
-{
-    std::string base = "CUSTOM_" + SanitizeIdentifier(name);
-    std::string candidate = base;
-    int suffix = 1;
-    while (existingIds.contains(candidate))
-    {
-        candidate = base + '_' + std::to_string(++suffix);
-    }
-    return candidate;
-}
-
-std::string QuotePathForCommand(const std::filesystem::path& path)
-{
-    const std::string raw = path.u8string();
-#ifdef _WIN32
-    std::string result;
-    result.reserve(raw.size() + 2);
-    result.push_back('"');
-    for (char ch : raw)
-    {
-        if (ch == '"')
-        {
-            result.append("\\\"");
-        }
-        else
-        {
-            result.push_back(ch);
-        }
-    }
-    result.push_back('"');
-    return result;
-#else
-    std::string result;
-    result.reserve(raw.size() + 2);
-    result.push_back('\'');
-    for (char ch : raw)
-    {
-        if (ch == '\'')
-        {
-            result.append("'\\''");
-        }
-        else
-        {
-            result.push_back(ch);
-        }
-    }
-    result.push_back('\'');
-    return result;
-#endif
 }
 
 } // namespace
@@ -338,7 +233,6 @@ bool Application::LoadContent()
             std::cerr << ex.what() << '\n';
             programCatalog_ = ProgramCatalog{};
         }
-        RefreshCustomProgramRegistrations();
         lastContentWriteTime_ = QueryLatestWriteTime(contentRoot_);
     }
     catch (const std::exception& ex)
@@ -523,11 +417,6 @@ void Application::RebuildProgramLaunchers()
                 }
             };
         }
-        else if (descriptor.IsExternal())
-        {
-            const std::filesystem::path path = descriptor.executable;
-            programLaunchers_[programId] = [this, path]() { LaunchExternalProgram(path); };
-        }
     }
 }
 
@@ -658,12 +547,6 @@ void Application::HandleEvent(const SDL_Event& event, bool& running)
 
 void Application::HandleMouseClick(int x, int y)
 {
-    if (addProgramButtonRect_.has_value() && PointInRect(*addProgramButtonRect_, x, y))
-    {
-        HandleAddProgramRequest();
-        return;
-    }
-
     for (std::size_t i = 0; i < channelButtonRects_.size(); ++i)
     {
         if (PointInRect(channelButtonRects_[i], x, y))
@@ -917,8 +800,6 @@ void Application::RenderFrame(double deltaSeconds)
         timeSeconds,
         deltaSeconds);
     programTileRects_ = libraryResult.tileRects;
-    addProgramButtonRect_ = libraryResult.addButtonVisible ? std::optional<SDL_Rect>{libraryResult.addButtonRect}
-                                                           : std::nullopt;
 
     heroActionRect_.reset();
     SDL_Rect previousSettingsViewport = settingsRenderResult_.viewport;
@@ -1158,311 +1039,6 @@ void Application::MaybeReloadContent(double deltaSeconds)
     InitializeNavigation();
     InitializeViews();
     RebuildTheme();
-}
-
-void Application::RefreshCustomProgramRegistrations()
-{
-    auto channelIt = std::find_if(content_.channels.begin(), content_.channels.end(), [](const colony::Channel& channel) {
-        return channel.id == kCustomProgramsChannelId;
-    });
-
-    if (preferences_.customPrograms.empty())
-    {
-        if (channelIt != content_.channels.end())
-        {
-            const auto channelIndex = static_cast<int>(std::distance(content_.channels.begin(), channelIt));
-            content_.channels.erase(channelIt);
-            if (channelIndex >= 0 && channelIndex < static_cast<int>(channelSelections_.size()))
-            {
-                channelSelections_.erase(channelSelections_.begin() + channelIndex);
-            }
-            if (activeChannelIndex_ >= static_cast<int>(content_.channels.size()))
-            {
-                activeChannelIndex_ = std::max(0, static_cast<int>(content_.channels.size()) - 1);
-            }
-        }
-
-        for (auto it = content_.views.begin(); it != content_.views.end();)
-        {
-            if (IsCustomProgramId(it->first))
-            {
-                it = content_.views.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
-        return;
-    }
-
-    if (channelIt == content_.channels.end())
-    {
-        colony::Channel customChannel;
-        customChannel.id = kCustomProgramsChannelId;
-        customChannel.label = "Custom Apps";
-        channelIt = content_.channels.insert(content_.channels.end(), std::move(customChannel));
-        channelSelections_.insert(channelSelections_.end(), 0);
-    }
-
-    channelIt->label = "Custom Apps";
-    channelIt->programs.clear();
-
-    for (auto& channel : content_.channels)
-    {
-        if (channel.id == kCustomProgramsChannelId)
-        {
-            continue;
-        }
-        auto& programs = channel.programs;
-        programs.erase(std::remove_if(programs.begin(), programs.end(), [](const std::string& id) {
-                            return IsCustomProgramId(id);
-                        }),
-            programs.end());
-    }
-
-    std::unordered_set<std::string> retainedIds;
-    retainedIds.reserve(preferences_.customPrograms.size());
-
-    for (const auto& program : preferences_.customPrograms)
-    {
-        if (program.id.empty())
-        {
-            continue;
-        }
-
-        retainedIds.insert(program.id);
-        channelIt->programs.push_back(program.id);
-        content_.views[program.id] = BuildCustomProgramView(program);
-
-        ProgramModuleDescriptor descriptor;
-        descriptor.id = program.id;
-        descriptor.launcher = "external";
-        descriptor.executable = program.executable;
-        programCatalog_.Add(std::move(descriptor));
-    }
-
-    for (auto it = content_.views.begin(); it != content_.views.end();)
-    {
-        if (IsCustomProgramId(it->first) && !retainedIds.contains(it->first))
-        {
-            it = content_.views.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-
-    channelSelections_.resize(content_.channels.size(), 0);
-}
-
-void Application::HandleAddProgramRequest()
-{
-    const auto selection = PromptForExecutable();
-    if (!selection.has_value())
-    {
-        return;
-    }
-
-    std::filesystem::path executable = selection->lexically_normal();
-    if (executable.empty())
-    {
-        return;
-    }
-
-    std::error_code error;
-    if (!std::filesystem::exists(executable, error))
-    {
-        std::cerr << "Selected executable does not exist: " << executable << '\n';
-        return;
-    }
-
-    executable = std::filesystem::absolute(executable, error);
-    if (error)
-    {
-        executable = selection.value();
-    }
-
-    const auto normalized = executable.lexically_normal();
-    for (const auto& program : preferences_.customPrograms)
-    {
-        if (!program.executable.empty() && program.executable.lexically_normal() == normalized)
-        {
-            ActivateCustomProgramChannel(program.id);
-            return;
-        }
-    }
-
-    std::unordered_set<std::string> existingIds;
-    existingIds.reserve(content_.views.size() + programCatalog_.Modules().size() + preferences_.customPrograms.size() + 1);
-    for (const auto& [id, _] : content_.views)
-    {
-        existingIds.insert(id);
-    }
-    for (const auto& [id, descriptor] : programCatalog_.Modules())
-    {
-        existingIds.insert(id);
-        if (descriptor.IsExternal() && descriptor.executable.lexically_normal() == normalized)
-        {
-            ActivateCustomProgramChannel(id);
-            return;
-        }
-    }
-    for (const auto& program : preferences_.customPrograms)
-    {
-        existingIds.insert(program.id);
-    }
-
-    preferences::CustomProgram customProgram;
-    customProgram.executable = normalized;
-    customProgram.name = executable.stem().string();
-    if (customProgram.name.empty())
-    {
-        customProgram.name = executable.filename().string();
-    }
-    if (customProgram.name.empty())
-    {
-        customProgram.name = "External Program";
-    }
-    customProgram.id = GenerateCustomProgramId(customProgram.name, existingIds);
-
-    preferences_.customPrograms.emplace_back(customProgram);
-    MarkPreferencesDirty();
-    SavePreferences();
-
-    RefreshCustomProgramRegistrations();
-    RebuildProgramLaunchers();
-
-    const auto channelIt = std::find_if(content_.channels.begin(), content_.channels.end(), [](const colony::Channel& channel) {
-        return channel.id == kCustomProgramsChannelId;
-    });
-    if (channelIt != content_.channels.end())
-    {
-        const int channelIndex = static_cast<int>(std::distance(content_.channels.begin(), channelIt));
-        channelSelections_.resize(content_.channels.size(), 0);
-        if (!channelIt->programs.empty())
-        {
-            const auto programIt = std::find(channelIt->programs.begin(), channelIt->programs.end(), customProgram.id);
-            if (programIt != channelIt->programs.end())
-            {
-                channelSelections_[channelIndex] = static_cast<int>(std::distance(channelIt->programs.begin(), programIt));
-                activeChannelIndex_ = channelIndex;
-            }
-        }
-    }
-
-    navigationController_ = NavigationController{};
-    InitializeNavigation();
-    viewRegistry_ = ViewRegistry{};
-    InitializeViews();
-    RebuildTheme();
-}
-
-std::optional<std::filesystem::path> Application::PromptForExecutable() const
-{
-    static constexpr std::array<const char*, 6> kFilters{"*.exe", "*.AppImage", "*.bin", "*.sh", "*.bat", "*"};
-    const char* selection = tinyfd_openFileDialog(
-        "Select application",
-        nullptr,
-        static_cast<int>(kFilters.size()),
-        kFilters.data(),
-        "Executable files",
-        0);
-    if (selection == nullptr || std::strlen(selection) == 0)
-    {
-        return std::nullopt;
-    }
-
-    return std::filesystem::path{selection};
-}
-
-void Application::LaunchExternalProgram(const std::filesystem::path& path) const
-{
-    if (path.empty())
-    {
-        return;
-    }
-
-    std::error_code error;
-    if (!std::filesystem::exists(path, error))
-    {
-        std::cerr << "Unable to launch missing executable: " << path << '\n';
-        return;
-    }
-
-    const std::string quoted = QuotePathForCommand(path);
-#ifdef _WIN32
-    std::string command = "cmd /c start \"\" " + quoted;
-#elif __APPLE__
-    std::string command = "open " + quoted;
-#else
-    std::string command = quoted + " &";
-#endif
-
-    std::thread launcher([command]() { std::system(command.c_str()); });
-    launcher.detach();
-}
-
-colony::ViewContent Application::BuildCustomProgramView(const preferences::CustomProgram& program) const
-{
-    ViewContent view;
-    view.type = "text";
-    view.heading = program.name;
-    if (view.heading.empty())
-    {
-        view.heading = program.executable.filename().string();
-    }
-    if (view.heading.empty())
-    {
-        view.heading = "External Program";
-    }
-    view.tagline = "Launch an external application from your Colony dock.";
-
-    std::error_code error;
-    const bool executableExists = !program.executable.empty() && std::filesystem::exists(program.executable, error);
-    const std::string pathString = program.executable.empty() ? std::string{"(not set)"} : program.executable.u8string();
-
-    view.paragraphs.push_back("Colony will start this executable using your operating system.");
-    view.paragraphs.push_back("Path: " + pathString);
-    if (!executableExists)
-    {
-        view.paragraphs.push_back("The linked file could not be found. Update the shortcut before launching.");
-    }
-
-    view.heroHighlights = {"One-click launch for external tools", "Keeps your desktop shortcuts organized"};
-    view.primaryActionLabel = "Launch";
-    view.statusMessage = executableExists ? "Ready to launch" : "Executable missing";
-    view.version = "External";
-    view.installState = executableExists ? "Linked" : "Missing";
-    view.availability = executableExists ? "Ready" : "Unavailable";
-    view.accentColor = executableExists ? "#7B8CFF" : "#B4AECF";
-    view.heroGradient = {"#141B2E", "#090D18"};
-
-    return view;
-}
-
-void Application::ActivateCustomProgramChannel(const std::string& programId)
-{
-    const auto channelIt = std::find_if(content_.channels.begin(), content_.channels.end(), [](const colony::Channel& channel) {
-        return channel.id == kCustomProgramsChannelId;
-    });
-    if (channelIt == content_.channels.end())
-    {
-        return;
-    }
-
-    const int channelIndex = static_cast<int>(std::distance(content_.channels.begin(), channelIt));
-    channelSelections_.resize(content_.channels.size(), 0);
-    const auto programIt = std::find(channelIt->programs.begin(), channelIt->programs.end(), programId);
-    if (programIt == channelIt->programs.end())
-    {
-        return;
-    }
-
-    channelSelections_[channelIndex] = static_cast<int>(std::distance(channelIt->programs.begin(), programIt));
-    activeChannelIndex_ = channelIndex;
-    navigationController_.Activate(channelIndex);
 }
 
 std::filesystem::path Application::ResolveContentPath()

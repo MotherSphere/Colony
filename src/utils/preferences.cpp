@@ -22,21 +22,6 @@ nlohmann::json Serialize(const Preferences& preferences)
     json["lastProgramId"] = preferences.lastProgramId;
     json["lastChannelIndex"] = preferences.lastChannelIndex;
     json["toggleStates"] = preferences.toggleStates;
-    nlohmann::json customPrograms = nlohmann::json::array();
-    for (const auto& program : preferences.customPrograms)
-    {
-        if (program.id.empty() || program.name.empty())
-        {
-            continue;
-        }
-
-        nlohmann::json entry;
-        entry["id"] = program.id;
-        entry["name"] = program.name;
-        entry["executable"] = program.executable.u8string();
-        customPrograms.push_back(std::move(entry));
-    }
-    json["customPrograms"] = std::move(customPrograms);
     return json;
 }
 
@@ -54,37 +39,6 @@ Preferences Deserialize(const nlohmann::json& json)
             if (it.value().is_boolean())
             {
                 preferences.toggleStates[it.key()] = it.value().get<bool>();
-            }
-        }
-    }
-    if (json.contains("customPrograms") && json["customPrograms"].is_array())
-    {
-        for (const auto& entry : json["customPrograms"])
-        {
-            if (!entry.is_object())
-            {
-                continue;
-            }
-
-            const auto idIt = entry.find("id");
-            const auto nameIt = entry.find("name");
-            const auto pathIt = entry.find("executable");
-            if (idIt == entry.end() || nameIt == entry.end() || pathIt == entry.end())
-            {
-                continue;
-            }
-            if (!idIt->is_string() || !nameIt->is_string() || !pathIt->is_string())
-            {
-                continue;
-            }
-
-            CustomProgram program;
-            program.id = idIt->get<std::string>();
-            program.name = nameIt->get<std::string>();
-            program.executable = std::filesystem::path{pathIt->get<std::string>()};
-            if (!program.id.empty() && !program.name.empty())
-            {
-                preferences.customPrograms.emplace_back(std::move(program));
             }
         }
     }

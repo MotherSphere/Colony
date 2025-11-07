@@ -40,6 +40,7 @@ target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf
 
 add_library(colony_app
     src/app/application.cpp
+    src/programs/archive/ArchiveApp.cpp
 )
 
 target_include_directories(colony_app PUBLIC src third_party)

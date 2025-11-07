@@ -1,12 +1,14 @@
 #include "app/application.hpp"
 
 #include "core/content_loader.hpp"
+#include "ui/layout.hpp"
 #include "ui/theme.hpp"
 #include "utils/color.hpp"
 #include "utils/font_manager.hpp"
 #include "utils/text.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -68,15 +70,35 @@ int Application::Run()
 
     bool running = true;
     SDL_Event event{};
+    lastFrameCounter_ = SDL_GetPerformanceCounter();
+    animationTimeSeconds_ = 0.0;
 
     while (running)
     {
+        const Uint64 now = SDL_GetPerformanceCounter();
+        const Uint64 elapsedTicks = now - lastFrameCounter_;
+        lastFrameCounter_ = now;
+
+        double deltaSeconds = 0.0;
+        if (SDL_GetPerformanceFrequency() != 0)
+        {
+            deltaSeconds = static_cast<double>(elapsedTicks) / static_cast<double>(SDL_GetPerformanceFrequency());
+        }
+        deltaSeconds = std::min(deltaSeconds, 0.25);
+
+        const auto reduceMotionIt = basicToggleStates_.find("reduced_motion");
+        const bool reduceMotion = reduceMotionIt != basicToggleStates_.end() && reduceMotionIt->second;
+        if (!reduceMotion)
+        {
+            animationTimeSeconds_ += deltaSeconds;
+        }
+
         while (SDL_PollEvent(&event))
         {
             HandleEvent(event, running);
         }
 
-        RenderFrame();
+        RenderFrame(reduceMotion ? 0.0 : deltaSeconds);
     }
 
     SDL_Quit();
@@ -136,21 +158,21 @@ bool Application::InitializeFonts()
         return false;
     }
 
-    auto openFont = [&](int size) { return sdl::FontHandle{TTF_OpenFont(fontPath.c_str(), size)}; };
+    auto openFont = [&](int size) { return sdl::FontHandle{TTF_OpenFont(fontPath.c_str(), ui::ScaleDynamic(size))}; };
 
-    fonts_.brand = openFont(32);
-    fonts_.navigation = openFont(18);
-    fonts_.channel = openFont(22);
-    fonts_.tileTitle = openFont(22);
-    fonts_.tileSubtitle = openFont(16);
-    fonts_.tileMeta = openFont(16);
-    fonts_.heroTitle = openFont(46);
-    fonts_.heroSubtitle = openFont(22);
-    fonts_.heroBody = openFont(18);
-    fonts_.patchTitle = openFont(18);
-    fonts_.patchBody = openFont(16);
-    fonts_.button = openFont(24);
-    fonts_.status = openFont(16);
+    fonts_.brand = openFont(30);
+    fonts_.navigation = openFont(16);
+    fonts_.channel = openFont(20);
+    fonts_.tileTitle = openFont(20);
+    fonts_.tileSubtitle = openFont(14);
+    fonts_.tileMeta = openFont(14);
+    fonts_.heroTitle = openFont(40);
+    fonts_.heroSubtitle = openFont(20);
+    fonts_.heroBody = openFont(16);
+    fonts_.patchTitle = openFont(16);
+    fonts_.patchBody = openFont(14);
+    fonts_.button = openFont(20);
+    fonts_.status = openFont(14);
 
     if (!fonts_.brand || !fonts_.navigation || !fonts_.channel || !fonts_.tileTitle || !fonts_.tileSubtitle || !fonts_.tileMeta
         || !fonts_.heroTitle || !fonts_.heroSubtitle || !fonts_.heroBody || !fonts_.patchTitle || !fonts_.patchBody
@@ -530,7 +552,7 @@ void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
         return;
     }
 
-    constexpr int kScrollStep = 48;
+    constexpr int kScrollStep = ui::Scale(40);
     const int delta = -wheelY * kScrollStep;
     visuals.sectionsScrollOffset = std::clamp(visuals.sectionsScrollOffset + delta, 0, maxScroll);
 }
@@ -556,7 +578,7 @@ void Application::HandleKeyDown(SDL_Keycode key)
     }
 }
 
-void Application::RenderFrame()
+void Application::RenderFrame(double deltaSeconds)
 {
     if (!renderer_)
     {
@@ -570,8 +592,10 @@ void Application::RenderFrame()
     SDL_SetRenderDrawColor(renderer_.get(), theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
     SDL_RenderClear(renderer_.get());
 
-    const int navRailWidth = 96;
-    const int libraryWidth = std::clamp(outputWidth / 4, 320, 360);
+    const double timeSeconds = animationTimeSeconds_;
+
+    const int navRailWidth = ui::Scale(88);
+    const int libraryWidth = std::clamp(outputWidth / 4, ui::Scale(280), ui::Scale(320));
     SDL_Rect navRailRect{0, 0, navRailWidth, outputHeight};
     SDL_SetRenderDrawColor(renderer_.get(), theme_.navRail.r, theme_.navRail.g, theme_.navRail.b, theme_.navRail.a);
     SDL_RenderFillRect(renderer_.get(), &navRailRect);
@@ -590,30 +614,41 @@ void Application::RenderFrame()
     const ui::ProgramVisuals* activeVisuals = visualsIt != programVisuals_.end() ? &visualsIt->second : nullptr;
     if (activeVisuals != nullptr)
     {
-        color::RenderVerticalGradient(renderer_.get(), heroRect, activeVisuals->gradientStart, activeVisuals->gradientEnd);
+        const float gradientPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 0.6));
+        SDL_Color gradientStart = color::Mix(activeVisuals->gradientStart, activeVisuals->accent, 0.15f + 0.1f * gradientPulse);
+        SDL_Color gradientEnd = color::Mix(activeVisuals->gradientEnd, theme_.heroGradientFallbackEnd, 0.2f * gradientPulse);
+        color::RenderVerticalGradient(renderer_.get(), heroRect, gradientStart, gradientEnd);
     }
     else
     {
-        color::RenderVerticalGradient(
-            renderer_.get(),
-            heroRect,
+        const float gradientPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 0.8));
+        SDL_Color gradientStart = color::Mix(
             theme_.heroGradientFallbackStart,
-            theme_.heroGradientFallbackEnd);
+            theme_.channelBadge,
+            0.1f + 0.15f * gradientPulse);
+        SDL_Color gradientEnd = color::Mix(
+            theme_.heroGradientFallbackEnd,
+            theme_.border,
+            0.1f * static_cast<float>(std::cos(timeSeconds * 0.6) * 0.5 + 0.5));
+        color::RenderVerticalGradient(renderer_.get(), heroRect, gradientStart, gradientEnd);
     }
 
     SDL_Rect navDivider{navRailRect.x + navRailRect.w - 2, 0, 2, outputHeight};
     SDL_SetRenderDrawColor(renderer_.get(), theme_.border.r, theme_.border.g, theme_.border.b, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(renderer_.get(), &navDivider);
 
+    const int statusBarHeight = ui::Scale(kStatusBarHeight);
+
     channelButtonRects_ = navigationRail_.Render(
         renderer_.get(),
         theme_,
         navRailRect,
-        kStatusBarHeight,
+        statusBarHeight,
         content_,
         channelSelections_,
         activeChannelIndex_,
-        programVisuals_);
+        programVisuals_,
+        timeSeconds);
 
     const auto libraryResult = libraryPanel_.Render(
         renderer_.get(),
@@ -623,7 +658,9 @@ void Application::RenderFrame()
         activeChannelIndex_,
         channelSelections_,
         programVisuals_,
-        fonts_.channel.get());
+        fonts_.channel.get(),
+        timeSeconds,
+        deltaSeconds);
     programTileRects_ = libraryResult.tileRects;
 
     heroActionRect_.reset();
@@ -649,7 +686,8 @@ void Application::RenderFrame()
             themeManager_.ActiveScheme().id,
             activeLanguageId_,
             basicToggleStates_,
-            settingsRenderResult_);
+            settingsRenderResult_,
+            timeSeconds);
 
         if (settingsRenderResult_.viewport.w > 0 && settingsRenderResult_.viewport.h > 0)
         {
@@ -666,7 +704,9 @@ void Application::RenderFrame()
             visualsIt->second,
             fonts_.heroBody.get(),
             fonts_.patchTitle.get(),
-            fonts_.patchBody.get());
+            fonts_.patchBody.get(),
+            timeSeconds,
+            deltaSeconds);
         heroActionRect_ = heroResult.actionButtonRect;
     }
 
@@ -675,7 +715,7 @@ void Application::RenderFrame()
         settingsScrollOffset_ = 0;
     }
 
-    heroPanel_.RenderStatusBar(renderer_.get(), theme_, heroRect, kStatusBarHeight, activeVisuals);
+    heroPanel_.RenderStatusBar(renderer_.get(), theme_, heroRect, statusBarHeight, activeVisuals, timeSeconds);
 
     SDL_RenderPresent(renderer_.get());
 }

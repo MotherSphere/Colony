@@ -29,7 +29,9 @@ class HeroPanelRenderer
         ProgramVisuals& visuals,
         TTF_Font* heroBodyFont,
         TTF_Font* patchTitleFont,
-        TTF_Font* patchBodyFont) const;
+        TTF_Font* patchBodyFont,
+        double timeSeconds,
+        double deltaSeconds) const;
 
     void RenderSettings(
         SDL_Renderer* renderer,
@@ -40,14 +42,16 @@ class HeroPanelRenderer
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,
         const std::unordered_map<std::string, bool>& toggleStates,
-        SettingsPanel::RenderResult& outResult) const;
+        SettingsPanel::RenderResult& outResult,
+        double timeSeconds) const;
 
     void RenderStatusBar(
         SDL_Renderer* renderer,
         const ThemeColors& theme,
         const SDL_Rect& heroRect,
         int statusBarHeight,
-        const ProgramVisuals* visuals) const;
+        const ProgramVisuals* visuals,
+        double timeSeconds) const;
 
   private:
     struct HeroChrome

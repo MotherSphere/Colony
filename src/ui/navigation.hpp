@@ -32,7 +32,8 @@ class NavigationRail
         const colony::AppContent& content,
         const std::vector<int>& channelSelections,
         int activeChannelIndex,
-        const std::unordered_map<std::string, ProgramVisuals>& programVisuals) const;
+        const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
+        double timeSeconds) const;
 
   private:
     struct NavigationChrome

@@ -64,7 +64,7 @@ class Application
     void HandleMouseClick(int x, int y);
     void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
     void HandleKeyDown(SDL_Keycode key);
-    void RenderFrame();
+    void RenderFrame(double deltaSeconds);
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
 
@@ -108,8 +108,11 @@ class Application
     RenderContext viewContext_{};
     std::string statusBuffer_;
 
-    static constexpr int kWindowWidth = 1280;
-    static constexpr int kWindowHeight = 768;
+    double animationTimeSeconds_ = 0.0;
+    Uint64 lastFrameCounter_ = 0;
+
+    static constexpr int kWindowWidth = 1600;
+    static constexpr int kWindowHeight = 900;
     static constexpr int kStatusBarHeight = 52;
     static constexpr char kSettingsProgramId[] = "SETTINGS";
 };

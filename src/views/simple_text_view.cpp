@@ -1,5 +1,7 @@
 #include "views/simple_text_view.hpp"
 
+#include "ui/layout.hpp"
+
 #include "utils/text_wrapping.hpp"
 #include "utils/drawing.hpp"
 
@@ -11,19 +13,19 @@ namespace colony
 
 namespace
 {
-constexpr int kParagraphSpacing = 16;
-constexpr int kLineSpacingFallback = 6;
-constexpr int kHeadingBottomSpacing = 32;
-constexpr int kActionTopSpacing = 48;
-constexpr int kActionWidth = 220;
-constexpr int kActionHeight = 60;
-constexpr int kSectionTopSpacing = 40;
-constexpr int kSectionPadding = 20;
-constexpr int kSectionSpacing = 28;
-constexpr int kSectionTitleSpacing = 12;
-constexpr int kOptionSpacing = 12;
-constexpr int kBulletIndent = 28;
-constexpr int kOptionLineSpacingFallback = 4;
+constexpr int kParagraphSpacing = ui::Scale(14);
+constexpr int kLineSpacingFallback = ui::Scale(4);
+constexpr int kHeadingBottomSpacing = ui::Scale(26);
+constexpr int kActionTopSpacing = ui::Scale(40);
+constexpr int kActionWidth = ui::Scale(188);
+constexpr int kActionHeight = ui::Scale(50);
+constexpr int kSectionTopSpacing = ui::Scale(32);
+constexpr int kSectionPadding = ui::Scale(16);
+constexpr int kSectionSpacing = ui::Scale(22);
+constexpr int kSectionTitleSpacing = ui::Scale(10);
+constexpr int kOptionSpacing = ui::Scale(10);
+constexpr int kBulletIndent = ui::Scale(22);
+constexpr int kOptionLineSpacingFallback = ui::Scale(3);
 constexpr SDL_Color kCardFillColor{250, 250, 250, SDL_ALPHA_OPAQUE};
 constexpr SDL_Color kCardBorderColor{222, 222, 222, SDL_ALPHA_OPAQUE};
 }

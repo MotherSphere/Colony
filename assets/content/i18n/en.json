@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "capabilities": "CAPABILITIES",
+    "patch_notes": "PATCH NOTES"
+  },
+  "library": {
+    "filter_label": "Installed programs"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Appearance",
+      "subtitle": "Choose a preset palette for Colony"
+    },
+    "language": {
+      "title": "Language",
+      "subtitle": "Switch the interface to your preferred language",
+      "options": {
+        "en": {
+          "name": "English",
+          "native": "English"
+        },
+        "fr": {
+          "name": "French",
+          "native": "Français"
+        },
+        "zh": {
+          "name": "Chinese",
+          "native": "中文"
+        },
+        "de": {
+          "name": "German",
+          "native": "Deutsch"
+        },
+        "ar": {
+          "name": "Arabic",
+          "native": "العربية"
+        },
+        "hi": {
+          "name": "Hindi",
+          "native": "हिन्दी"
+        }
+      }
+    },
+    "general": {
+      "title": "General",
+      "subtitle": "Tune everyday preferences and comfort options"
+    },
+    "toggles": {
+      "notifications": {
+        "label": "Enable notifications",
+        "description": "Show alerts when new colony drops arrive"
+      },
+      "sound": {
+        "label": "Enable interface sounds",
+        "description": "Play a soft chime when navigating the UI"
+      },
+      "auto_updates": {
+        "label": "Auto-update channels",
+        "description": "Refresh channel content whenever Colony launches"
+      },
+      "reduced_motion": {
+        "label": "Reduce motion",
+        "description": "Limit hero animations for sensitive users"
+      }
+    }
+  }
+}

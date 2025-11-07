@@ -18,7 +18,6 @@ set_target_properties(SODIUM::SODIUM PROPERTIES
 add_library(colony_core
     src/core/content_loader.cpp
     src/core/localization_manager.cpp
-    src/core/program_catalog.cpp
     src/controllers/navigation_controller.cpp
 )
 

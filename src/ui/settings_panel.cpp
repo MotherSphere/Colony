@@ -16,6 +16,7 @@ void SettingsPanel::Build(
     SDL_Color titleColor,
     SDL_Color bodyColor,
     const ThemeManager& themeManager,
+    const std::vector<std::string>& languageIds,
     const std::function<std::string(std::string_view)>& localize)
 {
     themeOptions_.clear();
@@ -58,12 +59,17 @@ void SettingsPanel::Build(
         languages_.emplace_back(std::move(option));
     };
 
-    makeLanguage("en");
-    makeLanguage("fr");
-    makeLanguage("zh");
-    makeLanguage("de");
-    makeLanguage("ar");
-    makeLanguage("hi");
+    if (languageIds.empty())
+    {
+        makeLanguage("en");
+    }
+    else
+    {
+        for (const auto& id : languageIds)
+        {
+            makeLanguage(id);
+        }
+    }
 
     const auto makeToggle = [&](std::string_view id) {
         ToggleOption option;

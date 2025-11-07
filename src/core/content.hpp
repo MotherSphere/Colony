@@ -14,13 +14,28 @@ struct ViewSection
     std::vector<std::string> options;
 };
 
+struct ChartDatum
+{
+    std::string label;
+    double value = 0.0;
+};
+
+struct MediaItem
+{
+    std::string title;
+    std::string description;
+};
+
 struct ViewContent
 {
+    std::string type{"text"};
     std::string heading;
     std::string tagline;
     std::vector<std::string> paragraphs;
     std::vector<ViewSection> sections;
     std::vector<std::string> heroHighlights;
+    std::vector<ChartDatum> chartData;
+    std::vector<MediaItem> mediaItems;
     std::array<std::string, 2> heroGradient{"#17233b", "#0b111d"};
     std::string primaryActionLabel;
     std::string statusMessage;

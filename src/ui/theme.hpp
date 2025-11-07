@@ -34,6 +34,20 @@ struct ColorScheme
     std::string id;
     std::string name;
     ThemeColors colors;
+    struct ThemeAnimations
+    {
+        enum class Easing
+        {
+            Linear,
+            EaseIn,
+            EaseOut,
+            EaseInOut
+        };
+
+        Easing heroPulseEasing = Easing::EaseInOut;
+        float heroPulsePeriod = 6.0f;
+        float heroFadeDuration = 0.45f;
+    } animations;
 };
 
 class ThemeManager
@@ -50,5 +64,7 @@ class ThemeManager
     std::vector<ColorScheme> schemes_;
     const ColorScheme* active_ = nullptr;
 };
+
+float EvaluateEasing(ColorScheme::ThemeAnimations::Easing easing, float t) noexcept;
 
 } // namespace colony::ui

@@ -3,6 +3,7 @@
 #include "utils/color.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace colony::ui
 {
@@ -46,6 +47,18 @@ ThemeColors MakeTheme(
     return colors;
 }
 
+ColorScheme::ThemeAnimations MakeAnimations(
+    ColorScheme::ThemeAnimations::Easing easing,
+    float pulsePeriod,
+    float fadeDuration)
+{
+    ColorScheme::ThemeAnimations animations;
+    animations.heroPulseEasing = easing;
+    animations.heroPulsePeriod = pulsePeriod;
+    animations.heroFadeDuration = fadeDuration;
+    return animations;
+}
+
 void AddCatppuccin(std::vector<ColorScheme>& schemes)
 {
     schemes.push_back(ColorScheme{
@@ -67,7 +80,8 @@ void AddCatppuccin(std::vector<ColorScheme>& schemes)
             "#4c4f69",
             "#ccd0da",
             "#e5e9f3",
-            "#dce1ec")});
+            "#dce1ec"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseInOut, 6.0f, 0.45f)});
 
     schemes.push_back(ColorScheme{
         .id = "catppuccin_frappe",
@@ -88,7 +102,8 @@ void AddCatppuccin(std::vector<ColorScheme>& schemes)
             "#c6d0f5",
             "#414559",
             "#2f3144",
-            "#1f2233")});
+            "#1f2233"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseOut, 7.25f, 0.5f)});
 
     schemes.push_back(ColorScheme{
         .id = "catppuccin_macchiato",
@@ -109,7 +124,8 @@ void AddCatppuccin(std::vector<ColorScheme>& schemes)
             "#cad3f5",
             "#2f3349",
             "#1a1d2c",
-            "#111320")});
+            "#111320"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseInOut, 6.5f, 0.42f)});
 
     schemes.push_back(ColorScheme{
         .id = "catppuccin_mocha",
@@ -130,7 +146,8 @@ void AddCatppuccin(std::vector<ColorScheme>& schemes)
             "#cdd6f4",
             "#2c2f40",
             "#161925",
-            "#0f111a")});
+            "#0f111a"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseOut, 7.0f, 0.5f)});
 }
 
 void AddClassicSchemes(std::vector<ColorScheme>& schemes)
@@ -154,7 +171,8 @@ void AddClassicSchemes(std::vector<ColorScheme>& schemes)
             "#ebdbb2",
             "#3c3836",
             "#252525",
-            "#1a1a1a")});
+            "#1a1a1a"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseIn, 5.5f, 0.38f)});
 
     schemes.push_back(ColorScheme{
         .id = "solarized_dark",
@@ -175,7 +193,8 @@ void AddClassicSchemes(std::vector<ColorScheme>& schemes)
             "#93a1a1",
             "#114857",
             "#0a2f3a",
-            "#041f27")});
+            "#041f27"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseInOut, 6.8f, 0.44f)});
 
     schemes.push_back(ColorScheme{
         .id = "everblush",
@@ -196,7 +215,8 @@ void AddClassicSchemes(std::vector<ColorScheme>& schemes)
             "#e5c76b",
             "#20272a",
             "#141b1e",
-            "#0c1214")});
+            "#0c1214"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseOut, 6.2f, 0.41f)});
 
     schemes.push_back(ColorScheme{
         .id = "cyberdream",
@@ -217,7 +237,8 @@ void AddClassicSchemes(std::vector<ColorScheme>& schemes)
             "#f8f8ff",
             "#1c2130",
             "#10131c",
-            "#080a10")});
+            "#080a10"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseInOut, 5.8f, 0.4f)});
 
     schemes.push_back(ColorScheme{
         .id = "onedark",
@@ -238,7 +259,8 @@ void AddClassicSchemes(std::vector<ColorScheme>& schemes)
             "#d0d7e2",
             "#262c39",
             "#151a21",
-            "#0e1117")});
+            "#0e1117"),
+        .animations = MakeAnimations(ColorScheme::ThemeAnimations::Easing::EaseInOut, 6.0f, 0.45f)});
 }
 
 } // namespace
@@ -265,6 +287,23 @@ bool ThemeManager::SetActiveScheme(std::string_view id)
     }
     active_ = &*it;
     return true;
+}
+
+float EvaluateEasing(ColorScheme::ThemeAnimations::Easing easing, float t) noexcept
+{
+    t = std::clamp(t, 0.0f, 1.0f);
+    switch (easing)
+    {
+    case ColorScheme::ThemeAnimations::Easing::Linear:
+        return t;
+    case ColorScheme::ThemeAnimations::Easing::EaseIn:
+        return t * t;
+    case ColorScheme::ThemeAnimations::Easing::EaseOut:
+        return 1.0f - std::pow(1.0f - t, 2.0f);
+    case ColorScheme::ThemeAnimations::Easing::EaseInOut:
+    default:
+        return t < 0.5f ? 2.0f * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) / 2.0f;
+    }
 }
 
 } // namespace colony::ui

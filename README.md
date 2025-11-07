@@ -32,18 +32,25 @@ You need a working C++20 compiler, CMake (3.16 or newer), and the development he
 ## Building
 
 ```bash
-cp /usr/share/fonts/TTF/DejaVuSans.ttf ~/colony/assets/fonts
-cmake -S . -B build
-cmake --build build
+cmake --preset debug
+cmake --build --preset debug
 ```
 
-The resulting executable (`ecosystem_app`) will be located in the `build` directory. Run it to display the blank application window:
+The resulting executable (`ecosystem_app`) will be located in `build/debug`. Run it to display the launcher UI:
 
 ```bash
-./build/ecosystem_app
+./build/debug/ecosystem_app
 ```
 
 Close the window to exit the application.
+
+### Tests
+
+The repository ships with doctest-based unit tests covering the content catalog, localization manager, and preferences module. Run them with CTest:
+
+```bash
+ctest --preset debug --output-on-failure
+```
 
 ### Fonts
 
@@ -58,6 +65,25 @@ COLONY_FONT_PATH=/path/to/your/font.ttf ./build/ecosystem_app
 
 If the environment variable is unset and the automatic lookup or download fails (for example, because `curl` is unavailable),
 place `DejaVuSans.ttf` under `assets/fonts/` manually.
+
+## Content workflow
+
+- Author content in JSON or YAML files under `assets/content/`. Multiple files are merged into a single catalog at runtime.
+- Use the optional `type` field in each view to select specialized renderers (`text`, `chart`, or `media`).
+- Keep the application running while editing assets—file timestamps are monitored and changes are reloaded automatically.
+
+## Localization
+
+- Store language resources under `assets/content/i18n/` (JSON/YAML). The settings panel lists the available languages dynamically based on the files present in this directory.
+- Language changes apply immediately in the running application and are persisted between sessions.
+
+## Preferences and persistence
+
+User-facing settings—active theme, language, toggles, and the last selected channel/program—are written to `${HOME}/.colony/config.json` on exit and restored on startup. Delete this file to reset all preferences.
+
+## Continuous integration
+
+The repository includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that configures, builds, and runs the test suite on Ubuntu using the provided CMake presets.
 
 ## Next steps
 

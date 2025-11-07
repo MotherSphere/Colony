@@ -160,7 +160,8 @@ bool Application::InitializeFonts()
     const std::string fontPath = fonts::ResolveFontPath();
     if (fontPath.empty())
     {
-        std::cerr << "Unable to locate a usable font file. Provide DejaVuSans.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
+        std::cerr <<
+            "Unable to locate a usable font file. Add a TTF/OTF/TTC font to assets/fonts or set COLONY_FONT_PATH." << '\n';
         return false;
     }
 

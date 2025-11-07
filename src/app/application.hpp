@@ -3,6 +3,7 @@
 #include "controllers/navigation_controller.hpp"
 #include "core/content.hpp"
 #include "core/localization_manager.hpp"
+#include "programs/archive/ArchiveApp.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/library_panel.hpp"
 #include "ui/navigation.hpp"
@@ -72,6 +73,7 @@ class Application
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
+    void HandlePrimaryActionLaunch();
     void LoadPreferences();
     void ApplyPreferences();
     void SavePreferences();
@@ -132,6 +134,8 @@ class Application
     preferences::Preferences preferences_{};
     std::filesystem::path preferencesPath_{};
     bool preferencesDirty_ = false;
+
+    programs::archive::ArchiveApp archiveApp_{};
 
     static constexpr int kWindowWidth = 1600;
     static constexpr int kWindowHeight = 900;

@@ -1,0 +1,8 @@
+{
+  "programs": [
+    {
+      "id": "ARCHIVE_VAULT",
+      "launcher": "archive.app"
+    }
+  ]
+}

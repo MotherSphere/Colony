@@ -11,6 +11,7 @@ find_package(SDL2_ttf REQUIRED)
 add_library(colony_core
     src/core/content_loader.cpp
     src/core/localization_manager.cpp
+    src/core/program_catalog.cpp
     src/controllers/navigation_controller.cpp
 )
 
@@ -41,6 +42,7 @@ target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf
 add_library(colony_app
     src/app/application.cpp
     src/programs/archive/ArchiveApp.cpp
+    src/programs/archive/ArchiveStateMachine.cpp
 )
 
 target_include_directories(colony_app PUBLIC src third_party)

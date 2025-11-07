@@ -7,6 +7,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
+find_package(OpenSSL REQUIRED Crypto)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SODIUM REQUIRED libsodium)
+add_library(SODIUM::SODIUM INTERFACE IMPORTED)
+set_target_properties(SODIUM::SODIUM PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${SODIUM_INCLUDE_DIRS}"
+    INTERFACE_LINK_LIBRARIES "${SODIUM_LIBRARIES}")
 
 add_library(colony_core
     src/core/content_loader.cpp
@@ -41,10 +48,15 @@ target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf
 add_library(colony_app
     src/app/application.cpp
     src/programs/archive/ArchiveApp.cpp
+    src/programs/archive/crypto/argon2id.cpp
+    src/programs/archive/crypto/aes_gcm.cpp
+    src/programs/archive/crypto/hkdf.cpp
+    src/programs/archive/vault/Entry.cpp
+    src/programs/archive/vault/Repository.cpp
 )
 
 target_include_directories(colony_app PUBLIC src third_party)
-target_link_libraries(colony_app PUBLIC colony_ui)
+target_link_libraries(colony_app PUBLIC colony_ui OpenSSL::Crypto SODIUM::SODIUM)
 
 add_executable(ecosystem_app
     src/main.cpp
@@ -52,10 +64,9 @@ add_executable(ecosystem_app
 
 target_link_libraries(ecosystem_app PRIVATE colony_app)
 
-find_package(OpenSSL QUIET)
 if(OpenSSL_FOUND)
     target_compile_definitions(ecosystem_app PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
-    target_link_libraries(ecosystem_app PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(ecosystem_app PRIVATE OpenSSL::SSL)
 endif()
 
 if(TARGET SDL2::SDL2main)
@@ -74,3 +85,13 @@ add_executable(content_loader_tests tests/content_loader_tests.cpp)
 target_include_directories(content_loader_tests PRIVATE src third_party)
 target_link_libraries(content_loader_tests PRIVATE colony_app)
 add_test(NAME content_loader_tests COMMAND content_loader_tests)
+
+add_executable(archive_crypto_tests tests/archive/test_crypto.cpp)
+target_include_directories(archive_crypto_tests PRIVATE src third_party)
+target_link_libraries(archive_crypto_tests PRIVATE colony_app)
+add_test(NAME archive_crypto_tests COMMAND archive_crypto_tests)
+
+add_executable(archive_repository_tests tests/archive/test_repository.cpp)
+target_include_directories(archive_repository_tests PRIVATE src third_party)
+target_link_libraries(archive_repository_tests PRIVATE colony_app)
+add_test(NAME archive_repository_tests COMMAND archive_repository_tests)

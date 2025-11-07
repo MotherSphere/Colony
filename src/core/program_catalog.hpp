@@ -13,6 +13,9 @@ struct ProgramModuleDescriptor
 {
     std::string id;
     std::string launcher;
+    std::filesystem::path executable;
+
+    [[nodiscard]] bool IsExternal() const noexcept { return !executable.empty(); }
 };
 
 class ProgramCatalog

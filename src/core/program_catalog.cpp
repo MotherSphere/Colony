@@ -82,6 +82,10 @@ ProgramCatalog LoadProgramCatalog(const std::filesystem::path& path)
         ProgramModuleDescriptor descriptor;
         descriptor.id = entry[kIdKey].get<std::string>();
         descriptor.launcher = entry[kLauncherKey].get<std::string>();
+        if (auto executableIt = entry.find("executable"); executableIt != entry.end() && executableIt->is_string())
+        {
+            descriptor.executable = std::filesystem::path{executableIt->get<std::string>()};
+        }
         catalog.Add(std::move(descriptor));
     }
 

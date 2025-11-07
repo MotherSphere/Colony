@@ -84,6 +84,12 @@ class Application
     void SavePreferences();
     void MarkPreferencesDirty();
     void MaybeReloadContent(double deltaSeconds);
+    void RefreshCustomProgramRegistrations();
+    void HandleAddProgramRequest();
+    [[nodiscard]] std::optional<std::filesystem::path> PromptForExecutable() const;
+    void LaunchExternalProgram(const std::filesystem::path& path) const;
+    colony::ViewContent BuildCustomProgramView(const preferences::CustomProgram& program) const;
+    void ActivateCustomProgramChannel(const std::string& programId);
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -115,6 +121,7 @@ class Application
     std::vector<SDL_Rect> channelButtonRects_;
     std::vector<SDL_Rect> programTileRects_;
     std::optional<SDL_Rect> heroActionRect_;
+    std::optional<SDL_Rect> addProgramButtonRect_;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
     std::string activeLanguageId_ = "en";
@@ -147,6 +154,7 @@ class Application
     static constexpr int kWindowWidth = 1600;
     static constexpr int kWindowHeight = 900;
     static constexpr char kSettingsProgramId[] = "SETTINGS";
+    static constexpr char kCustomProgramsChannelId[] = "custom_programs";
 };
 
 } // namespace colony

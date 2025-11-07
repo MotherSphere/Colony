@@ -5,7 +5,6 @@
 
 #include <stdexcept>
 
-#include "ArchiveStateMachine.hpp"
 #include "core/localization_manager.hpp"
 #include "utils/preferences.hpp"
 
@@ -44,8 +43,8 @@ void ArchiveApp::launch()
 void ArchiveApp::initialize_services()
 {
     // TODO: Attach preferences, localization, and other shared services.
-    // The primary application initializes and owns these resources today, so
-    // ArchiveApp does not need to do anything yet.
+    core::LocalizationManager::Get();
+    utils::Preferences::Get();
 }
 
 void ArchiveApp::configure_state_machine()

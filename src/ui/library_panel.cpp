@@ -12,9 +12,13 @@
 namespace colony::ui
 {
 
-void LibraryPanelRenderer::Build(SDL_Renderer* renderer, TTF_Font* bodyFont, const ThemeColors& theme)
+void LibraryPanelRenderer::Build(
+    SDL_Renderer* renderer,
+    TTF_Font* bodyFont,
+    const ThemeColors& theme,
+    const std::function<std::string(std::string_view)>& localize)
 {
-    chrome_.filterLabel = colony::CreateTextTexture(renderer, bodyFont, "Installed programs", theme.muted);
+    chrome_.filterLabel = colony::CreateTextTexture(renderer, bodyFont, localize("library.filter_label"), theme.muted);
 }
 
 LibraryRenderResult LibraryPanelRenderer::Render(

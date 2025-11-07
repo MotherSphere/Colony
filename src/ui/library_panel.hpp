@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -22,7 +23,11 @@ struct LibraryRenderResult
 class LibraryPanelRenderer
 {
   public:
-    void Build(SDL_Renderer* renderer, TTF_Font* bodyFont, const ThemeColors& theme);
+    void Build(
+        SDL_Renderer* renderer,
+        TTF_Font* bodyFont,
+        const ThemeColors& theme,
+        const std::function<std::string(std::string_view)>& localize);
 
     LibraryRenderResult Render(
         SDL_Renderer* renderer,

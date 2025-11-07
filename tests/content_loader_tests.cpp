@@ -2,6 +2,7 @@
 #include "doctest/doctest.h"
 
 #include "core/content_loader.hpp"
+#include "core/localization_manager.hpp"
 #define private public
 #include "app/application.hpp"
 #undef private
@@ -209,6 +210,53 @@ TEST_CASE("LoadContentFromFile validates user section")
             doctest::Contains("User status must be a string."),
             std::runtime_error);
     }
+}
+
+TEST_CASE("LocalizationManager loads translations with fallback and YAML support")
+{
+    const std::filesystem::path tempRoot = std::filesystem::temp_directory_path()
+        / std::filesystem::unique_path("colony_localization_test-%%%%-%%%%");
+    REQUIRE(std::filesystem::create_directories(tempRoot));
+
+    auto writeFile = [&](std::string_view name, std::string_view contents) {
+        std::ofstream output{tempRoot / std::string{name}};
+        REQUIRE(output.is_open());
+        output << contents;
+    };
+
+    writeFile("en.json", R"({
+        "messages": {
+            "greeting": "Hello",
+            "farewell": "Goodbye"
+        }
+    })");
+
+    writeFile("fr.json", R"({
+        "messages": {
+            "greeting": "Bonjour"
+        }
+    })");
+
+    writeFile("es.yaml", R"(messages:
+  greeting: Hola
+)");
+
+    colony::LocalizationManager manager;
+    manager.SetResourceDirectory(tempRoot);
+    manager.SetFallbackLanguage("en");
+
+    REQUIRE(manager.LoadLanguage("en"));
+    CHECK(manager.GetString("messages.greeting") == "Hello");
+
+    REQUIRE(manager.LoadLanguage("fr"));
+    CHECK(manager.GetString("messages.greeting") == "Bonjour");
+    CHECK(manager.GetString("messages.farewell") == "Goodbye");
+
+    REQUIRE(manager.LoadLanguage("es"));
+    CHECK(manager.GetString("messages.greeting") == "Hola");
+    CHECK(manager.GetStringOrDefault("messages.unknown", "Default") == "Default");
+
+    std::filesystem::remove_all(tempRoot);
 }
 
 TEST_CASE("LoadContentFromFile validates view sections")

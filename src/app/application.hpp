@@ -2,6 +2,7 @@
 
 #include "controllers/navigation_controller.hpp"
 #include "core/content.hpp"
+#include "core/localization_manager.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/library_panel.hpp"
 #include "ui/navigation.hpp"
@@ -18,6 +19,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -52,6 +54,7 @@ class Application
     [[nodiscard]] bool CreateWindowAndRenderer();
     [[nodiscard]] bool InitializeFonts();
     [[nodiscard]] bool LoadContent();
+    [[nodiscard]] bool InitializeLocalization();
     void InitializeNavigation();
     void InitializeViews();
     void RebuildTheme();
@@ -67,15 +70,20 @@ class Application
     void RenderFrame(double deltaSeconds);
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
+    void ChangeLanguage(const std::string& languageId);
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
+    [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
     [[nodiscard]] bool PointInRect(const SDL_Rect& rect, int x, int y) const;
+    [[nodiscard]] std::string GetLocalizedString(std::string_view key) const;
+    [[nodiscard]] std::string GetLocalizedString(std::string_view key, std::string_view fallback) const;
 
     sdl::WindowHandle window_;
     sdl::RendererHandle renderer_;
     FontResources fonts_;
 
     AppContent content_;
+    LocalizationManager localizationManager_{};
     ui::ThemeManager themeManager_;
     ui::ThemeColors theme_{};
 

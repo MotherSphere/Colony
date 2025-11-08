@@ -32,7 +32,6 @@ You need a working C++20 compiler, CMake (3.16 or newer), and the development he
 ## Building
 
 ```bash
-cp /usr/share/fonts/TTF/DejaVuSans.ttf ~/colony/assets/fonts
 cmake -S . -B build
 cmake --build build
 ```

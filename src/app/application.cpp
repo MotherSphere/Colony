@@ -259,7 +259,7 @@ bool Application::InitializeFonts()
     const fonts::FontConfiguration fontConfiguration = fonts::BuildFontConfiguration(activeLanguageId_);
     if (fontConfiguration.primaryFontPath.empty())
     {
-        std::cerr << "Unable to locate a usable font file. Provide JetBrainsMonoNLNerdFont-Regular.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
+        std::cerr << "Unable to locate a usable font file. Provide JetBrainsMono-Regular.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
         return false;
     }
 

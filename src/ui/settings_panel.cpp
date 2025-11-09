@@ -175,46 +175,21 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             option.label.height};
         colony::RenderTexture(renderer, option.label, offsetRect(labelRect));
 
+        const int swatchSpacing = Scale(4);
         const int swatchInset = Scale(12);
+        const int swatchWidth = (logicalCardRect.w - 2 * swatchInset - swatchSpacing * 2) / 3;
         const int swatchHeight = Scale(18);
-        const int swatchTrackWidth = logicalCardRect.w - 2 * swatchInset;
+        int swatchX = logicalCardRect.x + swatchInset;
         const int swatchY = logicalCardRect.y + logicalCardRect.h - swatchHeight - swatchInset;
-        const std::size_t swatchCount = option.swatch.size();
-        if (swatchCount > 0 && swatchTrackWidth > 0)
+        for (const SDL_Color& swatchColor : option.swatch)
         {
-            SDL_Rect swatchTrackRect{
-                logicalCardRect.x + swatchInset, swatchY, swatchTrackWidth, swatchHeight};
-            const int baseSwatchWidth = swatchTrackWidth / static_cast<int>(swatchCount);
-            int remainder = swatchTrackWidth % static_cast<int>(swatchCount);
-            int swatchX = swatchTrackRect.x;
-            for (std::size_t swatchIndex = 0; swatchIndex < swatchCount; ++swatchIndex)
-            {
-                const SDL_Color& swatchColor = option.swatch[swatchIndex];
-                int swatchWidth = baseSwatchWidth;
-                if (remainder > 0)
-                {
-                    ++swatchWidth;
-                    --remainder;
-                }
-                if (swatchIndex == swatchCount - 1)
-                {
-                    swatchWidth = swatchTrackRect.x + swatchTrackRect.w - swatchX;
-                }
-                if (swatchWidth <= 0)
-                {
-                    continue;
-                }
-                SDL_Rect swatchRect{swatchX, swatchY, swatchWidth, swatchHeight};
-                SDL_Rect swatchDrawRect = offsetRect(swatchRect);
-                SDL_SetRenderDrawColor(renderer, swatchColor.r, swatchColor.g, swatchColor.b, swatchColor.a);
-                const int radius = (swatchIndex == 0 || swatchIndex == swatchCount - 1) ? 8 : 0;
-                colony::drawing::RenderFilledRoundedRect(renderer, swatchDrawRect, radius);
-                swatchX += swatchWidth;
-            }
-
-            SDL_SetRenderDrawColor(
-                renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-            colony::drawing::RenderRoundedRect(renderer, offsetRect(swatchTrackRect), 8);
+            SDL_Rect swatchRect{swatchX, swatchY, swatchWidth, swatchHeight};
+            SDL_Rect swatchDrawRect = offsetRect(swatchRect);
+            SDL_SetRenderDrawColor(renderer, swatchColor.r, swatchColor.g, swatchColor.b, swatchColor.a);
+            colony::drawing::RenderFilledRoundedRect(renderer, swatchDrawRect, 8);
+            SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+            colony::drawing::RenderRoundedRect(renderer, swatchDrawRect, 8);
+            swatchX += swatchWidth + swatchSpacing;
         }
 
         addInteractiveRegion(option.id, RenderResult::InteractionType::ThemeSelection, cardRect);

@@ -160,12 +160,6 @@ int Application::Run()
 
     LoadSettings();
 
-    if (!LoadFontsForLanguage(activeLanguageId_))
-    {
-        std::cerr << "Unable to reload fonts for language '" << activeLanguageId_
-                  << "'. Continuing with previously loaded font resources." << '\n';
-    }
-
     if (!InitializeLocalization())
     {
         SDL_Quit();
@@ -262,51 +256,37 @@ bool Application::CreateWindowAndRenderer()
 
 bool Application::InitializeFonts()
 {
-    return LoadFontsForLanguage(activeLanguageId_);
-}
-
-bool Application::LoadFontsForLanguage(const std::string& languageId)
-{
-    if (!loadedFontLanguage_.empty() && languageId == loadedFontLanguage_)
-    {
-        return true;
-    }
-
-    const std::string fontPath = fonts::ResolveFontPathForLanguage(languageId);
+    const std::string fontPath = fonts::ResolveFontPath();
     if (fontPath.empty())
     {
-        std::cerr << "Unable to locate a usable font file for language '" << languageId
-                  << "'. Provide the required font in assets/fonts or set COLONY_FONT_PATH." << '\n';
+        std::cerr << "Unable to locate a usable font file. Provide DejaVuSans.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
         return false;
     }
 
     auto openFont = [&](int size) { return sdl::FontHandle{TTF_OpenFont(fontPath.c_str(), ui::ScaleDynamic(size))}; };
 
-    FontResources loaded;
-    loaded.brand = openFont(30);
-    loaded.navigation = openFont(16);
-    loaded.channel = openFont(20);
-    loaded.tileTitle = openFont(20);
-    loaded.tileSubtitle = openFont(14);
-    loaded.tileMeta = openFont(14);
-    loaded.heroTitle = openFont(40);
-    loaded.heroSubtitle = openFont(20);
-    loaded.heroBody = openFont(16);
-    loaded.patchTitle = openFont(16);
-    loaded.patchBody = openFont(14);
-    loaded.button = openFont(20);
-    loaded.status = openFont(14);
+    fonts_.brand = openFont(30);
+    fonts_.navigation = openFont(16);
+    fonts_.channel = openFont(20);
+    fonts_.tileTitle = openFont(20);
+    fonts_.tileSubtitle = openFont(14);
+    fonts_.tileMeta = openFont(14);
+    fonts_.heroTitle = openFont(40);
+    fonts_.heroSubtitle = openFont(20);
+    fonts_.heroBody = openFont(16);
+    fonts_.patchTitle = openFont(16);
+    fonts_.patchBody = openFont(14);
+    fonts_.button = openFont(20);
+    fonts_.status = openFont(14);
 
-    if (!loaded.brand || !loaded.navigation || !loaded.channel || !loaded.tileTitle || !loaded.tileSubtitle
-        || !loaded.tileMeta || !loaded.heroTitle || !loaded.heroSubtitle || !loaded.heroBody || !loaded.patchTitle
-        || !loaded.patchBody || !loaded.button || !loaded.status)
+    if (!fonts_.brand || !fonts_.navigation || !fonts_.channel || !fonts_.tileTitle || !fonts_.tileSubtitle || !fonts_.tileMeta
+        || !fonts_.heroTitle || !fonts_.heroSubtitle || !fonts_.heroBody || !fonts_.patchTitle || !fonts_.patchBody
+        || !fonts_.button || !fonts_.status)
     {
         std::cerr << "Failed to load required fonts from " << fontPath << ": " << TTF_GetError() << '\n';
         return false;
     }
 
-    fonts_ = std::move(loaded);
-    loadedFontLanguage_ = languageId;
     return true;
 }
 
@@ -3475,12 +3455,6 @@ void Application::ChangeLanguage(const std::string& languageId)
     {
         std::cerr << "Unable to load localization for language '" << languageId << "'." << '\n';
         return;
-    }
-
-    if (!LoadFontsForLanguage(languageId))
-    {
-        std::cerr << "Unable to load fonts for language '" << languageId
-                  << "'. Continuing with existing font resources." << '\n';
     }
 
     activeLanguageId_ = languageId;

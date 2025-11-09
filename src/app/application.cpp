@@ -301,11 +301,6 @@ void Application::RebuildTheme()
     viewContext_.mutedColor = theme_.heroBody;
     UpdateViewContextAccent();
 
-    if (arcadeOverlay_.active)
-    {
-        BuildArcadeOverlayTextures();
-    }
-
     if (!activeProgramId_.empty())
     {
         viewRegistry_.Activate(activeProgramId_, viewContext_);
@@ -358,8 +353,6 @@ void Application::ActivateChannel(int index)
 
 void Application::ActivateProgram(const std::string& programId)
 {
-    HideArcadeOverlay();
-
     if (programId.empty())
     {
         activeProgramId_.clear();
@@ -433,35 +426,11 @@ std::string Application::GetActiveProgramId() const
 
 void Application::HandleEvent(const SDL_Event& event, bool& running)
 {
-    if (event.type == SDL_QUIT)
-    {
-        running = false;
-        return;
-    }
-
-    if (arcadeOverlay_.active)
-    {
-        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-        {
-            HideArcadeOverlay();
-            if (auto it = content_.views.find(activeProgramId_); it != content_.views.end())
-            {
-                UpdateStatusMessage(it->second.statusMessage);
-            }
-        }
-        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT)
-        {
-            HideArcadeOverlay();
-            if (auto it = content_.views.find(activeProgramId_); it != content_.views.end())
-            {
-                UpdateStatusMessage(it->second.statusMessage);
-            }
-        }
-        return;
-    }
-
     switch (event.type)
     {
+    case SDL_QUIT:
+        running = false;
+        break;
     case SDL_MOUSEBUTTONDOWN:
         if (event.button.button == SDL_BUTTON_LEFT)
         {
@@ -533,10 +502,6 @@ void Application::HandleMouseClick(int x, int y)
     {
         viewRegistry_.TriggerPrimaryAction(statusBuffer_);
         UpdateStatusMessage(statusBuffer_);
-        if (activeProgramId_ == kOrbitalArcadeProgramId)
-        {
-            ShowArcadeOverlay();
-        }
     }
 }
 
@@ -783,153 +748,7 @@ void Application::RenderFrame(double deltaSeconds)
 
     heroPanel_.RenderStatusBar(renderer_.get(), theme_, heroRect, statusBarHeight, activeVisuals, timeSeconds);
 
-    RenderArcadeOverlay(outputWidth, outputHeight);
-
     SDL_RenderPresent(renderer_.get());
-}
-
-void Application::ShowArcadeOverlay()
-{
-    if (!renderer_)
-    {
-        return;
-    }
-
-    arcadeOverlay_.active = true;
-    BuildArcadeOverlayTextures();
-
-    statusBuffer_ = "Orbital Arcade placeholder environment active.";
-    UpdateStatusMessage(statusBuffer_);
-}
-
-void Application::HideArcadeOverlay()
-{
-    if (!arcadeOverlay_.active)
-    {
-        return;
-    }
-
-    arcadeOverlay_.active = false;
-    arcadeOverlay_.title = {};
-    arcadeOverlay_.message = {};
-    arcadeOverlay_.instructions = {};
-}
-
-void Application::BuildArcadeOverlayTextures()
-{
-    if (!arcadeOverlay_.active || !renderer_)
-    {
-        return;
-    }
-
-    arcadeOverlay_.title = {};
-    arcadeOverlay_.message = {};
-    arcadeOverlay_.instructions = {};
-
-    const SDL_Color titleColor{255, 255, 255, SDL_ALPHA_OPAQUE};
-    const SDL_Color messageColor{theme_.heroBody.r, theme_.heroBody.g, theme_.heroBody.b, SDL_ALPHA_OPAQUE};
-    const SDL_Color instructionsColor{theme_.muted.r, theme_.muted.g, theme_.muted.b, SDL_ALPHA_OPAQUE};
-
-    if (fonts_.heroTitle)
-    {
-        arcadeOverlay_.title = CreateTextTexture(renderer_.get(), fonts_.heroTitle.get(), "Orbital Arcade", titleColor);
-    }
-
-    if (fonts_.heroBody)
-    {
-        arcadeOverlay_.message = CreateTextTexture(
-            renderer_.get(),
-            fonts_.heroBody.get(),
-            "Simulation core placeholder ready for co-op development.",
-            messageColor);
-    }
-
-    if (fonts_.tileMeta)
-    {
-        arcadeOverlay_.instructions = CreateTextTexture(
-            renderer_.get(),
-            fonts_.tileMeta.get(),
-            "Press ESC or click to return to the launcher.",
-            instructionsColor);
-    }
-
-    const auto mixComponent = [](Uint8 accentComponent, int base) {
-        return static_cast<Uint8>(std::clamp(base + static_cast<int>(accentComponent) / 4, 0, 255));
-    };
-
-    const SDL_Color accent = viewContext_.accentColor;
-    arcadeOverlay_.background = SDL_Color{
-        mixComponent(accent.r, 12),
-        mixComponent(accent.g, 8),
-        mixComponent(accent.b, 28),
-        235};
-}
-
-void Application::RenderArcadeOverlay(int outputWidth, int outputHeight)
-{
-    if (!arcadeOverlay_.active || !renderer_)
-    {
-        return;
-    }
-
-    SDL_BlendMode previousBlendMode = SDL_BLENDMODE_NONE;
-    SDL_GetRenderDrawBlendMode(renderer_.get(), &previousBlendMode);
-    SDL_SetRenderDrawBlendMode(renderer_.get(), SDL_BLENDMODE_BLEND);
-
-    SDL_SetRenderDrawColor(
-        renderer_.get(),
-        arcadeOverlay_.background.r,
-        arcadeOverlay_.background.g,
-        arcadeOverlay_.background.b,
-        arcadeOverlay_.background.a);
-
-    SDL_Rect overlayRect{0, 0, outputWidth, outputHeight};
-    SDL_RenderFillRect(renderer_.get(), &overlayRect);
-
-    SDL_SetRenderDrawBlendMode(renderer_.get(), previousBlendMode);
-
-    const int centerX = outputWidth / 2;
-    int currentY = outputHeight / 3;
-
-    if (arcadeOverlay_.title.texture)
-    {
-        SDL_Rect titleRect{
-            centerX - arcadeOverlay_.title.width / 2,
-            currentY,
-            arcadeOverlay_.title.width,
-            arcadeOverlay_.title.height};
-        RenderTexture(renderer_.get(), arcadeOverlay_.title, titleRect);
-        currentY = titleRect.y + titleRect.h + ui::Scale(28);
-    }
-
-    if (arcadeOverlay_.message.texture)
-    {
-        SDL_Rect messageRect{
-            centerX - arcadeOverlay_.message.width / 2,
-            currentY,
-            arcadeOverlay_.message.width,
-            arcadeOverlay_.message.height};
-        RenderTexture(renderer_.get(), arcadeOverlay_.message, messageRect);
-        currentY = messageRect.y + messageRect.h + ui::Scale(18);
-    }
-
-    if (arcadeOverlay_.instructions.texture)
-    {
-        SDL_Rect instructionsRect{
-            centerX - arcadeOverlay_.instructions.width / 2,
-            currentY,
-            arcadeOverlay_.instructions.width,
-            arcadeOverlay_.instructions.height};
-        RenderTexture(renderer_.get(), arcadeOverlay_.instructions, instructionsRect);
-    }
-
-    const SDL_Color frameColor = viewContext_.accentColor;
-    SDL_SetRenderDrawBlendMode(renderer_.get(), SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer_.get(), frameColor.r, frameColor.g, frameColor.b, 180);
-    const int frameMargin = ui::Scale(64);
-    SDL_Rect frameRect{frameMargin, frameMargin, outputWidth - 2 * frameMargin, outputHeight - 2 * frameMargin};
-    SDL_RenderDrawRect(renderer_.get(), &frameRect);
-    SDL_SetRenderDrawBlendMode(renderer_.get(), previousBlendMode);
 }
 
 void Application::UpdateStatusMessage(const std::string& statusText)

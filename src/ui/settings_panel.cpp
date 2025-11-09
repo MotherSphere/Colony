@@ -175,7 +175,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             option.label.height};
         colony::RenderTexture(renderer, option.label, offsetRect(labelRect));
 
-        const int swatchSpacing = Scale(4);
+        const int swatchSpacing = Scale(2);
         const int swatchInset = Scale(12);
         const int swatchWidth = (logicalCardRect.w - 2 * swatchInset - swatchSpacing * 2) / 3;
         const int swatchHeight = Scale(18);

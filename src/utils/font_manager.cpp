@@ -18,6 +18,7 @@ namespace colony::fonts
 namespace
 {
 constexpr char kBundledFontDirectory[] = "assets/fonts";
+constexpr char kJetBrainsFontSubdirectory[] = "JetBrainsMono";
 constexpr char kPrimaryFontRelativePath[] = "JetBrainsMonoNLNerdFont-Regular.ttf";
 constexpr char kFontDownloadUrl[] =
     "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/JetBrainsMono/NoLigatures/Regular/JetBrainsMonoNLNerdFont-Regular.ttf";
@@ -33,7 +34,7 @@ const std::array<std::filesystem::path, 3> kSystemFontCandidates{
 
 std::filesystem::path BundledFontDestination()
 {
-    return std::filesystem::path{kBundledFontDirectory} / kPrimaryFontRelativePath;
+    return std::filesystem::path{kBundledFontDirectory} / kJetBrainsFontSubdirectory / kPrimaryFontRelativePath;
 }
 
 std::filesystem::path ResolveBundledFont(std::string_view relativePath)
@@ -46,10 +47,12 @@ std::filesystem::path ResolveBundledFont(std::string_view relativePath)
         std::filesystem::path base{basePath};
         SDL_free(basePath);
         candidates.emplace_back(base / kBundledFontDirectory / relative);
+        candidates.emplace_back(base / kBundledFontDirectory / kJetBrainsFontSubdirectory / relative);
         candidates.emplace_back(base / relative);
     }
 
     candidates.emplace_back(std::filesystem::path{kBundledFontDirectory} / relative);
+    candidates.emplace_back(std::filesystem::path{kBundledFontDirectory} / kJetBrainsFontSubdirectory / relative);
     candidates.emplace_back(relative);
     candidates.emplace_back(std::filesystem::path{"fonts"} / relative);
 
@@ -171,10 +174,19 @@ std::filesystem::path GetBundledFontPath()
 bool EnsureBundledFontAvailable()
 {
     const std::filesystem::path bundledPath = BundledFontDestination();
+    const std::filesystem::path legacyBundledPath = std::filesystem::path{kBundledFontDirectory} / kPrimaryFontRelativePath;
     std::error_code error;
     if (std::filesystem::exists(bundledPath, error))
     {
         return true;
+    }
+
+    if (std::filesystem::exists(legacyBundledPath, error))
+    {
+        if (CopyFontIfPresent(legacyBundledPath, bundledPath))
+        {
+            return true;
+        }
     }
 
     for (const auto& candidate : kSystemFontCandidates)

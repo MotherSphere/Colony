@@ -77,9 +77,12 @@ class Application
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
     void LaunchArcadeApp();
+    void LoadSettings();
+    void SaveSettings() const;
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
+    [[nodiscard]] std::filesystem::path ResolveSettingsPath() const;
     [[nodiscard]] bool PointInRect(const SDL_Rect& rect, int x, int y) const;
     [[nodiscard]] std::string GetLocalizedString(std::string_view key) const;
     [[nodiscard]] std::string GetLocalizedString(std::string_view key, std::string_view fallback) const;

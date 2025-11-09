@@ -10,6 +10,7 @@
 #include "ui/settings_panel.hpp"
 #include "ui/theme.hpp"
 #include "utils/sdl_wrappers.hpp"
+#include "utils/text.hpp"
 #include "views/view_factory.hpp"
 #include "views/view_registry.hpp"
 
@@ -71,6 +72,7 @@ class Application
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
+    void LaunchArcadeApp();
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -123,6 +125,8 @@ class Application
     static constexpr int kWindowHeight = 900;
     static constexpr int kStatusBarHeight = 52;
     static constexpr char kSettingsProgramId[] = "SETTINGS";
+    static constexpr char kOrbitalArcadeProgramId[] = "ORBITAL_ARCADE";
+
 };
 
 } // namespace colony

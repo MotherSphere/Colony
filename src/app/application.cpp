@@ -256,35 +256,61 @@ bool Application::CreateWindowAndRenderer()
 
 bool Application::InitializeFonts()
 {
-    const std::string fontPath = fonts::ResolveFontPath();
-    if (fontPath.empty())
+    const fonts::FontConfiguration fontConfiguration = fonts::BuildFontConfiguration(activeLanguageId_);
+    if (fontConfiguration.primaryFontPath.empty())
     {
-        std::cerr << "Unable to locate a usable font file. Provide DejaVuSans.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
+        std::cerr << "Unable to locate a usable font file. Provide JetBrainsMonoNLNerdFont-Regular.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
         return false;
     }
 
-    auto openFont = [&](int size) { return sdl::FontHandle{TTF_OpenFont(fontPath.c_str(), ui::ScaleDynamic(size))}; };
+    const auto openFont = [&](const std::string& path, int size) {
+        return sdl::FontHandle{TTF_OpenFont(path.c_str(), ui::ScaleDynamic(size))};
+    };
 
-    fonts_.brand = openFont(30);
-    fonts_.navigation = openFont(16);
-    fonts_.channel = openFont(20);
-    fonts_.tileTitle = openFont(20);
-    fonts_.tileSubtitle = openFont(14);
-    fonts_.tileMeta = openFont(14);
-    fonts_.heroTitle = openFont(40);
-    fonts_.heroSubtitle = openFont(20);
-    fonts_.heroBody = openFont(16);
-    fonts_.patchTitle = openFont(16);
-    fonts_.patchBody = openFont(14);
-    fonts_.button = openFont(20);
-    fonts_.status = openFont(14);
+    const auto openPrimaryFont = [&](int size) { return openFont(fontConfiguration.primaryFontPath, size); };
+
+    fonts_.brand = openPrimaryFont(30);
+    fonts_.navigation = openPrimaryFont(16);
+    fonts_.channel = openPrimaryFont(20);
+    fonts_.tileTitle = openPrimaryFont(20);
+    fonts_.tileSubtitle = openPrimaryFont(14);
+    fonts_.tileMeta = openPrimaryFont(14);
+    fonts_.heroTitle = openPrimaryFont(40);
+    fonts_.heroSubtitle = openPrimaryFont(20);
+    fonts_.heroBody = openPrimaryFont(16);
+    fonts_.patchTitle = openPrimaryFont(16);
+    fonts_.patchBody = openPrimaryFont(14);
+    fonts_.button = openPrimaryFont(20);
+    fonts_.status = openPrimaryFont(14);
 
     if (!fonts_.brand || !fonts_.navigation || !fonts_.channel || !fonts_.tileTitle || !fonts_.tileSubtitle || !fonts_.tileMeta
         || !fonts_.heroTitle || !fonts_.heroSubtitle || !fonts_.heroBody || !fonts_.patchTitle || !fonts_.patchBody
         || !fonts_.button || !fonts_.status)
     {
-        std::cerr << "Failed to load required fonts from " << fontPath << ": " << TTF_GetError() << '\n';
+        std::cerr << "Failed to load required fonts from " << fontConfiguration.primaryFontPath << ": " << TTF_GetError()
+                  << '\n';
         return false;
+    }
+
+    languageFonts_.clear();
+    constexpr int kBodyFontPointSize = 16;
+
+    for (const auto& [languageId, fontPath] : fontConfiguration.nativeLanguageFonts)
+    {
+        if (fontPath == fontConfiguration.primaryFontPath)
+        {
+            continue;
+        }
+
+        sdl::FontHandle fontHandle = openFont(fontPath, kBodyFontPointSize);
+        if (!fontHandle)
+        {
+            std::cerr << "Warning: failed to load language font for '" << languageId << "' from " << fontPath << ": "
+                      << TTF_GetError() << '\n';
+            continue;
+        }
+
+        languageFonts_.emplace(languageId, std::move(fontHandle));
     }
 
     return true;
@@ -390,7 +416,15 @@ void Application::RebuildTheme()
         theme_.heroTitle,
         theme_.heroBody,
         themeManager_,
-        localize);
+        localize,
+        [this](std::string_view languageId) -> TTF_Font* {
+            const auto it = languageFonts_.find(std::string{languageId});
+            if (it != languageFonts_.end())
+            {
+                return it->second.get();
+            }
+            return fonts_.heroBody.get();
+        });
     settingsScrollOffset_ = 0;
 
     RebuildProgramVisuals();
@@ -3458,6 +3492,11 @@ void Application::ChangeLanguage(const std::string& languageId)
     }
 
     activeLanguageId_ = languageId;
+    if (!InitializeFonts())
+    {
+        std::cerr << "Failed to reload fonts for language '" << languageId << "'." << '\n';
+        return;
+    }
     RebuildTheme();
 }
 

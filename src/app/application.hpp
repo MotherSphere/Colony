@@ -114,6 +114,7 @@ class Application
     sdl::WindowHandle window_;
     sdl::RendererHandle renderer_;
     FontResources fonts_;
+    std::unordered_map<std::string, sdl::FontHandle> languageFonts_;
 
     AppContent content_;
     LocalizationManager localizationManager_{};

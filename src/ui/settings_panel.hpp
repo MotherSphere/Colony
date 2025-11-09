@@ -28,7 +28,8 @@ class SettingsPanel
         SDL_Color titleColor,
         SDL_Color bodyColor,
         const ThemeManager& themeManager,
-        const std::function<std::string(std::string_view)>& localize);
+        const std::function<std::string(std::string_view)>& localize,
+        const std::function<TTF_Font*(std::string_view)>& nativeFontResolver);
 
     struct RenderResult
     {

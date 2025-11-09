@@ -16,7 +16,8 @@ void SettingsPanel::Build(
     SDL_Color titleColor,
     SDL_Color bodyColor,
     const ThemeManager& themeManager,
-    const std::function<std::string(std::string_view)>& localize)
+    const std::function<std::string(std::string_view)>& localize,
+    const std::function<TTF_Font*(std::string_view)>& nativeFontResolver)
 {
     themeOptions_.clear();
     languages_.clear();
@@ -54,7 +55,15 @@ void SettingsPanel::Build(
         const std::string nameKey = prefix + ".name";
         const std::string nativeKey = prefix + ".native";
         option.name = colony::CreateTextTexture(renderer, bodyFont, localize(nameKey), titleColor);
-        option.nativeName = colony::CreateTextTexture(renderer, bodyFont, localize(nativeKey), secondaryColor);
+        TTF_Font* nativeFont = bodyFont;
+        if (nativeFontResolver)
+        {
+            if (TTF_Font* providedFont = nativeFontResolver(option.id); providedFont != nullptr)
+            {
+                nativeFont = providedFont;
+            }
+        }
+        option.nativeName = colony::CreateTextTexture(renderer, nativeFont, localize(nativeKey), secondaryColor);
         languages_.emplace_back(std::move(option));
     };
 

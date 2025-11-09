@@ -19,18 +19,27 @@ namespace
 {
 constexpr char kBundledFontDirectory[] = "assets/fonts";
 constexpr char kJetBrainsFontSubdirectory[] = "JetBrainsMono";
-constexpr char kPrimaryFontRelativePath[] = "JetBrainsMonoNLNerdFont-Regular.ttf";
+constexpr char kPrimaryFontRelativePath[] = "JetBrainsMono-Regular.ttf";
 constexpr char kFontDownloadUrl[] =
-    "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/JetBrainsMono/NoLigatures/Regular/JetBrainsMonoNLNerdFont-Regular.ttf";
+    "https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/fonts/ttf/JetBrainsMono-Regular.ttf";
 constexpr char kDevanagariFontRelativePath[] =
     "Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf";
 constexpr char kCjkFontRelativePath[] = "NotoSansCJK-Regular.ttc";
 constexpr char kArabicFontRelativePath[] = "NotoSansArabic/NotoSansArabic-Regular.ttf";
 
-const std::array<std::filesystem::path, 3> kSystemFontCandidates{
-    std::filesystem::path{"/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMonoNLNerdFont-Regular.ttf"},
+const std::array<std::filesystem::path, 7> kSystemFontCandidates{
+    std::filesystem::path{"/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf"},
+    std::filesystem::path{"/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMonoNL-Regular.ttf"},
+    std::filesystem::path{"/usr/share/fonts/truetype/nerd-fonts/JetBrainsMono-Regular.ttf"},
     std::filesystem::path{"/usr/share/fonts/truetype/nerd-fonts/JetBrainsMonoNLNerdFont-Regular.ttf"},
+    std::filesystem::path{"/Library/Fonts/JetBrainsMono-Regular.ttf"},
+    std::filesystem::path{"/Library/Fonts/JetBrainsMonoNL-Regular.ttf"},
     std::filesystem::path{"/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf"}};
+
+constexpr std::array<std::string_view, 3> kLegacyPrimaryFontRelativePaths{
+    "JetBrainsMonoNLNerdFont-Regular.ttf",
+    "JetBrainsMonoNL-Regular.ttf",
+    "JetBrainsMonoNLNerdFont-Regular.otf"};
 
 std::filesystem::path BundledFontDestination()
 {
@@ -174,18 +183,24 @@ std::filesystem::path GetBundledFontPath()
 bool EnsureBundledFontAvailable()
 {
     const std::filesystem::path bundledPath = BundledFontDestination();
-    const std::filesystem::path legacyBundledPath = std::filesystem::path{kBundledFontDirectory} / kPrimaryFontRelativePath;
     std::error_code error;
     if (std::filesystem::exists(bundledPath, error))
     {
         return true;
     }
 
-    if (std::filesystem::exists(legacyBundledPath, error))
+    const std::array<std::filesystem::path, 2> legacyDirectories{
+        std::filesystem::path{kBundledFontDirectory},
+        std::filesystem::path{kBundledFontDirectory} / kJetBrainsFontSubdirectory};
+
+    for (const auto& legacyRelativePath : kLegacyPrimaryFontRelativePaths)
     {
-        if (CopyFontIfPresent(legacyBundledPath, bundledPath))
+        for (const auto& legacyDirectory : legacyDirectories)
         {
-            return true;
+            if (CopyFontIfPresent(legacyDirectory / legacyRelativePath, bundledPath))
+            {
+                return true;
+            }
         }
     }
 

@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "capabilities": "功能",
+    "patch_notes": "更新说明"
+  },
+  "library": {
+    "filter_label": "已安装的程序"
+  },
+  "settings": {
+    "appearance": {
+      "title": "外观",
+      "subtitle": "为 Colony 选择一个预设配色方案"
+    },
+    "language": {
+      "title": "语言",
+      "subtitle": "将界面切换到你偏好的语言",
+      "options": {
+        "en": {
+          "name": "英语",
+          "native": "English"
+        },
+        "fr": {
+          "name": "法语",
+          "native": "Français"
+        },
+        "zh": {
+          "name": "中文",
+          "native": "中文"
+        },
+        "de": {
+          "name": "德语",
+          "native": "Deutsch"
+        },
+        "ar": {
+          "name": "阿拉伯语",
+          "native": "العربية"
+        },
+        "hi": {
+          "name": "印地语",
+          "native": "हिन्दी"
+        }
+      }
+    },
+    "general": {
+      "title": "通用",
+      "subtitle": "调整日常偏好和舒适选项"
+    },
+    "toggles": {
+      "notifications": {
+        "label": "启用通知",
+        "description": "当新的 Colony 发布时显示提醒"
+      },
+      "sound": {
+        "label": "启用界面音效",
+        "description": "在浏览界面时播放轻柔的提示音"
+      },
+      "auto_updates": {
+        "label": "自动更新频道",
+        "description": "每次 Colony 启动时刷新频道内容"
+      },
+      "reduced_motion": {
+        "label": "减少动画",
+        "description": "为敏感用户限制主视觉动画"
+      }
+    }
+  }
+}

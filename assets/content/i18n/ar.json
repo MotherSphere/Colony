@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "capabilities": "الإمكانات",
+    "patch_notes": "ملاحظات التحديث"
+  },
+  "library": {
+    "filter_label": "البرامج المثبّتة"
+  },
+  "settings": {
+    "appearance": {
+      "title": "المظهر",
+      "subtitle": "اختر لوحة ألوان جاهزة لتطبيق Colony"
+    },
+    "language": {
+      "title": "اللغة",
+      "subtitle": "بدّل الواجهة إلى لغتك المفضّلة",
+      "options": {
+        "en": {
+          "name": "الإنجليزية",
+          "native": "English"
+        },
+        "fr": {
+          "name": "الفرنسية",
+          "native": "Français"
+        },
+        "zh": {
+          "name": "الصينية",
+          "native": "中文"
+        },
+        "de": {
+          "name": "الألمانية",
+          "native": "Deutsch"
+        },
+        "ar": {
+          "name": "العربية",
+          "native": "العربية"
+        },
+        "hi": {
+          "name": "الهندية",
+          "native": "हिन्दी"
+        }
+      }
+    },
+    "general": {
+      "title": "عام",
+      "subtitle": "عدّل تفضيلاتك اليومية وخيارات الراحة"
+    },
+    "toggles": {
+      "notifications": {
+        "label": "تفعيل الإشعارات",
+        "description": "إظهار تنبيهات عند وصول إصدارات Colony الجديدة"
+      },
+      "sound": {
+        "label": "تفعيل أصوات الواجهة",
+        "description": "تشغيل رنين خافت أثناء التنقّل في الواجهة"
+      },
+      "auto_updates": {
+        "label": "تحديث القنوات تلقائياً",
+        "description": "تحديث محتوى القنوات كلما تم تشغيل Colony"
+      },
+      "reduced_motion": {
+        "label": "تقليل الحركة",
+        "description": "تقليل رسوم البطل المتحركة للمستخدمين الحساسين"
+      }
+    }
+  }
+}

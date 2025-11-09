@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "capabilities": "FÄHIGKEITEN",
+    "patch_notes": "PATCH-HINWEISE"
+  },
+  "library": {
+    "filter_label": "Installierte Programme"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Erscheinungsbild",
+      "subtitle": "Wähle eine voreingestellte Farbpalette für Colony"
+    },
+    "language": {
+      "title": "Sprache",
+      "subtitle": "Wechsle die Oberfläche in deine bevorzugte Sprache",
+      "options": {
+        "en": {
+          "name": "Englisch",
+          "native": "English"
+        },
+        "fr": {
+          "name": "Französisch",
+          "native": "Français"
+        },
+        "zh": {
+          "name": "Chinesisch",
+          "native": "中文"
+        },
+        "de": {
+          "name": "Deutsch",
+          "native": "Deutsch"
+        },
+        "ar": {
+          "name": "Arabisch",
+          "native": "العربية"
+        },
+        "hi": {
+          "name": "Hindi",
+          "native": "हिन्दी"
+        }
+      }
+    },
+    "general": {
+      "title": "Allgemein",
+      "subtitle": "Passe tägliche Präferenzen und Komfortoptionen an"
+    },
+    "toggles": {
+      "notifications": {
+        "label": "Benachrichtigungen aktivieren",
+        "description": "Zeige Hinweise an, wenn neue Colony-Drops eintreffen"
+      },
+      "sound": {
+        "label": "Interface-Sounds aktivieren",
+        "description": "Spiele beim Navigieren ein sanftes Klingeln ab"
+      },
+      "auto_updates": {
+        "label": "Kanäle automatisch aktualisieren",
+        "description": "Aktualisiere die Kanalinhalte, wann immer Colony startet"
+      },
+      "reduced_motion": {
+        "label": "Bewegung reduzieren",
+        "description": "Begrenze Hero-Animationen für empfindliche Nutzende"
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "capabilities": "क्षमताएँ",
+    "patch_notes": "पैच नोट्स"
+  },
+  "library": {
+    "filter_label": "स्थापित प्रोग्राम"
+  },
+  "settings": {
+    "appearance": {
+      "title": "दिखावट",
+      "subtitle": "Colony के लिए एक पूर्वनिर्धारित रंग योजना चुनें"
+    },
+    "language": {
+      "title": "भाषा",
+      "subtitle": "इंटरफ़ेस को अपनी पसंदीदा भाषा में बदलें",
+      "options": {
+        "en": {
+          "name": "अंग्रेज़ी",
+          "native": "English"
+        },
+        "fr": {
+          "name": "फ़्रेंच",
+          "native": "Français"
+        },
+        "zh": {
+          "name": "चीनी",
+          "native": "中文"
+        },
+        "de": {
+          "name": "जर्मन",
+          "native": "Deutsch"
+        },
+        "ar": {
+          "name": "अरबी",
+          "native": "العربية"
+        },
+        "hi": {
+          "name": "हिन्दी",
+          "native": "हिन्दी"
+        }
+      }
+    },
+    "general": {
+      "title": "सामान्य",
+      "subtitle": "दैनिक प्राथमिकताएँ और सुविधा विकल्प समायोजित करें"
+    },
+    "toggles": {
+      "notifications": {
+        "label": "सूचनाएँ सक्षम करें",
+        "description": "जब नए Colony ड्रॉप्स आएँ तो अलर्ट दिखाएँ"
+      },
+      "sound": {
+        "label": "इंटरफ़ेस ध्वनियाँ सक्षम करें",
+        "description": "नेविगेट करते समय एक हल्की घंटी चलाएँ"
+      },
+      "auto_updates": {
+        "label": "चैनल स्वचालित रूप से अपडेट करें",
+        "description": "जब भी Colony शुरू हो, चैनल सामग्री रीफ़्रेश करें"
+      },
+      "reduced_motion": {
+        "label": "गतिविधि कम करें",
+        "description": "संवेदनशील उपयोगकर्ताओं के लिए हीरो एनीमेशन सीमित करें"
+      }
+    }
+  }
+}

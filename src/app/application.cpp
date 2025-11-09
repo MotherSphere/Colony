@@ -426,11 +426,14 @@ std::string Application::GetActiveProgramId() const
 
 void Application::HandleEvent(const SDL_Event& event, bool& running)
 {
+    if (event.type == SDL_QUIT)
+    {
+        running = false;
+        return;
+    }
+
     switch (event.type)
     {
-    case SDL_QUIT:
-        running = false;
-        break;
     case SDL_MOUSEBUTTONDOWN:
         if (event.button.button == SDL_BUTTON_LEFT)
         {
@@ -502,6 +505,10 @@ void Application::HandleMouseClick(int x, int y)
     {
         viewRegistry_.TriggerPrimaryAction(statusBuffer_);
         UpdateStatusMessage(statusBuffer_);
+        if (activeProgramId_ == kOrbitalArcadeProgramId)
+        {
+            LaunchArcadeApp();
+        }
     }
 }
 
@@ -749,6 +756,89 @@ void Application::RenderFrame(double deltaSeconds)
     heroPanel_.RenderStatusBar(renderer_.get(), theme_, heroRect, statusBarHeight, activeVisuals, timeSeconds);
 
     SDL_RenderPresent(renderer_.get());
+}
+
+void Application::LaunchArcadeApp()
+{
+    const std::string previousStatus = statusBuffer_;
+
+    SDL_Window* arcadeWindow = SDL_CreateWindow(
+        "Orbital Arcade",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        1280,
+        720,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+
+    if (arcadeWindow == nullptr)
+    {
+        std::cerr << "Unable to create Orbital Arcade window: " << SDL_GetError() << '\n';
+        return;
+    }
+
+    SDL_Renderer* arcadeRenderer = SDL_CreateRenderer(
+        arcadeWindow,
+        -1,
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+    if (arcadeRenderer == nullptr)
+    {
+        std::cerr << "Unable to create Orbital Arcade renderer: " << SDL_GetError() << '\n';
+        SDL_DestroyWindow(arcadeWindow);
+        return;
+    }
+
+    UpdateStatusMessage("Orbital Arcade is running in a separate window. Close it to return to Colony.");
+
+    const Uint32 arcadeWindowId = SDL_GetWindowID(arcadeWindow);
+    bool running = true;
+    bool propagateQuit = false;
+
+    while (running)
+    {
+        SDL_Event event{};
+        while (SDL_PollEvent(&event))
+        {
+            switch (event.type)
+            {
+            case SDL_QUIT:
+                propagateQuit = true;
+                running = false;
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    running = false;
+                }
+                break;
+            case SDL_WINDOWEVENT:
+                if (event.window.windowID == arcadeWindowId && event.window.event == SDL_WINDOWEVENT_CLOSE)
+                {
+                    running = false;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+
+        SDL_SetRenderDrawColor(arcadeRenderer, 6, 10, 26, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(arcadeRenderer);
+        SDL_RenderPresent(arcadeRenderer);
+        SDL_Delay(16);
+    }
+
+    SDL_DestroyRenderer(arcadeRenderer);
+    SDL_DestroyWindow(arcadeWindow);
+
+    if (propagateQuit)
+    {
+        SDL_Event quitEvent{};
+        quitEvent.type = SDL_QUIT;
+        SDL_PushEvent(&quitEvent);
+    }
+
+    UpdateStatusMessage(previousStatus);
 }
 
 void Application::UpdateStatusMessage(const std::string& statusText)

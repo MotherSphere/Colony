@@ -30,10 +30,12 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     const std::vector<int>& channelSelections,
     const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
     TTF_Font* channelFont,
+    bool showAddButton,
     double timeSeconds,
     double deltaSeconds) const
 {
     LibraryRenderResult result;
+    result.addButtonRect.reset();
     const auto& activeChannel = content.channels[activeChannelIndex];
 
     const int libraryPadding = Scale(22);
@@ -73,14 +75,59 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             filterIconRect.x + filterIconRect.w + Scale(2),
             filterIconRect.y + filterIconRect.h + Scale(2));
 
-        if (chrome_.filterLabel.texture)
+        int labelRightBound = filterRect.x + filterRect.w - Scale(10);
+        if (showAddButton)
+        {
+            const int buttonSize = std::max(Scale(30), filterRect.h - Scale(6));
+            SDL_Rect addButtonRect{
+                filterRect.x + filterRect.w - buttonSize - Scale(8),
+                filterRect.y + (filterRect.h - buttonSize) / 2,
+                buttonSize,
+                buttonSize};
+            result.addButtonRect = addButtonRect;
+
+            SDL_Color buttonFill = colony::color::Mix(theme.libraryCardActive, theme.libraryBackground, 0.5f);
+            SDL_SetRenderDrawColor(renderer, buttonFill.r, buttonFill.g, buttonFill.b, buttonFill.a);
+            colony::drawing::RenderFilledRoundedRect(renderer, addButtonRect, 10);
+            SDL_SetRenderDrawColor(renderer, theme.channelBadge.r, theme.channelBadge.g, theme.channelBadge.b, theme.channelBadge.a);
+            colony::drawing::RenderRoundedRect(renderer, addButtonRect, 10);
+
+            SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, SDL_ALPHA_OPAQUE);
+            const int centerX = addButtonRect.x + addButtonRect.w / 2;
+            const int centerY = addButtonRect.y + addButtonRect.h / 2;
+            const int glyphExtent = addButtonRect.w / 3;
+            SDL_RenderDrawLine(renderer, centerX - glyphExtent, centerY, centerX + glyphExtent, centerY);
+            SDL_RenderDrawLine(renderer, centerX, centerY - glyphExtent, centerX, centerY + glyphExtent);
+
+            labelRightBound = addButtonRect.x - Scale(10);
+        }
+
+        if (chrome_.filterLabel.texture && filterIconRect.x + filterIconRect.w + Scale(10) < labelRightBound)
         {
             SDL_Rect filterLabelRect{
                 filterIconRect.x + filterIconRect.w + Scale(10),
                 filterRect.y + (filterRect.h - chrome_.filterLabel.height) / 2,
                 chrome_.filterLabel.width,
                 chrome_.filterLabel.height};
-            colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+
+            if (filterLabelRect.x + filterLabelRect.w > labelRightBound)
+            {
+                SDL_Rect clipRect{
+                    filterLabelRect.x,
+                    filterLabelRect.y,
+                    std::max(0, labelRightBound - filterLabelRect.x),
+                    chrome_.filterLabel.height};
+                if (clipRect.w > 0)
+                {
+                    SDL_RenderSetClipRect(renderer, &clipRect);
+                    colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+                    SDL_RenderSetClipRect(renderer, nullptr);
+                }
+            }
+            else
+            {
+                colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+            }
         }
     }
     else if (chrome_.filterLabel.texture)
@@ -90,7 +137,54 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             filterRect.y + (filterRect.h - chrome_.filterLabel.height) / 2,
             chrome_.filterLabel.width,
             chrome_.filterLabel.height};
-        colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+        int labelRightBound = filterRect.x + filterRect.w - Scale(10);
+        if (showAddButton)
+        {
+            const int buttonSize = std::max(Scale(30), filterRect.h - Scale(6));
+            SDL_Rect addButtonRect{
+                filterRect.x + filterRect.w - buttonSize - Scale(8),
+                filterRect.y + (filterRect.h - buttonSize) / 2,
+                buttonSize,
+                buttonSize};
+            result.addButtonRect = addButtonRect;
+
+            SDL_Color buttonFill = colony::color::Mix(theme.libraryCardActive, theme.libraryBackground, 0.5f);
+            SDL_SetRenderDrawColor(renderer, buttonFill.r, buttonFill.g, buttonFill.b, buttonFill.a);
+            colony::drawing::RenderFilledRoundedRect(renderer, addButtonRect, 10);
+            SDL_SetRenderDrawColor(renderer, theme.channelBadge.r, theme.channelBadge.g, theme.channelBadge.b, theme.channelBadge.a);
+            colony::drawing::RenderRoundedRect(renderer, addButtonRect, 10);
+
+            SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, SDL_ALPHA_OPAQUE);
+            const int centerX = addButtonRect.x + addButtonRect.w / 2;
+            const int centerY = addButtonRect.y + addButtonRect.h / 2;
+            const int glyphExtent = addButtonRect.w / 3;
+            SDL_RenderDrawLine(renderer, centerX - glyphExtent, centerY, centerX + glyphExtent, centerY);
+            SDL_RenderDrawLine(renderer, centerX, centerY - glyphExtent, centerX, centerY + glyphExtent);
+
+            labelRightBound = addButtonRect.x - Scale(10);
+        }
+
+        if (filterLabelRect.x < labelRightBound)
+        {
+            if (filterLabelRect.x + filterLabelRect.w > labelRightBound)
+            {
+                SDL_Rect clipRect{
+                    filterLabelRect.x,
+                    filterLabelRect.y,
+                    std::max(0, labelRightBound - filterLabelRect.x),
+                    chrome_.filterLabel.height};
+                if (clipRect.w > 0)
+                {
+                    SDL_RenderSetClipRect(renderer, &clipRect);
+                    colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+                    SDL_RenderSetClipRect(renderer, nullptr);
+                }
+            }
+            else
+            {
+                colony::RenderTexture(renderer, chrome_.filterLabel, filterLabelRect);
+            }
+        }
     }
     libraryCursorY += filterRect.h + Scale(18);
 

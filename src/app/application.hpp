@@ -54,6 +54,7 @@ class Application
     [[nodiscard]] bool InitializeSDL();
     [[nodiscard]] bool CreateWindowAndRenderer();
     [[nodiscard]] bool InitializeFonts();
+    [[nodiscard]] bool LoadFontsForLanguage(const std::string& languageId);
     [[nodiscard]] bool LoadContent();
     [[nodiscard]] bool InitializeLocalization();
     void InitializeNavigation();
@@ -114,6 +115,7 @@ class Application
     sdl::WindowHandle window_;
     sdl::RendererHandle renderer_;
     FontResources fonts_;
+    std::string loadedFontLanguage_{};
 
     AppContent content_;
     LocalizationManager localizationManager_{};

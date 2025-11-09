@@ -395,6 +395,8 @@ void Application::InitializeViews()
 
 void Application::RebuildTheme()
 {
+    const int previousSettingsScrollOffset = settingsScrollOffset_;
+
     theme_ = themeManager_.ActiveScheme().colors;
 
     const auto localize = [this](std::string_view key) { return GetLocalizedString(key); };
@@ -425,7 +427,7 @@ void Application::RebuildTheme()
             }
             return fonts_.heroBody.get();
         });
-    settingsScrollOffset_ = 0;
+    settingsScrollOffset_ = std::max(0, previousSettingsScrollOffset);
 
     RebuildProgramVisuals();
     UpdateStatusMessage(statusBuffer_.empty() && !activeProgramId_.empty()

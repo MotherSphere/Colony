@@ -128,6 +128,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
     };
 
     int settingsChannelIndex = -1;
+    int localAppsChannelIndex = -1;
     for (std::size_t i = 0; i < content.channels.size(); ++i)
     {
         if (content.channels[i].id == "settings")
@@ -136,14 +137,38 @@ std::vector<SDL_Rect> NavigationRail::Render(
             continue;
         }
 
+        if (content.channels[i].id == "local_apps")
+        {
+            localAppsChannelIndex = static_cast<int>(i);
+            continue;
+        }
+
         channelStartY = renderChannelButton(static_cast<int>(i), channelStartY);
+    }
+
+    int settingsLabelPadding = 0;
+    if (chrome_.settingsLabel.texture)
+    {
+        settingsLabelPadding = chrome_.settingsLabel.height + Scale(12);
+    }
+
+    const int settingsTargetY = navRailRect.y + navRailRect.h - statusBarHeight - channelButtonSize - navPadding
+        - (settingsChannelIndex != -1 ? settingsLabelPadding : 0);
+
+    if (localAppsChannelIndex != -1)
+    {
+        int localTargetY = navRailRect.y + navRailRect.h - statusBarHeight - channelButtonSize - navPadding;
+        if (settingsChannelIndex != -1)
+        {
+            localTargetY = settingsTargetY - channelSpacing - channelButtonSize;
+        }
+
+        const int localY = std::max(channelStartY, localTargetY);
+        channelStartY = renderChannelButton(localAppsChannelIndex, localY);
     }
 
     if (settingsChannelIndex != -1)
     {
-        const int settingsLabelPadding = chrome_.settingsLabel.texture ? chrome_.settingsLabel.height + Scale(12) : 0;
-        const int settingsTargetY =
-            navRailRect.y + navRailRect.h - statusBarHeight - channelButtonSize - navPadding - settingsLabelPadding;
         const int settingsY = std::max(channelStartY, settingsTargetY);
         renderChannelButton(settingsChannelIndex, settingsY);
     }

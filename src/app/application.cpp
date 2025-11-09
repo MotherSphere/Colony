@@ -1,6 +1,7 @@
 #include "app/application.hpp"
 
 #include "core/content_loader.hpp"
+#include "json.hpp"
 #include "ui/layout.hpp"
 #include "ui/theme.hpp"
 #include "utils/color.hpp"
@@ -13,6 +14,7 @@
 #include <cmath>
 #include <cctype>
 #include <filesystem>
+#include <fstream>
 #include <ctime>
 #include <cstring>
 #include <iomanip>
@@ -156,6 +158,8 @@ int Application::Run()
         return EXIT_FAILURE;
     }
 
+    LoadSettings();
+
     if (!InitializeLocalization())
     {
         SDL_Quit();
@@ -201,6 +205,7 @@ int Application::Run()
         RenderFrame(reduceMotion ? 0.0 : deltaSeconds);
     }
 
+    SaveSettings();
     SDL_Quit();
     return EXIT_SUCCESS;
 }
@@ -3456,6 +3461,107 @@ void Application::ChangeLanguage(const std::string& languageId)
     RebuildTheme();
 }
 
+void Application::LoadSettings()
+{
+    const std::filesystem::path settingsPath = ResolveSettingsPath();
+    if (settingsPath.empty())
+    {
+        return;
+    }
+
+    std::error_code error;
+    if (!std::filesystem::exists(settingsPath, error) || error)
+    {
+        return;
+    }
+
+    std::ifstream input{settingsPath};
+    if (!input.is_open())
+    {
+        std::cerr << "Unable to open settings file: " << settingsPath << '\n';
+        return;
+    }
+
+    try
+    {
+        const nlohmann::json document = nlohmann::json::parse(input);
+
+        if (document.contains("theme") && document["theme"].is_string())
+        {
+            themeManager_.SetActiveScheme(document["theme"].get<std::string>());
+        }
+
+        if (document.contains("language") && document["language"].is_string())
+        {
+            activeLanguageId_ = document["language"].get<std::string>();
+        }
+
+        if (document.contains("toggles") && document["toggles"].is_object())
+        {
+            for (const auto& [key, value] : document["toggles"].items())
+            {
+                if (!value.is_boolean())
+                {
+                    continue;
+                }
+
+                if (auto it = basicToggleStates_.find(key); it != basicToggleStates_.end())
+                {
+                    it->second = value.get<bool>();
+                }
+                else
+                {
+                    basicToggleStates_.emplace(key, value.get<bool>());
+                }
+            }
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr << "Failed to load settings: " << ex.what() << '\n';
+    }
+}
+
+void Application::SaveSettings() const
+{
+    const std::filesystem::path settingsPath = ResolveSettingsPath();
+    if (settingsPath.empty())
+    {
+        return;
+    }
+
+    const std::filesystem::path directory = settingsPath.parent_path();
+    std::error_code error;
+    if (!directory.empty() && !std::filesystem::exists(directory, error))
+    {
+        std::filesystem::create_directories(directory, error);
+        if (error)
+        {
+            std::cerr << "Unable to create settings directory: " << directory << '\n';
+            return;
+        }
+    }
+
+    nlohmann::json document;
+    document["theme"] = themeManager_.ActiveScheme().id;
+    document["language"] = activeLanguageId_;
+    nlohmann::json toggles = nlohmann::json::object();
+    for (const auto& [key, value] : basicToggleStates_)
+    {
+        toggles[key] = value;
+    }
+    document["toggles"] = std::move(toggles);
+
+    std::ofstream output{settingsPath};
+    if (!output.is_open())
+    {
+        std::cerr << "Unable to write settings file: " << settingsPath << '\n';
+        return;
+    }
+
+    output << document.dump(2) << '\n';
+}
+
 std::filesystem::path Application::ResolveContentPath()
 {
     constexpr char kContentFile[] = "assets/content/app_content.json";
@@ -3504,6 +3610,23 @@ std::filesystem::path Application::ResolveLocalizationDirectory()
     }
 
     return candidate;
+}
+
+std::filesystem::path Application::ResolveSettingsPath() const
+{
+    constexpr char kSettingsFileName[] = "settings.json";
+
+    if (char* prefPath = SDL_GetPrefPath("OpenAI", "Colony"); prefPath != nullptr)
+    {
+        std::filesystem::path base{prefPath};
+        SDL_free(prefPath);
+        if (!base.empty())
+        {
+            return base / kSettingsFileName;
+        }
+    }
+
+    return std::filesystem::path{kSettingsFileName};
 }
 
 bool Application::PointInRect(const SDL_Rect& rect, int x, int y) const

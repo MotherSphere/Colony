@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <string_view>
 #include <system_error>
 #include <vector>
 
@@ -16,19 +17,52 @@ namespace colony::fonts
 {
 namespace
 {
-constexpr char kFontFileName[] = "DejaVuSans.ttf";
 constexpr char kBundledFontDirectory[] = "assets/fonts";
+constexpr char kPrimaryFontRelativePath[] = "JetBrainsMonoNLNerdFont-Regular.ttf";
 constexpr char kFontDownloadUrl[] =
-    "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans.ttf";
+    "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/JetBrainsMono/NoLigatures/Regular/JetBrainsMonoNLNerdFont-Regular.ttf";
+constexpr char kDevanagariFontRelativePath[] =
+    "Noto_Sans_Devanagari/static/NotoSansDevanagari-Regular.ttf";
+constexpr char kCjkFontRelativePath[] = "NotoSansCJK-Regular.ttc";
+constexpr char kArabicFontRelativePath[] = "NotoSansArabic/NotoSansArabic-Regular.ttf";
 
 const std::array<std::filesystem::path, 3> kSystemFontCandidates{
-    std::filesystem::path{"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"},
-    std::filesystem::path{"/usr/local/share/fonts/DejaVuSans.ttf"},
-    std::filesystem::path{"/Library/Fonts/DejaVuSans.ttf"}};
+    std::filesystem::path{"/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMonoNLNerdFont-Regular.ttf"},
+    std::filesystem::path{"/usr/share/fonts/truetype/nerd-fonts/JetBrainsMonoNLNerdFont-Regular.ttf"},
+    std::filesystem::path{"/Library/Fonts/JetBrainsMonoNLNerdFont-Regular.ttf"}};
 
 std::filesystem::path BundledFontDestination()
 {
-    return std::filesystem::path{kBundledFontDirectory} / kFontFileName;
+    return std::filesystem::path{kBundledFontDirectory} / kPrimaryFontRelativePath;
+}
+
+std::filesystem::path ResolveBundledFont(std::string_view relativePath)
+{
+    const std::filesystem::path relative{relativePath};
+    std::vector<std::filesystem::path> candidates;
+
+    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
+    {
+        std::filesystem::path base{basePath};
+        SDL_free(basePath);
+        candidates.emplace_back(base / kBundledFontDirectory / relative);
+        candidates.emplace_back(base / relative);
+    }
+
+    candidates.emplace_back(std::filesystem::path{kBundledFontDirectory} / relative);
+    candidates.emplace_back(relative);
+    candidates.emplace_back(std::filesystem::path{"fonts"} / relative);
+
+    for (const auto& candidate : candidates)
+    {
+        std::error_code error;
+        if (std::filesystem::exists(candidate, error))
+        {
+            return candidate;
+        }
+    }
+
+    return {};
 }
 
 bool CopyFontIfPresent(const std::filesystem::path& source, const std::filesystem::path& destination)
@@ -160,9 +194,9 @@ bool EnsureBundledFontAvailable()
     return std::filesystem::exists(bundledPath, error);
 }
 
-std::string ResolveFontPath()
+FontConfiguration BuildFontConfiguration(std::string_view activeLanguageId)
 {
-    std::vector<std::filesystem::path> candidates;
+    FontConfiguration configuration{};
 
     if (const char* envFontPath = std::getenv("COLONY_FONT_PATH"); envFontPath != nullptr)
     {
@@ -170,36 +204,59 @@ std::string ResolveFontPath()
         std::error_code envError;
         if (std::filesystem::exists(envPath, envError))
         {
-            return envPath.string();
+            configuration.primaryFontPath = envPath.string();
         }
-        std::cerr << "Environment variable COLONY_FONT_PATH is set to '" << envFontPath
-                  << "', but the file could not be found. Falling back to defaults.\n";
-    }
-
-    EnsureBundledFontAvailable();
-
-    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
-    {
-        std::filesystem::path base{basePath};
-        SDL_free(basePath);
-        candidates.emplace_back(base / kBundledFontDirectory / kFontFileName);
-    }
-
-    candidates.emplace_back(BundledFontDestination());
-    candidates.emplace_back(std::filesystem::path{"fonts"} / kFontFileName);
-    candidates.emplace_back(std::filesystem::path{kFontFileName});
-    candidates.insert(candidates.end(), kSystemFontCandidates.begin(), kSystemFontCandidates.end());
-
-    for (const auto& candidate : candidates)
-    {
-        std::error_code error;
-        if (std::filesystem::exists(candidate, error))
+        else
         {
-            return candidate.string();
+            std::cerr << "Environment variable COLONY_FONT_PATH is set to '" << envFontPath
+                      << "', but the file could not be found. Falling back to defaults.\n";
         }
     }
 
-    return {};
+    if (configuration.primaryFontPath.empty())
+    {
+        EnsureBundledFontAvailable();
+
+        const auto resolvePrimary = [&](std::string_view relativePath) {
+            const std::filesystem::path path = ResolveBundledFont(relativePath);
+            if (!path.empty())
+            {
+                configuration.primaryFontPath = path.string();
+            }
+        };
+
+        if (activeLanguageId == "hi")
+        {
+            resolvePrimary(kDevanagariFontRelativePath);
+        }
+        else if (activeLanguageId == "zh")
+        {
+            resolvePrimary(kCjkFontRelativePath);
+        }
+        else if (activeLanguageId == "ar")
+        {
+            resolvePrimary(kArabicFontRelativePath);
+        }
+
+        if (configuration.primaryFontPath.empty())
+        {
+            resolvePrimary(kPrimaryFontRelativePath);
+        }
+    }
+
+    const auto addNativeFont = [&](std::string_view languageId, std::string_view relativePath) {
+        const std::filesystem::path path = ResolveBundledFont(relativePath);
+        if (!path.empty())
+        {
+            configuration.nativeLanguageFonts.emplace(languageId, path.string());
+        }
+    };
+
+    addNativeFont("zh", kCjkFontRelativePath);
+    addNativeFont("hi", kDevanagariFontRelativePath);
+    addNativeFont("ar", kArabicFontRelativePath);
+
+    return configuration;
 }
 
 } // namespace colony::fonts

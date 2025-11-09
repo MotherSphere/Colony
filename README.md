@@ -46,17 +46,19 @@ Close the window to exit the application.
 
 ### Fonts
 
-The UI uses the **DejaVu Sans** typeface. At launch the application verifies whether the font is available on your system. If it
-can be found in a common location, it is copied into `assets/fonts/DejaVuSans.ttf`; otherwise the font is downloaded on demand
-from the [official DejaVu repository](https://github.com/dejavu-fonts/dejavu-fonts). If you prefer to use a different font, set
-the `COLONY_FONT_PATH` environment variable to a TTF file before launching the executable:
+The UI uses the **DejaVu Sans** typeface by default and switches to **Noto Sans CJK** for the Chinese (`zh`) and Hindi (`hi`)
+localizations. At launch the application verifies whether DejaVu Sans is available on your system. If it can be found in a
+common location, it is copied into `assets/fonts/DejaVuSans.ttf`; otherwise the font is downloaded on demand from the [official
+DejaVu repository](https://github.com/dejavu-fonts/dejavu-fonts). If you prefer to use a different font, set the
+`COLONY_FONT_PATH` environment variable to a TTF or TTC file before launching the executable:
 
 ```bash
 COLONY_FONT_PATH=/path/to/your/font.ttf ./build/ecosystem_app
 ```
 
 If the environment variable is unset and the automatic lookup or download fails (for example, because `curl` is unavailable),
-place `DejaVuSans.ttf` under `assets/fonts/` manually.
+place `DejaVuSans.ttf` under `assets/fonts/` manually. To ensure Chinese and Hindi text renders correctly, also place
+`NotoSansCJK-Regular.ttc` in the same directory.
 
 ## Next steps
 

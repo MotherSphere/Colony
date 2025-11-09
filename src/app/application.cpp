@@ -304,6 +304,7 @@ bool Application::LoadContent()
     }
 
     channelSelections_.assign(content_.channels.size(), 0);
+    EnsureLocalAppsChannel();
     return true;
 }
 
@@ -329,7 +330,7 @@ bool Application::InitializeLocalization()
     return true;
 }
 
-void Application::InitializeNavigation()
+void Application::SyncNavigationEntries()
 {
     std::vector<std::string> entries;
     entries.reserve(content_.channels.size());
@@ -339,6 +340,11 @@ void Application::InitializeNavigation()
     }
 
     navigationController_.SetEntries(std::move(entries));
+}
+
+void Application::InitializeNavigation()
+{
+    SyncNavigationEntries();
     navigationController_.OnSelectionChanged([this](int index) { ActivateChannel(index); });
     ActivateChannel(navigationController_.ActiveIndex());
 }
@@ -584,10 +590,23 @@ void Application::HandleMouseClick(int x, int y)
         }
     }
 
-    if (addAppButtonRect_.has_value() && PointInRect(*addAppButtonRect_, x, y))
+    if (addAppButtonRect_.has_value() && activeChannelIndex_ >= 0
+        && activeChannelIndex_ < static_cast<int>(content_.channels.size()))
     {
-        ShowAddAppDialog();
-        return;
+        auto toLower = [](std::string value) {
+            std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+                return static_cast<char>(std::tolower(ch));
+            });
+            return value;
+        };
+
+        const std::string channelIdLower = toLower(content_.channels[activeChannelIndex_].id);
+        const std::string localIdLower = toLower(std::string(kLocalAppsChannelId));
+        if (channelIdLower == localIdLower && PointInRect(*addAppButtonRect_, x, y))
+        {
+            ShowAddAppDialog();
+            return;
+        }
     }
 
     for (std::size_t i = 0; i < programTileRects_.size(); ++i)
@@ -918,13 +937,16 @@ void Application::RenderFrame(double deltaSeconds)
     bool showAddButton = false;
     if (activeChannelIndex_ >= 0 && activeChannelIndex_ < static_cast<int>(content_.channels.size()))
     {
-        std::string channelIdLower = content_.channels[activeChannelIndex_].id;
-        std::transform(
-            channelIdLower.begin(),
-            channelIdLower.end(),
-            channelIdLower.begin(),
-            [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-        showAddButton = channelIdLower != "settings";
+        auto toLower = [](std::string value) {
+            std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+                return static_cast<char>(std::tolower(ch));
+            });
+            return value;
+        };
+
+        std::string channelIdLower = toLower(content_.channels[activeChannelIndex_].id);
+        const std::string localIdLower = toLower(std::string(kLocalAppsChannelId));
+        showAddButton = channelIdLower == localIdLower;
     }
 
     const auto libraryResult = libraryPanel_.Render(
@@ -3202,6 +3224,97 @@ std::string Application::TrimString(std::string value)
     return value;
 }
 
+int Application::EnsureLocalAppsChannel()
+{
+    auto toLower = [](std::string value) {
+        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+            return static_cast<char>(std::tolower(ch));
+        });
+        return value;
+    };
+
+    const std::string localIdLower = toLower(std::string(kLocalAppsChannelId));
+    const std::string settingsIdLower = toLower(std::string("settings"));
+
+    auto equalsIgnoreCase = [&](const std::string& lhs, const std::string& rhsLower) {
+        return toLower(lhs) == rhsLower;
+    };
+
+    auto existingIt = std::find_if(content_.channels.begin(), content_.channels.end(), [&](const Channel& channel) {
+        return equalsIgnoreCase(channel.id, localIdLower);
+    });
+
+    auto settingsIt = std::find_if(content_.channels.begin(), content_.channels.end(), [&](const Channel& channel) {
+        return equalsIgnoreCase(channel.id, settingsIdLower);
+    });
+
+    const int desiredIndex = settingsIt != content_.channels.end()
+        ? static_cast<int>(std::distance(content_.channels.begin(), settingsIt))
+        : static_cast<int>(content_.channels.size());
+
+    if (existingIt == content_.channels.end())
+    {
+        Channel localChannel;
+        localChannel.id = std::string(kLocalAppsChannelId);
+        localChannel.label = std::string(kLocalAppsChannelLabel);
+
+        auto insertPos = settingsIt != content_.channels.end() ? settingsIt : content_.channels.end();
+        const int index = static_cast<int>(std::distance(content_.channels.begin(), insertPos));
+        content_.channels.insert(insertPos, std::move(localChannel));
+
+        if (channelSelections_.empty())
+        {
+            channelSelections_.assign(content_.channels.size(), 0);
+        }
+        else
+        {
+            channelSelections_.insert(channelSelections_.begin() + index, 0);
+        }
+
+        SyncNavigationEntries();
+        return index;
+    }
+
+    const int existingIndex = static_cast<int>(std::distance(content_.channels.begin(), existingIt));
+
+    if ((settingsIt != content_.channels.end() && existingIndex == desiredIndex - 1)
+        || (settingsIt == content_.channels.end() && existingIndex == desiredIndex - 1))
+    {
+        return existingIndex;
+    }
+
+    Channel localChannel = std::move(*existingIt);
+    int preservedSelection = 0;
+    bool hasSelectionEntry = !channelSelections_.empty() && existingIndex < static_cast<int>(channelSelections_.size());
+    if (hasSelectionEntry)
+    {
+        preservedSelection = channelSelections_[existingIndex];
+        channelSelections_.erase(channelSelections_.begin() + existingIndex);
+    }
+
+    existingIt = content_.channels.erase(existingIt);
+
+    settingsIt = std::find_if(content_.channels.begin(), content_.channels.end(), [&](const Channel& channel) {
+        return equalsIgnoreCase(channel.id, settingsIdLower);
+    });
+
+    auto insertPos = settingsIt != content_.channels.end() ? settingsIt : content_.channels.end();
+    auto insertedIt = content_.channels.insert(insertPos, std::move(localChannel));
+    const int index = static_cast<int>(std::distance(content_.channels.begin(), insertedIt));
+
+    if (channelSelections_.empty())
+    {
+        channelSelections_.assign(content_.channels.size(), 0);
+    }
+    else
+    {
+        channelSelections_.insert(channelSelections_.begin() + index, preservedSelection);
+    }
+
+    SyncNavigationEntries();
+    return index;
+}
+
 bool Application::AddUserApplication(const std::filesystem::path& executablePath)
 {
     std::error_code ec;
@@ -3229,7 +3342,7 @@ bool Application::AddUserApplication(const std::filesystem::path& executablePath
         "Executable path: " + resolvedPath.string(),
         "Launch opens the binary in a separate process."};
     viewContent.heroHighlights = {
-        "Manually added to the Applications channel",
+        std::string("Manually added to the ") + std::string(kLocalAppsChannelLabel) + " category",
         "Launches without leaving Colony",
         "Remove or update by editing your configuration"};
     viewContent.primaryActionLabel = "Launch";
@@ -3252,42 +3365,8 @@ bool Application::AddUserApplication(const std::filesystem::path& executablePath
 
     userAppExecutables_[programId] = resolvedPath;
 
-    int targetChannelIndex = -1;
-    for (std::size_t index = 0; index < content_.channels.size(); ++index)
-    {
-        std::string idLower = content_.channels[index].id;
-        std::transform(idLower.begin(), idLower.end(), idLower.begin(), [](unsigned char ch) {
-            return static_cast<char>(std::tolower(ch));
-        });
-        if (idLower == "applications")
-        {
-            targetChannelIndex = static_cast<int>(index);
-            break;
-        }
-    }
-
-    if (targetChannelIndex == -1)
-    {
-        for (std::size_t index = 0; index < content_.channels.size(); ++index)
-        {
-            std::string idLower = content_.channels[index].id;
-            std::transform(idLower.begin(), idLower.end(), idLower.begin(), [](unsigned char ch) {
-                return static_cast<char>(std::tolower(ch));
-            });
-            if (idLower != "settings")
-            {
-                targetChannelIndex = static_cast<int>(index);
-                break;
-            }
-        }
-    }
-
-    if (targetChannelIndex == -1 && !content_.channels.empty())
-    {
-        targetChannelIndex = 0;
-    }
-
-    if (targetChannelIndex == -1)
+    const int targetChannelIndex = EnsureLocalAppsChannel();
+    if (targetChannelIndex < 0 || targetChannelIndex >= static_cast<int>(content_.channels.size()))
     {
         addAppDialog_.errorMessage = "Unable to locate a channel for the application.";
         return false;

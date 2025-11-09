@@ -63,8 +63,6 @@ class Application
     void ActivateChannel(int index);
     void ActivateProgram(const std::string& programId);
     void ActivateProgramInChannel(int programIndex);
-    void SyncNavigationEntries();
-    int EnsureLocalAppsChannel();
     [[nodiscard]] std::string GetActiveProgramId() const;
     void HandleEvent(const SDL_Event& event, bool& running);
     void HandleMouseClick(int x, int y);
@@ -104,9 +102,6 @@ class Application
     static std::string MakeDisplayNameFromPath(const std::filesystem::path& path);
     static bool IsValidHexColor(const std::string& value);
     static std::string TrimString(std::string value);
-
-    static constexpr std::string_view kLocalAppsChannelId = "local_apps";
-    static constexpr std::string_view kLocalAppsChannelLabel = "Local Apps";
 
     sdl::WindowHandle window_;
     sdl::RendererHandle renderer_;

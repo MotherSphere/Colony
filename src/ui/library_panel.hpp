@@ -9,6 +9,8 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <functional>
+#include <optional>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -18,6 +20,8 @@ namespace colony::ui
 struct LibraryRenderResult
 {
     std::vector<SDL_Rect> tileRects;
+    std::optional<SDL_Rect> addButtonRect;
+    std::vector<std::string> programIds;
 };
 
 class LibraryPanelRenderer
@@ -38,6 +42,7 @@ class LibraryPanelRenderer
         const std::vector<int>& channelSelections,
         const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
         TTF_Font* channelFont,
+        bool showAddButton,
         double timeSeconds,
         double deltaSeconds) const;
 

@@ -30,6 +30,13 @@
       ]
     },
     {
+      "id": "games",
+      "label": "Games",
+      "programs": [
+        "ORBITAL_ARCADE"
+      ]
+    },
+    {
       "id": "settings",
       "label": "Settings",
       "programs": [
@@ -240,6 +247,40 @@
       "heroGradient": [
         "#0F1B35",
         "#050910"
+      ]
+    },
+    "ORBITAL_ARCADE": {
+      "heading": "Orbital Arcade",
+      "tagline": "Unwind the crew with competitive sims between mission shifts.",
+      "paragraphs": [
+        "Orbital Arcade curates zero-g tournaments, cognitive drills, and retro holoboards to keep morale aloft.",
+        "Queue up head-to-head challenges, track crew leaderboards, and unlock seasonal arenas straight from the command deck."
+      ],
+      "heroHighlights": [
+        "Daily rotation of cooperative and competitive holosims",
+        "Crew leaderboard with mission performance bonuses",
+        "Dynamic arena shaders that react to spectator energy"
+      ],
+      "sections": [
+        {
+          "title": "2.1 Recreation Update",
+          "options": [
+            "New \"Starlight Drift\" racing circuit with grav inversion gates.",
+            "Squad matchmaking balances roles using recent mission data.",
+            "Arcade cabinets now sync unlocks across every habitat wing."
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch Arcade",
+      "statusMessage": "Initializing holo-emitters and syncing crew profiles...",
+      "version": "Version 2.1.0",
+      "installState": "Installed",
+      "availability": "Ready to launch",
+      "lastLaunched": "Played earlier today",
+      "accentColor": "#FF6FD8",
+      "heroGradient": [
+        "#2B0F3A",
+        "#0A0410"
       ]
     },
     "SETTINGS": {

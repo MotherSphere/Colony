@@ -37,7 +37,8 @@ class SettingsPanel
         {
             ThemeSelection,
             LanguageSelection,
-            Toggle
+            Toggle,
+            Customization
         };
 
         struct InteractiveRegion
@@ -84,16 +85,25 @@ class SettingsPanel
         colony::TextTexture description;
     };
 
+    struct CustomizationOption
+    {
+        std::string id;
+        colony::TextTexture label;
+        colony::TextTexture description;
+    };
+
     colony::TextTexture appearanceTitle_;
     colony::TextTexture appearanceSubtitle_;
     colony::TextTexture languageTitle_;
     colony::TextTexture languageSubtitle_;
     colony::TextTexture generalTitle_;
     colony::TextTexture generalSubtitle_;
+    colony::TextTexture customizationHint_;
 
     std::vector<ThemeOption> themeOptions_;
     std::vector<LanguageOption> languages_;
     std::vector<ToggleOption> toggles_;
+    std::vector<CustomizationOption> appearanceCustomizations_;
 };
 
 } // namespace colony::ui

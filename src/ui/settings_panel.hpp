@@ -73,7 +73,8 @@ class SettingsPanel
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,
         const SectionStates& sectionStates,
-        const std::unordered_map<std::string, bool>& toggleStates) const;
+        const std::unordered_map<std::string, bool>& toggleStates,
+        const std::unordered_map<std::string, float>& customizationValues) const;
 
   private:
     struct ThemeOption

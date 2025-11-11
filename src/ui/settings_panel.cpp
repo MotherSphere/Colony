@@ -5,6 +5,7 @@
 #include "utils/drawing.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace colony::ui
 {
@@ -119,7 +120,8 @@ SettingsPanel::RenderResult SettingsPanel::Render(
     std::string_view activeSchemeId,
     std::string_view activeLanguageId,
     const SectionStates& sectionStates,
-    const std::unordered_map<std::string, bool>& toggleStates) const
+    const std::unordered_map<std::string, bool>& toggleStates,
+    const std::unordered_map<std::string, float>& customizationValues) const
 {
     SettingsPanel::RenderResult result;
     result.viewport = bounds;
@@ -424,11 +426,19 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             SDL_SetRenderDrawColor(renderer, trackColor.r, trackColor.g, trackColor.b, trackColor.a);
             colony::drawing::RenderFilledRoundedRect(renderer, drawSliderRect, sliderHeight / 2);
 
-            const float knobRatio = 0.35f + static_cast<float>(index) * 0.25f;
             const int knobSize = Scale(28);
             const int knobTravel = std::max(0, sliderRect.w - knobSize);
+            float sliderValue = 0.5f;
+            if (auto valueIt = customizationValues.find(customization.id); valueIt != customizationValues.end())
+            {
+                sliderValue = std::clamp(valueIt->second, 0.0f, 1.0f);
+            }
+
+            const int knobOffset = knobTravel > 0
+                ? static_cast<int>(std::round(sliderValue * static_cast<float>(knobTravel)))
+                : 0;
             SDL_Rect knobRect{
-                sliderRect.x + static_cast<int>(std::clamp(knobRatio, 0.0f, 1.0f) * knobTravel),
+                sliderRect.x + knobOffset,
                 sliderRect.y - (knobSize - sliderHeight) / 2,
                 knobSize,
                 knobSize};
@@ -438,10 +448,15 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             SDL_SetRenderDrawColor(renderer, theme.background.r, theme.background.g, theme.background.b, SDL_ALPHA_OPAQUE);
             colony::drawing::RenderRoundedRect(renderer, drawKnobRect, knobSize / 2);
 
+            SDL_Rect interactionRect{
+                sliderRect.x,
+                sliderRect.y - (knobSize - sliderHeight) / 2,
+                sliderRect.w,
+                knobSize};
             addInteractiveRegion(
                 customization.id,
                 RenderResult::InteractionType::Customization,
-                offsetRect(knobRect));
+                offsetRect(interactionRect));
 
             cursorY += customizationCardHeight + customizationSpacing;
         }

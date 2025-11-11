@@ -13,19 +13,71 @@ namespace colony
 
 namespace
 {
-constexpr int kParagraphSpacing = ui::Scale(14);
-constexpr int kLineSpacingFallback = ui::Scale(4);
-constexpr int kHeadingBottomSpacing = ui::Scale(26);
-constexpr int kActionTopSpacing = ui::Scale(40);
-constexpr int kActionWidth = ui::Scale(188);
-constexpr int kActionHeight = ui::Scale(50);
-constexpr int kSectionTopSpacing = ui::Scale(32);
-constexpr int kSectionPadding = ui::Scale(16);
-constexpr int kSectionSpacing = ui::Scale(22);
-constexpr int kSectionTitleSpacing = ui::Scale(10);
-constexpr int kOptionSpacing = ui::Scale(10);
-constexpr int kBulletIndent = ui::Scale(22);
-constexpr int kOptionLineSpacingFallback = ui::Scale(3);
+inline int ParagraphSpacing()
+{
+    return ui::Scale(14);
+}
+
+inline int LineSpacingFallback()
+{
+    return ui::Scale(4);
+}
+
+inline int HeadingBottomSpacing()
+{
+    return ui::Scale(26);
+}
+
+inline int ActionTopSpacing()
+{
+    return ui::Scale(40);
+}
+
+inline int ActionWidth()
+{
+    return ui::Scale(188);
+}
+
+inline int ActionHeight()
+{
+    return ui::Scale(50);
+}
+
+inline int SectionTopSpacing()
+{
+    return ui::Scale(32);
+}
+
+inline int SectionPadding()
+{
+    return ui::Scale(16);
+}
+
+inline int SectionSpacing()
+{
+    return ui::Scale(22);
+}
+
+inline int SectionTitleSpacing()
+{
+    return ui::Scale(10);
+}
+
+inline int OptionSpacing()
+{
+    return ui::Scale(10);
+}
+
+inline int BulletIndent()
+{
+    return ui::Scale(22);
+}
+
+inline int OptionLineSpacingFallback()
+{
+    return ui::Scale(3);
+}
+
 constexpr SDL_Color kCardFillColor{250, 250, 250, SDL_ALPHA_OPAQUE};
 constexpr SDL_Color kCardBorderColor{222, 222, 222, SDL_ALPHA_OPAQUE};
 }
@@ -86,7 +138,7 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
     {
         SDL_Rect headingRect{bounds.x, cursorY, headingTexture_.width, headingTexture_.height};
         RenderTexture(context.renderer, headingTexture_, headingRect);
-        cursorY += headingRect.h + kHeadingBottomSpacing;
+        cursorY += headingRect.h + HeadingBottomSpacing();
     }
 
     const int baseLineSkip = context.paragraphFont != nullptr ? TTF_FontLineSkip(context.paragraphFont) : 0;
@@ -103,20 +155,20 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
 
             if (lineIndex + 1 < lines.size())
             {
-                const int spacing = baseLineSkip > 0 ? std::max(0, baseLineSkip - lineTexture.height) : kLineSpacingFallback;
+                const int spacing = baseLineSkip > 0 ? std::max(0, baseLineSkip - lineTexture.height) : LineSpacingFallback();
                 cursorY += spacing;
             }
         }
 
         if (!lines.empty() && paragraphIndex + 1 < paragraphLines_.size())
         {
-            cursorY += kParagraphSpacing;
+            cursorY += ParagraphSpacing();
         }
     }
 
     if (!sectionRenderData_.empty())
     {
-        cursorY += kSectionTopSpacing;
+        cursorY += SectionTopSpacing();
 
         const int optionLineSkip = context.paragraphFont != nullptr ? TTF_FontLineSkip(context.paragraphFont) : 0;
 
@@ -125,7 +177,7 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
             const auto& section = sectionRenderData_[sectionIndex];
 
             const int cardWidth = bounds.w;
-            int cardHeight = 2 * kSectionPadding;
+            int cardHeight = 2 * SectionPadding();
 
             const bool hasTitle = section.titleTexture.texture.get() != nullptr;
             const bool hasOptions = !section.optionLines.empty();
@@ -137,7 +189,7 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
 
             if (hasTitle && hasOptions)
             {
-                cardHeight += kSectionTitleSpacing;
+                cardHeight += SectionTitleSpacing();
             }
 
             for (std::size_t optionIndex = 0; optionIndex < section.optionLines.size(); ++optionIndex)
@@ -149,14 +201,14 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
                     cardHeight += line.texture.height;
                     if (lineIndex + 1 < optionLines.size())
                     {
-                        const int spacing = optionLineSkip > 0 ? std::max(0, optionLineSkip - line.texture.height) : kOptionLineSpacingFallback;
+                        const int spacing = optionLineSkip > 0 ? std::max(0, optionLineSkip - line.texture.height) : OptionLineSpacingFallback();
                         cardHeight += spacing;
                     }
                 }
 
                 if (optionIndex + 1 < section.optionLines.size())
                 {
-                    cardHeight += kOptionSpacing;
+                    cardHeight += OptionSpacing();
                 }
             }
 
@@ -166,8 +218,8 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
             SDL_SetRenderDrawColor(context.renderer, kCardBorderColor.r, kCardBorderColor.g, kCardBorderColor.b, kCardBorderColor.a);
             colony::drawing::RenderRoundedRect(context.renderer, cardRect, 18);
 
-            int contentX = cardRect.x + kSectionPadding;
-            int contentY = cardRect.y + kSectionPadding;
+            int contentX = cardRect.x + SectionPadding();
+            int contentY = cardRect.y + SectionPadding();
 
             if (hasTitle)
             {
@@ -176,7 +228,7 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
                 contentY += section.titleTexture.height;
                 if (hasOptions)
                 {
-                    contentY += kSectionTitleSpacing;
+                    contentY += SectionTitleSpacing();
                 }
             }
 
@@ -186,30 +238,30 @@ void SimpleTextView::Render(const RenderContext& context, const SDL_Rect& bounds
                 for (std::size_t lineIndex = 0; lineIndex < optionLines.size(); ++lineIndex)
                 {
                     const auto& line = optionLines[lineIndex];
-                    const int lineX = contentX + (line.indent ? kBulletIndent : 0);
+                    const int lineX = contentX + (line.indent ? BulletIndent() : 0);
                     SDL_Rect lineRect{lineX, contentY, line.texture.width, line.texture.height};
                     RenderTexture(context.renderer, line.texture, lineRect);
                     contentY += line.texture.height;
                     if (lineIndex + 1 < optionLines.size())
                     {
-                        const int spacing = optionLineSkip > 0 ? std::max(0, optionLineSkip - line.texture.height) : kOptionLineSpacingFallback;
+                        const int spacing = optionLineSkip > 0 ? std::max(0, optionLineSkip - line.texture.height) : OptionLineSpacingFallback();
                         contentY += spacing;
                     }
                 }
 
                 if (optionIndex + 1 < section.optionLines.size())
                 {
-                    contentY += kOptionSpacing;
+                    contentY += OptionSpacing();
                 }
             }
 
-            cursorY += cardHeight + kSectionSpacing;
+            cursorY += cardHeight + SectionSpacing();
         }
     }
 
-    cursorY += kActionTopSpacing;
+    cursorY += ActionTopSpacing();
 
-    SDL_Rect buttonRect{bounds.x, cursorY, kActionWidth, kActionHeight};
+    SDL_Rect buttonRect{bounds.x, cursorY, ActionWidth(), ActionHeight()};
     SDL_SetRenderDrawColor(context.renderer, 245, 245, 245, SDL_ALPHA_OPAQUE);
     colony::drawing::RenderFilledRoundedRect(context.renderer, buttonRect, 16);
     SDL_SetRenderDrawColor(context.renderer, context.accentColor.r, context.accentColor.g, context.accentColor.b, context.accentColor.a);
@@ -281,7 +333,7 @@ void SimpleTextView::RebuildSectionTextures(const RenderContext& context, int ma
         return;
     }
 
-    const int cardInnerWidth = std::max(0, maxWidth - 2 * kSectionPadding);
+    const int cardInnerWidth = std::max(0, maxWidth - 2 * SectionPadding());
     if (cardInnerWidth <= 0)
     {
         return;
@@ -305,7 +357,7 @@ void SimpleTextView::RebuildSectionTextures(const RenderContext& context, int ma
             }
         }
 
-        const int optionWidth = std::max(0, cardInnerWidth - kBulletIndent);
+        const int optionWidth = std::max(0, cardInnerWidth - BulletIndent());
         for (const auto& option : sectionContent.options)
         {
             if (option.empty() || optionWidth <= 0)

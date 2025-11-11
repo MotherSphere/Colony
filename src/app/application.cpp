@@ -48,7 +48,11 @@ bool SDLCallSucceeded(int result)
 
 namespace
 {
-constexpr int kAddDialogRowHeight = ui::Scale(40);
+inline int AddDialogRowHeight()
+{
+    return ui::Scale(40);
+}
+
 constexpr int kAddDialogCornerRadius = 18;
 
 struct AddDialogSortOption
@@ -398,6 +402,8 @@ void Application::RebuildTheme()
     const int previousSettingsScrollOffset = settingsScrollOffset_;
 
     theme_ = themeManager_.ActiveScheme().colors;
+    ApplyInterfaceDensity();
+    ApplyAppearanceCustomizations();
 
     const auto localize = [this](std::string_view key) { return GetLocalizedString(key); };
 
@@ -702,7 +708,19 @@ void Application::HandleMouseClick(int x, int y)
                 }
                 break;
             case ui::SettingsPanel::RenderResult::InteractionType::Customization:
+            {
+                const int knobSize = ui::Scale(28);
+                const int knobTravel = std::max(1, region.rect.w - knobSize);
+                const int relative = std::clamp(x - region.rect.x - knobSize / 2, 0, knobTravel);
+                const float newValue = knobTravel > 0
+                    ? static_cast<float>(relative) / static_cast<float>(knobTravel)
+                    : 0.0f;
+                if (SetAppearanceCustomizationValue(region.id, newValue))
+                {
+                    RebuildTheme();
+                }
                 break;
+            }
             case ui::SettingsPanel::RenderResult::InteractionType::SectionToggle:
                 if (region.id == ui::SettingsPanel::kAppearanceSectionId)
                 {
@@ -859,8 +877,8 @@ void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
         return;
     }
 
-    constexpr int kScrollStep = ui::Scale(40);
-    const int delta = -wheelY * kScrollStep;
+    const int scrollStep = ui::Scale(40);
+    const int delta = -wheelY * scrollStep;
     visuals.sectionsScrollOffset = std::clamp(visuals.sectionsScrollOffset + delta, 0, maxScroll);
 }
 
@@ -1045,6 +1063,7 @@ void Application::RenderFrame(double deltaSeconds)
             themeManager_.ActiveScheme().id,
             activeLanguageId_,
             settingsSectionStates_,
+            appearanceCustomizationValues_,
             basicToggleStates_,
             settingsRenderResult_,
             timeSeconds);
@@ -1206,6 +1225,86 @@ void Application::UpdateViewContextAccent()
     else
     {
         viewContext_.accentColor = theme_.channelBadge;
+    }
+}
+
+bool Application::SetAppearanceCustomizationValue(const std::string& id, float value)
+{
+    const float clamped = std::clamp(value, 0.0f, 1.0f);
+    auto [it, inserted] = appearanceCustomizationValues_.try_emplace(id, clamped);
+    if (!inserted)
+    {
+        if (std::abs(it->second - clamped) < 0.001f)
+        {
+            return false;
+        }
+        it->second = clamped;
+        return true;
+    }
+
+    return true;
+}
+
+float Application::GetAppearanceCustomizationValue(std::string_view id) const
+{
+    const auto it = appearanceCustomizationValues_.find(std::string{id});
+    if (it != appearanceCustomizationValues_.end())
+    {
+        return it->second;
+    }
+
+    return 0.5f;
+}
+
+void Application::ApplyInterfaceDensity() const
+{
+    const float density = std::clamp(GetAppearanceCustomizationValue("interface_density"), 0.0f, 1.0f);
+    constexpr float kMinScale = 0.74f;
+    constexpr float kMaxScale = 0.9f;
+    const float scale = kMinScale + (kMaxScale - kMinScale) * density;
+    ui::SetUiScale(scale);
+}
+
+void Application::ApplyAppearanceCustomizations()
+{
+    const float accentValue = std::clamp(GetAppearanceCustomizationValue("accent_intensity"), 0.0f, 1.0f);
+    const float backgroundValue = std::clamp(GetAppearanceCustomizationValue("background_depth"), 0.0f, 1.0f);
+
+    const float accentDelta = accentValue - 0.5f;
+    if (accentDelta > 0.0f)
+    {
+        theme_.channelBadge = color::Mix(theme_.channelBadge, theme_.heroTitle, accentDelta * 0.6f);
+        theme_.libraryCardActive = color::Mix(theme_.libraryCardActive, theme_.heroTitle, accentDelta * 0.45f);
+        theme_.statusBar = color::Mix(theme_.statusBar, theme_.heroTitle, accentDelta * 0.35f);
+    }
+    else if (accentDelta < 0.0f)
+    {
+        const float factor = -accentDelta;
+        theme_.channelBadge = color::Mix(theme_.channelBadge, theme_.muted, factor * 0.6f);
+        theme_.libraryCardActive = color::Mix(theme_.libraryCardActive, theme_.muted, factor * 0.45f);
+        theme_.statusBar = color::Mix(theme_.statusBar, theme_.muted, factor * 0.35f);
+    }
+
+    const float depthDelta = backgroundValue - 0.5f;
+    if (depthDelta != 0.0f)
+    {
+        const float depthAmount = std::abs(depthDelta) * 0.45f;
+        const SDL_Color darkTarget{0, 0, 0, SDL_ALPHA_OPAQUE};
+        const SDL_Color lightTarget{255, 255, 255, SDL_ALPHA_OPAQUE};
+        const SDL_Color target = depthDelta > 0.0f ? darkTarget : lightTarget;
+
+        auto adjust = [&](SDL_Color color) {
+            return color::Mix(color, target, depthAmount);
+        };
+
+        theme_.background = adjust(theme_.background);
+        theme_.libraryBackground = adjust(theme_.libraryBackground);
+        theme_.navRail = adjust(theme_.navRail);
+        theme_.libraryCard = adjust(theme_.libraryCard);
+        theme_.libraryCardHover = adjust(theme_.libraryCardHover);
+        theme_.libraryCardActive = adjust(theme_.libraryCardActive);
+        theme_.heroGradientFallbackStart = adjust(theme_.heroGradientFallbackStart);
+        theme_.heroGradientFallbackEnd = adjust(theme_.heroGradientFallbackEnd);
     }
 }
 
@@ -1786,7 +1885,7 @@ void Application::RefreshAddAppDialogEntries()
     appendEntries(directories);
     appendEntries(files);
 
-    addAppDialog_.contentHeight = static_cast<int>(addAppDialog_.entries.size()) * kAddDialogRowHeight;
+    addAppDialog_.contentHeight = static_cast<int>(addAppDialog_.entries.size()) * AddDialogRowHeight();
     addAppDialog_.entryRects.assign(addAppDialog_.entries.size(), SDL_Rect{0, 0, 0, 0});
 
     if (addAppDialog_.entries.empty())
@@ -1842,7 +1941,7 @@ void Application::RenderAddAppDialog(double timeSeconds)
     const int panelPadding = ui::Scale(24);
     const int panelWidth = std::clamp(outputWidth - ui::Scale(240), ui::Scale(520), outputWidth - ui::Scale(80));
     const int maxPanelHeight = std::max(ui::Scale(440), outputHeight - ui::Scale(60));
-    int minPanelHeight = kAddDialogRowHeight * 12 + ui::Scale(260);
+    int minPanelHeight = AddDialogRowHeight() * 12 + ui::Scale(260);
     if (minPanelHeight > maxPanelHeight)
     {
         minPanelHeight = maxPanelHeight;
@@ -2128,13 +2227,13 @@ void Application::RenderAddAppDialog(double timeSeconds)
     const int footerHeight = ui::Scale(86);
     int availableHeight = panelRect.h - cursorY - footerHeight - panelPadding;
     int maxViewportHeight = panelRect.h - cursorY - ui::Scale(24);
-    maxViewportHeight = std::max(maxViewportHeight, kAddDialogRowHeight * 6);
-    const int minVisibleHeight = kAddDialogRowHeight * 12;
+    maxViewportHeight = std::max(maxViewportHeight, AddDialogRowHeight() * 6);
+    const int minVisibleHeight = AddDialogRowHeight() * 12;
     if (availableHeight < minVisibleHeight)
     {
         availableHeight = std::min(minVisibleHeight, maxViewportHeight);
     }
-    availableHeight = std::max(availableHeight, kAddDialogRowHeight * 6);
+    availableHeight = std::max(availableHeight, AddDialogRowHeight() * 6);
 
     SDL_Rect listViewport{
         panelRect.x + panelPadding,
@@ -2154,9 +2253,9 @@ void Application::RenderAddAppDialog(double timeSeconds)
     addAppDialog_.entryRects.assign(addAppDialog_.entries.size(), SDL_Rect{0, 0, 0, 0});
     for (std::size_t index = 0; index < addAppDialog_.entries.size(); ++index)
     {
-        SDL_Rect rowRect{listViewport.x, rowTop, listViewport.w, kAddDialogRowHeight};
+        SDL_Rect rowRect{listViewport.x, rowTop, listViewport.w, AddDialogRowHeight()};
         addAppDialog_.entryRects[index] = rowRect;
-        rowTop += kAddDialogRowHeight;
+        rowTop += AddDialogRowHeight();
 
         if (rowRect.y + rowRect.h <= listViewport.y || rowRect.y >= listViewport.y + listViewport.h)
         {
@@ -2852,7 +2951,7 @@ bool Application::HandleAddAppDialogMouseWheel(const SDL_MouseWheelEvent& wheel)
     }
 
     addAppDialog_.scrollOffset = std::clamp(
-        addAppDialog_.scrollOffset - wheelY * kAddDialogRowHeight,
+        addAppDialog_.scrollOffset - wheelY * AddDialogRowHeight(),
         0,
         maxScroll);
     return true;
@@ -2941,7 +3040,7 @@ bool Application::HandleAddAppDialogKey(SDL_Keycode key)
                 --addAppDialog_.selectedIndex;
             }
             const int rowTop = addAppDialog_.listViewport.y
-                + addAppDialog_.selectedIndex * kAddDialogRowHeight - addAppDialog_.scrollOffset;
+                + addAppDialog_.selectedIndex * AddDialogRowHeight() - addAppDialog_.scrollOffset;
             if (rowTop < addAppDialog_.listViewport.y)
             {
                 addAppDialog_.scrollOffset = std::max(0, addAppDialog_.scrollOffset - (addAppDialog_.listViewport.y - rowTop));
@@ -2960,7 +3059,7 @@ bool Application::HandleAddAppDialogKey(SDL_Keycode key)
                 ++addAppDialog_.selectedIndex;
             }
             const int rowBottom = addAppDialog_.listViewport.y
-                + (addAppDialog_.selectedIndex + 1) * kAddDialogRowHeight - addAppDialog_.scrollOffset;
+                + (addAppDialog_.selectedIndex + 1) * AddDialogRowHeight() - addAppDialog_.scrollOffset;
             if (rowBottom > addAppDialog_.listViewport.y + addAppDialog_.listViewport.h)
             {
                 const int maxScroll = std::max(0, addAppDialog_.contentHeight - addAppDialog_.listViewport.h);
@@ -3573,6 +3672,19 @@ void Application::LoadSettings()
                 }
             }
         }
+
+        if (document.contains("appearance") && document["appearance"].is_object())
+        {
+            for (const auto& [key, value] : document["appearance"].items())
+            {
+                if (!value.is_number())
+                {
+                    continue;
+                }
+
+                SetAppearanceCustomizationValue(key, static_cast<float>(value.get<double>()));
+            }
+        }
     }
     catch (const std::exception& ex)
     {
@@ -3609,6 +3721,13 @@ void Application::SaveSettings() const
         toggles[key] = value;
     }
     document["toggles"] = std::move(toggles);
+
+    nlohmann::json appearance = nlohmann::json::object();
+    for (const auto& [key, value] : appearanceCustomizationValues_)
+    {
+        appearance[key] = value;
+    }
+    document["appearance"] = std::move(appearance);
 
     std::ofstream output{settingsPath};
     if (!output.is_open())

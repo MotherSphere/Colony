@@ -372,16 +372,6 @@ SettingsPanel::RenderResult SettingsPanel::Render(
                 SDL_Rect drawBadgeRect = offsetRect(badgeRect);
                 SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
                 colony::drawing::RenderFilledRoundedRect(renderer, drawBadgeRect, badgeSize / 2);
-
-                SDL_SetRenderDrawColor(renderer, theme.background.r, theme.background.g, theme.background.b, SDL_ALPHA_OPAQUE);
-                const int checkStartX = drawBadgeRect.x + Scale(7);
-                const int checkStartY = drawBadgeRect.y + badgeRect.h / 2;
-                const int checkMidX = checkStartX + Scale(5);
-                const int checkMidY = checkStartY + Scale(4);
-                const int checkEndX = drawBadgeRect.x + badgeRect.w - Scale(5);
-                const int checkEndY = drawBadgeRect.y + Scale(8);
-                SDL_RenderDrawLine(renderer, checkStartX, checkStartY, checkMidX, checkMidY);
-                SDL_RenderDrawLine(renderer, checkMidX, checkMidY, checkEndX, checkEndY);
             }
 
             addInteractiveRegion(option.id, RenderResult::InteractionType::ThemeSelection, offsetRect(optionRect));

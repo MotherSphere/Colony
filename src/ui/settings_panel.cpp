@@ -9,6 +9,11 @@
 
 namespace colony::ui
 {
+namespace
+{
+constexpr int kRightRoundedCorners = colony::drawing::CornerTopRight | colony::drawing::CornerBottomRight;
+}
+
 
 void SettingsPanel::Build(
     SDL_Renderer* renderer,
@@ -402,9 +407,9 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             SDL_Rect drawCardRect = offsetRect(cardRect);
             SDL_Color cardBase = colony::color::Mix(theme.libraryCard, theme.background, 0.35f);
             SDL_SetRenderDrawColor(renderer, cardBase.r, cardBase.g, cardBase.b, cardBase.a);
-            colony::drawing::RenderFilledRoundedRect(renderer, drawCardRect, 18);
+            colony::drawing::RenderFilledRoundedRect(renderer, drawCardRect, 18, kRightRoundedCorners);
             SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-            colony::drawing::RenderRoundedRect(renderer, drawCardRect, 18);
+            colony::drawing::RenderRoundedRect(renderer, drawCardRect, 18, kRightRoundedCorners);
 
             const int accentWidth = Scale(5);
             SDL_Rect accentRect{cardRect.x, cardRect.y, accentWidth, cardRect.h};
@@ -494,9 +499,9 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             const SDL_Color borderColor = isActive ? theme.heroTitle : colony::color::Mix(theme.border, theme.libraryCard, 0.4f);
 
             SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-            colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 18);
+            colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 18, kRightRoundedCorners);
             SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-            colony::drawing::RenderRoundedRect(renderer, cardRect, 18);
+            colony::drawing::RenderRoundedRect(renderer, cardRect, 18, kRightRoundedCorners);
 
             const int accentWidth = Scale(6);
             SDL_Rect accentRect{logicalCardRect.x, logicalCardRect.y, accentWidth, logicalCardRect.h};

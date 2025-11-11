@@ -152,6 +152,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
                                         std::string_view id,
                                         bool expanded) {
         const int cursorYStart = cursorY;
+        result.sectionAnchors.push_back({std::string{id}, cursorYStart - bounds.y});
         if (title.texture)
         {
             SDL_Rect titleRect{bounds.x + horizontalPadding, cursorY, title.width, title.height};

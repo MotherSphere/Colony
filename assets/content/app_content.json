@@ -14,17 +14,19 @@
       "id": "settings",
       "label": "Settings",
       "programs": [
-        "SETTINGS"
+        "SETTINGS_APPEARANCE",
+        "SETTINGS_LANGUAGE",
+        "SETTINGS_GENERAL"
       ]
     }
   ],
   "views": {
-    "SETTINGS": {
-      "heading": "Settings Console",
+    "SETTINGS_APPEARANCE": {
+      "heading": "Appearance Console",
       "tagline": "Personalize the Colony interface to match your mission tempo.",
       "paragraphs": [
-        "Choose from curated color harmonies tuned for clarity in dim command decks or bright observation bays.",
-        "Switch schemes at any time to align with the crew mood or the operations cycle."
+        "Dial in color harmonies tuned for dim command decks or bright observation bays.",
+        "Switch schemes instantly to align with the crew mood or operations cycle."
       ],
       "heroHighlights": [
         "Unified palette preview across navigation, library, and hero panels",
@@ -32,16 +34,66 @@
         "Catppuccin, Gruvbox, Solarized, Everblush, Cyberdream, and One Dark presets"
       ],
       "sections": [],
-      "primaryActionLabel": "Apply theme",
+      "primaryActionLabel": "Apply appearance",
       "statusMessage": "Select a palette to update the interface chroma.",
-      "version": "Theme pack v1.0",
+      "version": "Visual suite v1.0",
       "installState": "Built-in",
       "availability": "Ready",
-      "lastLaunched": "Updated moments ago",
+      "lastLaunched": "Adjusted moments ago",
       "accentColor": "#7FDBFF",
       "heroGradient": [
         "#1A1D29",
         "#090B12"
+      ]
+    },
+    "SETTINGS_LANGUAGE": {
+      "heading": "Language Console",
+      "tagline": "Switch Colony to your preferred language with native typography.",
+      "paragraphs": [
+        "Preview localized copy before committing to a new primary language.",
+        "Assign authentic scripts so each crew member sees familiar lettering."
+      ],
+      "heroHighlights": [
+        "Localized navigation, hero, and status copy",
+        "Native script preview before applying",
+        "Automatic font selection for supported languages"
+      ],
+      "sections": [],
+      "primaryActionLabel": "Apply language",
+      "statusMessage": "Choose a language to localize the interface.",
+      "version": "Localization pack v1.0",
+      "installState": "Built-in",
+      "availability": "Ready",
+      "lastLaunched": "Calibrated moments ago",
+      "accentColor": "#F97316",
+      "heroGradient": [
+        "#1B1222",
+        "#0A0713"
+      ]
+    },
+    "SETTINGS_GENERAL": {
+      "heading": "Comfort Console",
+      "tagline": "Fine-tune everyday Colony behaviors and notifications.",
+      "paragraphs": [
+        "Toggle auditory cues, update cadence, and motion sensitivity to support each operator.",
+        "Preferences persist across missions so the console always boots in a familiar state."
+      ],
+      "heroHighlights": [
+        "Notification, sound, and update cadence toggles",
+        "Reduced motion option for sensitive operators",
+        "Preferences persist across sessions"
+      ],
+      "sections": [],
+      "primaryActionLabel": "Apply preferences",
+      "statusMessage": "Toggle everyday comforts and notifications.",
+      "version": "Preferences kit v1.0",
+      "installState": "Built-in",
+      "availability": "Ready",
+      "lastLaunched": "Refined moments ago",
+      "accentColor": "#34D399",
+      "heroGradient": [
+        "#13231A",
+        "#08110C"
       ]
     }
   }

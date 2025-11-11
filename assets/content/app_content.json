@@ -22,7 +22,7 @@
   ],
   "views": {
     "SETTINGS_APPEARANCE": {
-      "heading": "Appearance",
+      "heading": "Appearance Console",
       "tagline": "Personalize the Colony interface to match your mission tempo.",
       "paragraphs": [
         "Dial in color harmonies tuned for dim command decks or bright observation bays.",
@@ -47,7 +47,7 @@
       ]
     },
     "SETTINGS_LANGUAGE": {
-      "heading": "Language",
+      "heading": "Language Console",
       "tagline": "Switch Colony to your preferred language with native typography.",
       "paragraphs": [
         "Preview localized copy before committing to a new primary language.",
@@ -72,7 +72,7 @@
       ]
     },
     "SETTINGS_GENERAL": {
-      "heading": "Comfort",
+      "heading": "Comfort Console",
       "tagline": "Fine-tune everyday Colony behaviors and notifications.",
       "paragraphs": [
         "Toggle auditory cues, update cadence, and motion sensitivity to support each operator.",

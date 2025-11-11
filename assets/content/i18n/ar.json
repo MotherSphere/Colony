@@ -24,43 +24,6 @@
           "label": "كثافة الواجهة",
           "description": "حدد تباعد القوائم ولوحات المعلومات."
         }
-      },
-      "custom_theme": {
-        "button": {
-          "label": "إنشاء لوحة مخصصة",
-          "description": "حدّد كل لون في الواجهة يدوياً."
-        },
-        "dialog": {
-          "title": "إنشاء ألوان مخصصة",
-          "name_label": "اسم اللوحة",
-          "name_placeholder": "أدخل اسماً",
-          "save": "حفظ اللوحة",
-          "cancel": "إلغاء",
-          "fields": {
-            "background": "الخلفية",
-            "navRail": "شريط التنقّل",
-            "libraryBackground": "خلفية المكتبة",
-            "libraryCard": "بطاقة المكتبة",
-            "libraryCardHover": "تمرير المكتبة",
-            "libraryCardActive": "المكتبة النشطة",
-            "navText": "نص التنقّل",
-            "heroTitle": "عنوان البطل",
-            "heroBody": "نص البطل",
-            "muted": "نص خافت",
-            "border": "الإطار",
-            "statusBar": "شريط الحالة",
-            "statusBarText": "نص الحالة",
-            "channelBadge": "شارة القناة",
-            "heroGradientFallbackStart": "بداية التدرج",
-            "heroGradientFallbackEnd": "نهاية التدرج"
-          },
-          "errors": {
-            "name_required": "يرجى إدخال اسم للوحة.",
-            "colors_required": "عيّن قيمة لكل لون.",
-            "color_format": "استخدم رموز ألوان بصيغة #RGB أو #RRGGBB.",
-            "duplicate_name": "يوجد بالفعل لوحة بهذا الاسم."
-          }
-        }
       }
     },
     "language": {

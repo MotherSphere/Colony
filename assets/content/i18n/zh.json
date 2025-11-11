@@ -24,43 +24,6 @@
           "label": "界面密度",
           "description": "设置列表和仪表板的间距。"
         }
-      },
-      "custom_theme": {
-        "button": {
-          "label": "创建自定义调色板",
-          "description": "手动指定界面中的每种颜色。"
-        },
-        "dialog": {
-          "title": "创建自定义颜色",
-          "name_label": "调色板名称",
-          "name_placeholder": "输入名称",
-          "save": "保存调色板",
-          "cancel": "取消",
-          "fields": {
-            "background": "背景",
-            "navRail": "导航栏",
-            "libraryBackground": "资料库背景",
-            "libraryCard": "资料库卡片",
-            "libraryCardHover": "资料库悬停",
-            "libraryCardActive": "资料库激活",
-            "navText": "导航文本",
-            "heroTitle": "主标题",
-            "heroBody": "主说明",
-            "muted": "次要文本",
-            "border": "边框",
-            "statusBar": "状态栏",
-            "statusBarText": "状态文字",
-            "channelBadge": "频道徽章",
-            "heroGradientFallbackStart": "渐变起点",
-            "heroGradientFallbackEnd": "渐变终点"
-          },
-          "errors": {
-            "name_required": "请填写调色板名称。",
-            "colors_required": "请为每种颜色设置数值。",
-            "color_format": "请使用 #RGB 或 #RRGGBB 颜色代码。",
-            "duplicate_name": "已存在同名调色板。"
-          }
-        }
       }
     },
     "language": {

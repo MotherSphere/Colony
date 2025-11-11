@@ -256,7 +256,6 @@ ThemeManager::ThemeManager()
 
 const ColorScheme& ThemeManager::AddCustomScheme(ColorScheme scheme, bool makeActive)
 {
-    scheme.isCustom = true;
     const auto findById = [&](std::string_view id) {
         return std::find_if(schemes_.begin(), schemes_.end(), [&](const ColorScheme& candidate) {
             return candidate.id == id;

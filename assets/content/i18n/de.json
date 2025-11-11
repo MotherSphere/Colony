@@ -24,43 +24,6 @@
           "label": "Oberflächendichte",
           "description": "Bestimmen Sie den Abstand für Listen und Dashboards."
         }
-      },
-      "custom_theme": {
-        "button": {
-          "label": "Eigene Palette erstellen",
-          "description": "Definiere jede Interface-Farbe manuell."
-        },
-        "dialog": {
-          "title": "Eigene Farben erstellen",
-          "name_label": "Palettenname",
-          "name_placeholder": "Name eingeben",
-          "save": "Palette speichern",
-          "cancel": "Abbrechen",
-          "fields": {
-            "background": "Hintergrund",
-            "navRail": "Navigationsleiste",
-            "libraryBackground": "Bibliothekshintergrund",
-            "libraryCard": "Bibliothekskarte",
-            "libraryCardHover": "Bibliothek Hover",
-            "libraryCardActive": "Bibliothek aktiv",
-            "navText": "Navigationstext",
-            "heroTitle": "Hero-Titel",
-            "heroBody": "Hero-Text",
-            "muted": "Gedämpfter Text",
-            "border": "Rand",
-            "statusBar": "Statusleiste",
-            "statusBarText": "Statustext",
-            "channelBadge": "Kanalabzeichen",
-            "heroGradientFallbackStart": "Verlauf Start",
-            "heroGradientFallbackEnd": "Verlauf Ende"
-          },
-          "errors": {
-            "name_required": "Gib einen Palettennamen an.",
-            "colors_required": "Setze für jede Farbe einen Wert.",
-            "color_format": "Verwende #RGB- oder #RRGGBB-Farbwerte.",
-            "duplicate_name": "Eine Palette mit diesem Namen existiert bereits."
-          }
-        }
       }
     },
     "language": {

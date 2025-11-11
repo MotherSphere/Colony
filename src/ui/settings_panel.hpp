@@ -36,7 +36,6 @@ class SettingsPanel
         enum class InteractionType
         {
             ThemeSelection,
-            ThemeCreation,
             LanguageSelection,
             Toggle,
             Customization,
@@ -116,8 +115,6 @@ class SettingsPanel
 
     colony::TextTexture appearanceTitle_;
     colony::TextTexture appearanceSubtitle_;
-    colony::TextTexture addThemeButtonLabel_;
-    colony::TextTexture addThemeButtonDescription_;
     colony::TextTexture languageTitle_;
     colony::TextTexture languageSubtitle_;
     colony::TextTexture generalTitle_;
@@ -125,7 +122,6 @@ class SettingsPanel
     colony::TextTexture customizationHint_;
 
     std::vector<ThemeOption> themeOptions_;
-    mutable SDL_Rect addThemeButtonRect_{0, 0, 0, 0};
     std::vector<LanguageOption> languages_;
     std::vector<ToggleOption> toggles_;
     std::vector<CustomizationOption> appearanceCustomizations_;

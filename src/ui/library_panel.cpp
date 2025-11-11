@@ -233,21 +233,33 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     const int chipPaddingX = Scale(14);
     const int chipHeight = Scale(30);
     const int chipSpacing = Scale(10);
-    int chipCursorX = libraryRect.x + libraryPadding;
+    const int chipAreaStart = libraryRect.x + libraryPadding;
+    const int chipAreaEnd = libraryRect.x + libraryRect.w - libraryPadding;
+    const int chipAreaWidth = std::max(0, chipAreaEnd - chipAreaStart);
+    int chipCursorX = chipAreaStart;
     int chipCursorY = libraryCursorY;
-    const int chipMaxX = libraryRect.x + libraryRect.w - libraryPadding;
     bool renderedChips = false;
 
     for (const auto& chip : sortChips)
     {
         colony::TextTexture chipTexture = colony::CreateTextTexture(renderer, bodyFont, chip.label, chip.active ? theme.heroTitle : theme.muted);
-        const int chipWidth = std::max(chipTexture.texture ? chipTexture.width + chipPaddingX * 2 : chipHeight, Scale(72));
+        const int naturalWidth = chipTexture.texture ? chipTexture.width + chipPaddingX * 2 : chipHeight;
+        const int minChipWidth = chipAreaWidth > 0 ? std::min(Scale(72), chipAreaWidth) : 0;
+        const int desiredWidth = std::max(naturalWidth, minChipWidth);
 
-        if (chipCursorX + chipWidth > chipMaxX)
+        if (chipCursorX + desiredWidth > chipAreaEnd)
         {
-            chipCursorX = libraryRect.x + libraryPadding;
+            chipCursorX = chipAreaStart;
             chipCursorY += chipHeight + chipSpacing;
         }
+
+        const int rowAvailableWidth = std::max(0, chipAreaEnd - chipCursorX);
+        if (rowAvailableWidth <= 0)
+        {
+            break;
+        }
+
+        const int chipWidth = std::min(desiredWidth, rowAvailableWidth);
 
         SDL_Rect chipRect{chipCursorX, chipCursorY, chipWidth, chipHeight};
         SDL_Color chipFill = chip.active ? theme.libraryCardActive : theme.libraryCard;
@@ -260,12 +272,30 @@ LibraryRenderResult LibraryPanelRenderer::Render(
 
         if (chipTexture.texture)
         {
-            SDL_Rect textRect{
-                chipRect.x + (chipRect.w - chipTexture.width) / 2,
-                chipRect.y + (chipRect.h - chipTexture.height) / 2,
-                chipTexture.width,
-                chipTexture.height};
-            colony::RenderTexture(renderer, chipTexture, textRect);
+            const int paddedClipWidth = chipRect.w - chipPaddingX * 2;
+            if (paddedClipWidth > 0)
+            {
+                SDL_Rect clipRect{
+                    chipRect.x + chipPaddingX,
+                    chipRect.y,
+                    paddedClipWidth,
+                    chipRect.h};
+                SDL_RenderSetClipRect(renderer, &clipRect);
+
+                SDL_Rect textRect{
+                    chipRect.x + (chipRect.w - chipTexture.width) / 2,
+                    chipRect.y + (chipRect.h - chipTexture.height) / 2,
+                    chipTexture.width,
+                    chipTexture.height};
+
+                if (chipTexture.width > paddedClipWidth)
+                {
+                    textRect.x = clipRect.x;
+                }
+
+                colony::RenderTexture(renderer, chipTexture, textRect);
+                SDL_RenderSetClipRect(renderer, nullptr);
+            }
         }
 
         result.sortChipHitboxes.push_back(LibraryRenderResult::SortChipHitbox{chipRect, chip.option});
@@ -398,18 +428,20 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             libraryRect.w - 2 * libraryPadding,
             Scale(180)};
         const bool hasFilter = !filterText.empty();
-        const std::string title = hasFilter ? "No matches" : "Nothing here yet";
-        const std::string message = hasFilter ? "Try adjusting your search or sort options."
-                                              : "Add applications to populate this channel.";
-        frontend::components::RenderEmptyStateCard(
-            renderer,
-            theme,
-            cardBounds,
-            channelFont,
-            bodyFont,
-            title,
-            message,
-            timeSeconds);
+        if (hasFilter)
+        {
+            const std::string title = "No matches";
+            const std::string message = "Try adjusting your search or sort options.";
+            frontend::components::RenderEmptyStateCard(
+                renderer,
+                theme,
+                cardBounds,
+                channelFont,
+                bodyFont,
+                title,
+                message,
+                timeSeconds);
+        }
     }
 
     return result;

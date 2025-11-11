@@ -17,6 +17,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <array>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -106,6 +107,13 @@ class Application
     void ShowEditUserAppDialog(const std::string& programId);
     void HideEditUserAppDialog();
     bool ApplyEditUserAppChanges();
+    void ShowCustomThemeDialog();
+    void HideCustomThemeDialog();
+    void RenderCustomThemeDialog(double timeSeconds);
+    bool HandleCustomThemeDialogMouseClick(int x, int y);
+    bool HandleCustomThemeDialogKey(SDL_Keycode key);
+    bool HandleCustomThemeDialogText(const SDL_TextInputEvent& text);
+    bool ApplyCustomThemeDialog();
     void UpdateTextInputState();
     bool AddUserApplication(const std::filesystem::path& executablePath);
     void LaunchUserApp(const std::filesystem::path& executablePath, const std::string& programId);
@@ -238,6 +246,22 @@ class Application
         bool nameFocused = false;
         bool colorFocused = false;
     } editAppDialog_{};
+
+    struct CustomThemeDialogState
+    {
+        static constexpr int kColorFieldCount = 16;
+
+        bool visible = false;
+        std::string nameInput;
+        std::array<std::string, kColorFieldCount> colorInputs{};
+        int focusedIndex = -1; // 0 = name, 1..kColorFieldCount = color fields
+        std::string errorMessage;
+        SDL_Rect panelRect{0, 0, 0, 0};
+        SDL_Rect nameFieldRect{0, 0, 0, 0};
+        std::array<SDL_Rect, kColorFieldCount> colorFieldRects{};
+        SDL_Rect saveButtonRect{0, 0, 0, 0};
+        SDL_Rect cancelButtonRect{0, 0, 0, 0};
+    } customThemeDialog_{};
 
     NavigationController navigationController_;
     ViewRegistry viewRegistry_;

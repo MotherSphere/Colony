@@ -32,6 +32,14 @@ void SettingsPanel::Build(
 
     appearanceTitle_ = colony::CreateTextTexture(renderer, titleFont, localize("settings.appearance.title"), titleColor);
     appearanceSubtitle_ = colony::CreateTextTexture(renderer, bodyFont, localize("settings.appearance.subtitle"), bodyColor);
+    addThemeButtonLabel_ =
+        colony::CreateTextTexture(renderer, bodyFont, localize("settings.appearance.custom_theme.button.label"), titleColor);
+    addThemeButtonDescription_ = colony::CreateTextTexture(
+        renderer,
+        bodyFont,
+        localize("settings.appearance.custom_theme.button.description"),
+        bodyColor);
+    addThemeButtonRect_ = SDL_Rect{0, 0, 0, 0};
 
     languageTitle_ = colony::CreateTextTexture(renderer, titleFont, localize("settings.language.title"), titleColor);
     languageSubtitle_ =
@@ -331,6 +339,81 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         }
 
         cursorY = menuRect.y + menuRect.h + Scale(18);
+
+        const int addButtonPaddingY = Scale(18);
+        const int iconSize = Scale(28);
+        const int labelSpacing = Scale(8);
+        const int labelHeight = addThemeButtonLabel_.texture ? addThemeButtonLabel_.height : 0;
+        const int descriptionHeight = addThemeButtonDescription_.texture ? addThemeButtonDescription_.height : 0;
+        int textBlockHeight = labelHeight + descriptionHeight;
+        if (labelHeight > 0 && descriptionHeight > 0)
+        {
+            textBlockHeight += labelSpacing;
+        }
+        const int minimumHeight = std::max(iconSize + addButtonPaddingY * 2, Scale(72));
+        const int addButtonHeight = std::max(textBlockHeight + addButtonPaddingY * 2, minimumHeight);
+        SDL_Rect addButtonRect{bounds.x + horizontalPadding, cursorY, availableWidth, addButtonHeight};
+        addThemeButtonRect_ = addButtonRect;
+
+        SDL_Rect drawAddButtonRect = offsetRect(addButtonRect);
+        SDL_Color addFill = colony::color::Mix(theme.libraryCardActive, theme.background, 0.35f);
+        SDL_Color addBorder = colony::color::Mix(theme.border, theme.libraryCardActive, 0.5f);
+        SDL_SetRenderDrawColor(renderer, addFill.r, addFill.g, addFill.b, addFill.a);
+        colony::drawing::RenderFilledRoundedRect(renderer, drawAddButtonRect, 16);
+        SDL_SetRenderDrawColor(renderer, addBorder.r, addBorder.g, addBorder.b, addBorder.a);
+        colony::drawing::RenderRoundedRect(renderer, drawAddButtonRect, 16);
+
+        SDL_Rect iconRect{
+            addButtonRect.x + Scale(22),
+            addButtonRect.y + (addButtonRect.h - iconSize) / 2,
+            iconSize,
+            iconSize};
+        SDL_Rect drawIconRect = offsetRect(iconRect);
+        SDL_Color iconColor = theme.heroTitle;
+        SDL_SetRenderDrawColor(renderer, iconColor.r, iconColor.g, iconColor.b, iconColor.a);
+        const int iconCenterX = drawIconRect.x + drawIconRect.w / 2;
+        const int iconCenterY = drawIconRect.y + drawIconRect.h / 2;
+        SDL_RenderDrawLine(
+            renderer,
+            iconCenterX - iconRect.w / 2 + Scale(4),
+            iconCenterY,
+            iconCenterX + iconRect.w / 2 - Scale(4),
+            iconCenterY);
+        SDL_RenderDrawLine(
+            renderer,
+            iconCenterX,
+            iconCenterY - iconRect.h / 2 + Scale(4),
+            iconCenterX,
+            iconCenterY + iconRect.h / 2 - Scale(4));
+
+        int buttonTextX = addButtonRect.x + Scale(22) + iconRect.w + Scale(18);
+        int buttonTextY = addButtonRect.y + addButtonPaddingY;
+        if (addThemeButtonLabel_.texture)
+        {
+            SDL_Rect labelRect{buttonTextX, buttonTextY, addThemeButtonLabel_.width, addThemeButtonLabel_.height};
+            colony::RenderTexture(renderer, addThemeButtonLabel_, offsetRect(labelRect));
+            buttonTextY += addThemeButtonLabel_.height;
+            if (addThemeButtonDescription_.texture)
+            {
+                buttonTextY += labelSpacing;
+            }
+        }
+        if (addThemeButtonDescription_.texture)
+        {
+            SDL_Rect descriptionRect{
+                buttonTextX,
+                buttonTextY,
+                addThemeButtonDescription_.width,
+                addThemeButtonDescription_.height};
+            colony::RenderTexture(renderer, addThemeButtonDescription_, offsetRect(descriptionRect));
+        }
+
+        addInteractiveRegion(
+            "settings.appearance.custom_theme.create",
+            RenderResult::InteractionType::ThemeCreation,
+            offsetRect(addButtonRect));
+
+        cursorY += addButtonRect.h + Scale(24);
 
         if (customizationHint_.texture)
         {

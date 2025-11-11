@@ -17,8 +17,6 @@ add_library(colony_core
 target_include_directories(colony_core PUBLIC src third_party)
 
 add_library(colony_ui
-    src/frontend/components/empty_state_card.cpp
-    src/frontend/models/library_view_model.cpp
     src/ui/theme.cpp
     src/ui/program_visuals.cpp
     src/ui/navigation.cpp

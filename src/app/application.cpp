@@ -130,6 +130,29 @@ const std::vector<AddDialogFileTypeFilter>& GetAddDialogFileTypeFilters()
 }
 }
 
+bool Application::IsSettingsProgramId(std::string_view programId)
+{
+    return programId == kSettingsAppearanceProgramId || programId == kSettingsLanguageProgramId
+        || programId == kSettingsGeneralProgramId;
+}
+
+std::string_view Application::SettingsSectionForProgram(std::string_view programId)
+{
+    if (programId == kSettingsAppearanceProgramId)
+    {
+        return ui::SettingsPanel::kAppearanceSectionId;
+    }
+    if (programId == kSettingsLanguageProgramId)
+    {
+        return ui::SettingsPanel::kLanguageSectionId;
+    }
+    if (programId == kSettingsGeneralProgramId)
+    {
+        return ui::SettingsPanel::kGeneralSectionId;
+    }
+    return {};
+}
+
 Application::Application() = default;
 
 int Application::Run()
@@ -388,7 +411,7 @@ void Application::InitializeViews()
 {
     for (const auto& [id, view] : content_.views)
     {
-        if (id == kSettingsProgramId)
+        if (IsSettingsProgramId(id))
         {
             continue;
         }
@@ -448,9 +471,13 @@ void Application::RebuildTheme()
     viewContext_.mutedColor = theme_.heroBody;
     UpdateViewContextAccent();
 
-    if (!activeProgramId_.empty())
+    if (!activeProgramId_.empty() && !IsSettingsProgramId(activeProgramId_))
     {
         viewRegistry_.Activate(activeProgramId_, viewContext_);
+    }
+    else
+    {
+        viewRegistry_.DeactivateActive();
     }
 
     if (addAppDialog_.visible)
@@ -513,16 +540,54 @@ void Application::ActivateProgram(const std::string& programId)
         return;
     }
 
+    const std::string previousProgramId = activeProgramId_;
+    const bool wasSettingsProgram = IsSettingsProgramId(previousProgramId);
     activeProgramId_ = programId;
 
-    if (activeProgramId_ == kSettingsProgramId)
+    if (IsSettingsProgramId(activeProgramId_))
     {
-        settingsScrollOffset_ = 0;
+        const bool programChanged = !wasSettingsProgram || previousProgramId != activeProgramId_;
+        if (programChanged)
+        {
+            const std::string_view targetSectionId = SettingsSectionForProgram(activeProgramId_);
+            settingsSectionStates_.appearanceExpanded = targetSectionId == ui::SettingsPanel::kAppearanceSectionId;
+            settingsSectionStates_.languageExpanded = targetSectionId == ui::SettingsPanel::kLanguageSectionId;
+            settingsSectionStates_.generalExpanded = targetSectionId == ui::SettingsPanel::kGeneralSectionId;
+            if (targetSectionId.empty())
+            {
+                settingsSectionStates_.appearanceExpanded = true;
+                settingsSectionStates_.languageExpanded = true;
+                settingsSectionStates_.generalExpanded = true;
+                pendingSettingsSectionId_.reset();
+            }
+            else
+            {
+                pendingSettingsSectionId_ = std::string{targetSectionId};
+            }
+
+            settingsScrollOffset_ = 0;
+            if (!targetSectionId.empty())
+            {
+                const auto anchorIt = std::find_if(
+                    settingsRenderResult_.sectionAnchors.begin(),
+                    settingsRenderResult_.sectionAnchors.end(),
+                    [&](const ui::SettingsPanel::RenderResult::SectionAnchor& anchor) {
+                        return anchor.id == targetSectionId;
+                    });
+                if (anchorIt != settingsRenderResult_.sectionAnchors.end())
+                {
+                    settingsScrollOffset_ = anchorIt->offset;
+                }
+            }
+        }
+
         viewRegistry_.DeactivateActive();
         UpdateStatusMessage(content_.views[activeProgramId_].statusMessage);
         UpdateViewContextAccent();
         return;
     }
+
+    pendingSettingsSectionId_.reset();
 
     if (const auto visualsIt = programVisuals_.find(activeProgramId_); visualsIt != programVisuals_.end())
     {
@@ -681,7 +746,7 @@ void Application::HandleMouseClick(int x, int y)
         }
     }
 
-    if (activeProgramId_ == kSettingsProgramId)
+    if (IsSettingsProgramId(activeProgramId_))
     {
         for (const auto& region : settingsRenderResult_.interactiveRegions)
         {
@@ -801,7 +866,7 @@ void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
         return;
     }
 
-    if (activeProgramId_ == kSettingsProgramId)
+    if (IsSettingsProgramId(activeProgramId_))
     {
         if (settingsRenderResult_.viewport.w <= 0 || settingsRenderResult_.viewport.h <= 0)
         {
@@ -1048,7 +1113,7 @@ void Application::RenderFrame(double deltaSeconds)
     settingsRenderResult_.contentHeight = 0;
     settingsRenderResult_.viewport = SDL_Rect{0, 0, 0, 0};
 
-    if (activeProgramId_ == kSettingsProgramId)
+    if (IsSettingsProgramId(activeProgramId_))
     {
         const int previousViewportHeight = previousSettingsViewport.h;
         const int previousMaxScroll = std::max(0, previousSettingsContentHeight - previousViewportHeight);
@@ -1068,10 +1133,30 @@ void Application::RenderFrame(double deltaSeconds)
             settingsRenderResult_,
             timeSeconds);
 
+        int maxScroll = 0;
         if (settingsRenderResult_.viewport.w > 0 && settingsRenderResult_.viewport.h > 0)
         {
-            const int maxScroll = std::max(0, settingsRenderResult_.contentHeight - settingsRenderResult_.viewport.h);
+            maxScroll = std::max(0, settingsRenderResult_.contentHeight - settingsRenderResult_.viewport.h);
             settingsScrollOffset_ = std::clamp(settingsScrollOffset_, 0, maxScroll);
+        }
+
+        if (pendingSettingsSectionId_.has_value())
+        {
+            const auto anchorIt = std::find_if(
+                settingsRenderResult_.sectionAnchors.begin(),
+                settingsRenderResult_.sectionAnchors.end(),
+                [&](const ui::SettingsPanel::RenderResult::SectionAnchor& anchor) {
+                    return anchor.id == *pendingSettingsSectionId_;
+                });
+            if (anchorIt != settingsRenderResult_.sectionAnchors.end())
+            {
+                if (settingsRenderResult_.viewport.w > 0 && settingsRenderResult_.viewport.h > 0)
+                {
+                    maxScroll = std::max(0, settingsRenderResult_.contentHeight - settingsRenderResult_.viewport.h);
+                }
+                settingsScrollOffset_ = std::clamp(anchorIt->offset, 0, maxScroll);
+                pendingSettingsSectionId_.reset();
+            }
         }
     }
     else if (activeVisuals != nullptr)
@@ -1089,7 +1174,7 @@ void Application::RenderFrame(double deltaSeconds)
         heroActionRect_ = heroResult.actionButtonRect;
     }
 
-    if (activeProgramId_ != kSettingsProgramId)
+    if (!IsSettingsProgramId(activeProgramId_))
     {
         settingsScrollOffset_ = 0;
     }

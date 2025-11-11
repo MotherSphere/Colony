@@ -49,7 +49,14 @@ class SettingsPanel
             SDL_Rect rect{0, 0, 0, 0};
         };
 
+        struct SectionAnchor
+        {
+            std::string id;
+            int offset = 0;
+        };
+
         std::vector<InteractiveRegion> interactiveRegions;
+        std::vector<SectionAnchor> sectionAnchors;
         SDL_Rect viewport{0, 0, 0, 0};
         int contentHeight = 0;
     };

@@ -142,6 +142,7 @@ class Application
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
     ui::SettingsPanel::SectionStates settingsSectionStates_{};
+    std::optional<std::string> pendingSettingsSectionId_{};
     std::string activeLanguageId_ = "en";
     std::unordered_map<std::string, bool> basicToggleStates_{
         {"notifications", true},
@@ -227,7 +228,12 @@ class Application
     static constexpr int kWindowWidth = 1600;
     static constexpr int kWindowHeight = 900;
     static constexpr int kStatusBarHeight = 52;
-    static constexpr char kSettingsProgramId[] = "SETTINGS";
+    static constexpr std::string_view kSettingsAppearanceProgramId = "SETTINGS_APPEARANCE";
+    static constexpr std::string_view kSettingsLanguageProgramId = "SETTINGS_LANGUAGE";
+    static constexpr std::string_view kSettingsGeneralProgramId = "SETTINGS_GENERAL";
+
+    [[nodiscard]] static bool IsSettingsProgramId(std::string_view programId);
+    [[nodiscard]] static std::string_view SettingsSectionForProgram(std::string_view programId);
     static constexpr char kOrbitalArcadeProgramId[] = "ORBITAL_ARCADE";
 
 };

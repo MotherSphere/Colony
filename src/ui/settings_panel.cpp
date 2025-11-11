@@ -150,7 +150,8 @@ SettingsPanel::RenderResult SettingsPanel::Render(
                                         const colony::TextTexture& title,
                                         const colony::TextTexture& subtitle,
                                         std::string_view id,
-                                        bool expanded) {
+                                        bool expanded,
+                                        bool interactive) {
         const int cursorYStart = cursorY;
         result.sectionAnchors.push_back({std::string{id}, cursorYStart - bounds.y});
         if (title.texture)
@@ -176,50 +177,58 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         }
 
         SDL_Rect drawHeaderRect = offsetRect(headerRect);
-        addInteractiveRegion(std::string{id}, RenderResult::InteractionType::SectionToggle, drawHeaderRect);
+        if (interactive)
+        {
+            addInteractiveRegion(std::string{id}, RenderResult::InteractionType::SectionToggle, drawHeaderRect);
 
-        const int chevronSize = Scale(12);
-        const int chevronMargin = Scale(18);
-        SDL_Point chevronCenter{
-            drawHeaderRect.x + drawHeaderRect.w - chevronMargin,
-            drawHeaderRect.y + drawHeaderRect.h / 2};
-        SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
-        if (expanded)
-        {
-            SDL_RenderDrawLine(
-                renderer,
-                chevronCenter.x - chevronSize,
-                chevronCenter.y + chevronSize / 2,
-                chevronCenter.x,
-                chevronCenter.y - chevronSize / 2);
-            SDL_RenderDrawLine(
-                renderer,
-                chevronCenter.x,
-                chevronCenter.y - chevronSize / 2,
-                chevronCenter.x + chevronSize,
-                chevronCenter.y + chevronSize / 2);
-        }
-        else
-        {
-            SDL_RenderDrawLine(
-                renderer,
-                chevronCenter.x - chevronSize,
-                chevronCenter.y - chevronSize / 2,
-                chevronCenter.x,
-                chevronCenter.y + chevronSize / 2);
-            SDL_RenderDrawLine(
-                renderer,
-                chevronCenter.x,
-                chevronCenter.y + chevronSize / 2,
-                chevronCenter.x + chevronSize,
-                chevronCenter.y - chevronSize / 2);
+            const int chevronSize = Scale(12);
+            const int chevronMargin = Scale(18);
+            SDL_Point chevronCenter{
+                drawHeaderRect.x + drawHeaderRect.w - chevronMargin,
+                drawHeaderRect.y + drawHeaderRect.h / 2};
+            SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
+            if (expanded)
+            {
+                SDL_RenderDrawLine(
+                    renderer,
+                    chevronCenter.x - chevronSize,
+                    chevronCenter.y + chevronSize / 2,
+                    chevronCenter.x,
+                    chevronCenter.y - chevronSize / 2);
+                SDL_RenderDrawLine(
+                    renderer,
+                    chevronCenter.x,
+                    chevronCenter.y - chevronSize / 2,
+                    chevronCenter.x + chevronSize,
+                    chevronCenter.y + chevronSize / 2);
+            }
+            else
+            {
+                SDL_RenderDrawLine(
+                    renderer,
+                    chevronCenter.x - chevronSize,
+                    chevronCenter.y - chevronSize / 2,
+                    chevronCenter.x,
+                    chevronCenter.y + chevronSize / 2);
+                SDL_RenderDrawLine(
+                    renderer,
+                    chevronCenter.x,
+                    chevronCenter.y + chevronSize / 2,
+                    chevronCenter.x + chevronSize,
+                    chevronCenter.y - chevronSize / 2);
+            }
         }
     };
 
-    drawSectionHeader(appearanceTitle_, appearanceSubtitle_, kAppearanceSectionId, sectionStates.appearanceExpanded);
-
     if (sectionStates.appearanceExpanded)
     {
+        drawSectionHeader(
+            appearanceTitle_,
+            appearanceSubtitle_,
+            kAppearanceSectionId,
+            sectionStates.appearanceExpanded,
+            false);
+
         const auto activeThemeIt = std::find_if(
             themeOptions_.begin(),
             themeOptions_.end(),
@@ -463,10 +472,15 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         }
     }
 
-    drawSectionHeader(languageTitle_, languageSubtitle_, kLanguageSectionId, sectionStates.languageExpanded);
-
     if (sectionStates.languageExpanded)
     {
+        drawSectionHeader(
+            languageTitle_,
+            languageSubtitle_,
+            kLanguageSectionId,
+            sectionStates.languageExpanded,
+            false);
+
         const int languageCardHeight = Scale(86);
         const int languageCardSpacing = Scale(16);
         for (const auto& language : languages_)
@@ -534,74 +548,75 @@ SettingsPanel::RenderResult SettingsPanel::Render(
         }
     }
 
-    cursorY += Scale(10);
-
-    drawSectionHeader(generalTitle_, generalSubtitle_, kGeneralSectionId, sectionStates.generalExpanded);
-
-    if (!sectionStates.generalExpanded)
+    if (sectionStates.generalExpanded)
     {
-        result.contentHeight = cursorY - bounds.y;
-        return result;
-    }
+        cursorY += Scale(10);
+        drawSectionHeader(
+            generalTitle_,
+            generalSubtitle_,
+            kGeneralSectionId,
+            sectionStates.generalExpanded,
+            false);
 
-    const int toggleCardHeight = Scale(92);
-    const int toggleCardSpacing = Scale(18);
-    for (const auto& toggle : toggles_)
-    {
-        SDL_Rect logicalCardRect{bounds.x + horizontalPadding, cursorY, availableWidth, toggleCardHeight};
-        SDL_Rect cardRect = offsetRect(logicalCardRect);
-        SDL_Color toggleBase = colony::color::Mix(theme.libraryCard, theme.background, 0.4f);
-        SDL_SetRenderDrawColor(renderer, toggleBase.r, toggleBase.g, toggleBase.b, toggleBase.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 20);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        colony::drawing::RenderRoundedRect(renderer, cardRect, 20);
-
-        const int contentX = logicalCardRect.x + Scale(22);
-        int contentY = logicalCardRect.y + Scale(18);
-        if (toggle.label.texture)
+        const int toggleCardHeight = Scale(92);
+        const int toggleCardSpacing = Scale(18);
+        for (const auto& toggle : toggles_)
         {
-            SDL_Rect labelRect{contentX, contentY, toggle.label.width, toggle.label.height};
-            colony::RenderTexture(renderer, toggle.label, offsetRect(labelRect));
-            contentY += toggle.label.height + Scale(6);
+            SDL_Rect logicalCardRect{bounds.x + horizontalPadding, cursorY, availableWidth, toggleCardHeight};
+            SDL_Rect cardRect = offsetRect(logicalCardRect);
+            SDL_Color toggleBase = colony::color::Mix(theme.libraryCard, theme.background, 0.4f);
+            SDL_SetRenderDrawColor(renderer, toggleBase.r, toggleBase.g, toggleBase.b, toggleBase.a);
+            colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 20);
+            SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+            colony::drawing::RenderRoundedRect(renderer, cardRect, 20);
+
+            const int contentX = logicalCardRect.x + Scale(22);
+            int contentY = logicalCardRect.y + Scale(18);
+            if (toggle.label.texture)
+            {
+                SDL_Rect labelRect{contentX, contentY, toggle.label.width, toggle.label.height};
+                colony::RenderTexture(renderer, toggle.label, offsetRect(labelRect));
+                contentY += toggle.label.height + Scale(6);
+            }
+
+            if (toggle.description.texture)
+            {
+                SDL_Rect descriptionRect{contentX, contentY, toggle.description.width, toggle.description.height};
+                colony::RenderTexture(renderer, toggle.description, offsetRect(descriptionRect));
+            }
+
+            const int switchWidth = Scale(64);
+            const int switchHeight = Scale(30);
+            SDL_Rect switchRect{
+                logicalCardRect.x + logicalCardRect.w - switchWidth - Scale(28),
+                logicalCardRect.y + (logicalCardRect.h - switchHeight) / 2,
+                switchWidth,
+                switchHeight};
+            SDL_Rect drawSwitchRect = offsetRect(switchRect);
+
+            const bool isEnabled = toggleStates.contains(toggle.id) ? toggleStates.at(toggle.id) : false;
+            SDL_Color trackColor = isEnabled ? theme.heroTitle : colony::color::Mix(theme.muted, theme.libraryCard, 0.55f);
+            SDL_SetRenderDrawColor(renderer, trackColor.r, trackColor.g, trackColor.b, trackColor.a);
+            colony::drawing::RenderFilledRoundedRect(renderer, drawSwitchRect, switchHeight / 2);
+            SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+            colony::drawing::RenderRoundedRect(renderer, drawSwitchRect, switchHeight / 2);
+
+            const int handleSize = switchHeight - Scale(8);
+            SDL_Rect handleRect{
+                isEnabled ? switchRect.x + switchRect.w - handleSize - Scale(4) : switchRect.x + Scale(4),
+                switchRect.y + Scale(4),
+                handleSize,
+                handleSize};
+            SDL_Rect drawHandleRect = offsetRect(handleRect);
+            SDL_SetRenderDrawColor(renderer, theme.background.r, theme.background.g, theme.background.b, SDL_ALPHA_OPAQUE);
+            colony::drawing::RenderFilledRoundedRect(renderer, drawHandleRect, handleSize / 2);
+            SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+            colony::drawing::RenderRoundedRect(renderer, drawHandleRect, handleSize / 2);
+
+            addInteractiveRegion(toggle.id, RenderResult::InteractionType::Toggle, drawSwitchRect);
+
+            cursorY += toggleCardHeight + toggleCardSpacing;
         }
-
-        if (toggle.description.texture)
-        {
-            SDL_Rect descriptionRect{contentX, contentY, toggle.description.width, toggle.description.height};
-            colony::RenderTexture(renderer, toggle.description, offsetRect(descriptionRect));
-        }
-
-        const int switchWidth = Scale(64);
-        const int switchHeight = Scale(30);
-        SDL_Rect switchRect{
-            logicalCardRect.x + logicalCardRect.w - switchWidth - Scale(28),
-            logicalCardRect.y + (logicalCardRect.h - switchHeight) / 2,
-            switchWidth,
-            switchHeight};
-        SDL_Rect drawSwitchRect = offsetRect(switchRect);
-
-        const bool isEnabled = toggleStates.contains(toggle.id) ? toggleStates.at(toggle.id) : false;
-        SDL_Color trackColor = isEnabled ? theme.heroTitle : colony::color::Mix(theme.muted, theme.libraryCard, 0.55f);
-        SDL_SetRenderDrawColor(renderer, trackColor.r, trackColor.g, trackColor.b, trackColor.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, drawSwitchRect, switchHeight / 2);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        colony::drawing::RenderRoundedRect(renderer, drawSwitchRect, switchHeight / 2);
-
-        const int handleSize = switchHeight - Scale(8);
-        SDL_Rect handleRect{
-            isEnabled ? switchRect.x + switchRect.w - handleSize - Scale(4) : switchRect.x + Scale(4),
-            switchRect.y + Scale(4),
-            handleSize,
-            handleSize};
-        SDL_Rect drawHandleRect = offsetRect(handleRect);
-        SDL_SetRenderDrawColor(renderer, theme.background.r, theme.background.g, theme.background.b, SDL_ALPHA_OPAQUE);
-        colony::drawing::RenderFilledRoundedRect(renderer, drawHandleRect, handleSize / 2);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        colony::drawing::RenderRoundedRect(renderer, drawHandleRect, handleSize / 2);
-
-        addInteractiveRegion(toggle.id, RenderResult::InteractionType::Toggle, drawSwitchRect);
-
-        cursorY += toggleCardHeight + toggleCardSpacing;
     }
 
     result.contentHeight = cursorY - bounds.y;

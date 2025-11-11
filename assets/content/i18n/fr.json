@@ -9,7 +9,22 @@
   "settings": {
     "appearance": {
       "title": "Apparence",
-      "subtitle": "Choisissez une palette prédéfinie pour Colony"
+      "subtitle": "Choisissez une palette prédéfinie pour Colony",
+      "customization": {
+        "hint": "Ajustez la palette active pour s'adapter aux différentes conditions de lumière.",
+        "accent_intensity": {
+          "label": "Intensité des accents",
+          "description": "Renforcez ou adoucissez les couleurs de mise en valeur dans les contrôles."
+        },
+        "background_depth": {
+          "label": "Profondeur de l'arrière-plan",
+          "description": "Modifiez le contraste des panneaux et des surfaces."
+        },
+        "interface_density": {
+          "label": "Densité de l'interface",
+          "description": "Définissez l'espacement des listes et des tableaux de bord."
+        }
+      }
     },
     "language": {
       "title": "Langue",

@@ -38,7 +38,8 @@ class SettingsPanel
             ThemeSelection,
             LanguageSelection,
             Toggle,
-            Customization
+            Customization,
+            SectionToggle
         };
 
         struct InteractiveRegion
@@ -53,6 +54,17 @@ class SettingsPanel
         int contentHeight = 0;
     };
 
+    struct SectionStates
+    {
+        bool appearanceExpanded = true;
+        bool languageExpanded = true;
+        bool generalExpanded = true;
+    };
+
+    inline static constexpr std::string_view kAppearanceSectionId = "settings.section.appearance";
+    inline static constexpr std::string_view kLanguageSectionId = "settings.section.language";
+    inline static constexpr std::string_view kGeneralSectionId = "settings.section.general";
+
     RenderResult Render(
         SDL_Renderer* renderer,
         const SDL_Rect& bounds,
@@ -60,6 +72,7 @@ class SettingsPanel
         const ThemeColors& theme,
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,
+        const SectionStates& sectionStates,
         const std::unordered_map<std::string, bool>& toggleStates) const;
 
   private:

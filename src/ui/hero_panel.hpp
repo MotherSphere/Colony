@@ -46,6 +46,7 @@ class HeroPanelRenderer
         int scrollOffset,
         std::string_view activeSchemeId,
         std::string_view activeLanguageId,
+        const SettingsPanel::SectionStates& sectionStates,
         const std::unordered_map<std::string, bool>& toggleStates,
         SettingsPanel::RenderResult& outResult,
         double timeSeconds) const;

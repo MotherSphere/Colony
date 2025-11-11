@@ -9,7 +9,22 @@
   "settings": {
     "appearance": {
       "title": "المظهر",
-      "subtitle": "اختر لوحة ألوان جاهزة لتطبيق Colony"
+      "subtitle": "اختر لوحة ألوان جاهزة لتطبيق Colony",
+      "customization": {
+        "hint": "اضبط لوحة الألوان النشطة لتلائم ظروف الإضاءة المختلفة.",
+        "accent_intensity": {
+          "label": "حدة الألوان المميزة",
+          "description": "عزّز أو خفّف ألوان التمييز في عناصر التحكم."
+        },
+        "background_depth": {
+          "label": "عمق الخلفية",
+          "description": "عدّل تباين اللوحات والأسطح."
+        },
+        "interface_density": {
+          "label": "كثافة الواجهة",
+          "description": "حدد تباعد القوائم ولوحات المعلومات."
+        }
+      }
     },
     "language": {
       "title": "اللغة",

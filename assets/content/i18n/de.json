@@ -9,7 +9,22 @@
   "settings": {
     "appearance": {
       "title": "Erscheinungsbild",
-      "subtitle": "Wähle eine voreingestellte Farbpalette für Colony"
+      "subtitle": "Wähle eine voreingestellte Farbpalette für Colony",
+      "customization": {
+        "hint": "Feinabstimmung der aktiven Palette für unterschiedliche Lichtbedingungen.",
+        "accent_intensity": {
+          "label": "Akzentintensität",
+          "description": "Verstärken oder mildern Sie Hervorhebungsfarben in Steuerelementen."
+        },
+        "background_depth": {
+          "label": "Hintergrundtiefe",
+          "description": "Passen Sie den Kontrast von Paneelen und Flächen an."
+        },
+        "interface_density": {
+          "label": "Oberflächendichte",
+          "description": "Bestimmen Sie den Abstand für Listen und Dashboards."
+        }
+      }
     },
     "language": {
       "title": "Sprache",

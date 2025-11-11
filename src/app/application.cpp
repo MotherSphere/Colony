@@ -701,6 +701,22 @@ void Application::HandleMouseClick(int x, int y)
                     it->second = !it->second;
                 }
                 break;
+            case ui::SettingsPanel::RenderResult::InteractionType::Customization:
+                break;
+            case ui::SettingsPanel::RenderResult::InteractionType::SectionToggle:
+                if (region.id == ui::SettingsPanel::kAppearanceSectionId)
+                {
+                    settingsSectionStates_.appearanceExpanded = !settingsSectionStates_.appearanceExpanded;
+                }
+                else if (region.id == ui::SettingsPanel::kLanguageSectionId)
+                {
+                    settingsSectionStates_.languageExpanded = !settingsSectionStates_.languageExpanded;
+                }
+                else if (region.id == ui::SettingsPanel::kGeneralSectionId)
+                {
+                    settingsSectionStates_.generalExpanded = !settingsSectionStates_.generalExpanded;
+                }
+                break;
             }
             return;
         }
@@ -1028,6 +1044,7 @@ void Application::RenderFrame(double deltaSeconds)
             settingsScrollOffset_,
             themeManager_.ActiveScheme().id,
             activeLanguageId_,
+            settingsSectionStates_,
             basicToggleStates_,
             settingsRenderResult_,
             timeSeconds);

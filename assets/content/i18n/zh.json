@@ -9,7 +9,22 @@
   "settings": {
     "appearance": {
       "title": "外观",
-      "subtitle": "为 Colony 选择一个预设配色方案"
+      "subtitle": "为 Colony 选择一个预设配色方案",
+      "customization": {
+        "hint": "微调当前配色以适应不同的光线环境。",
+        "accent_intensity": {
+          "label": "强调色强度",
+          "description": "增强或柔化界面控件中的高亮颜色。"
+        },
+        "background_depth": {
+          "label": "背景层次",
+          "description": "调节面板与界面的对比度。"
+        },
+        "interface_density": {
+          "label": "界面密度",
+          "description": "设置列表和仪表板的间距。"
+        }
+      }
     },
     "language": {
       "title": "语言",

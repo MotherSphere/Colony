@@ -9,7 +9,22 @@
   "settings": {
     "appearance": {
       "title": "Appearance",
-      "subtitle": "Choose a preset palette for Colony"
+      "subtitle": "Choose a preset palette for Colony",
+      "customization": {
+        "hint": "Fine-tune the active palette to fit different lighting conditions.",
+        "accent_intensity": {
+          "label": "Accent intensity",
+          "description": "Boost or soften highlight colors across controls."
+        },
+        "background_depth": {
+          "label": "Background depth",
+          "description": "Adjust contrast of panels and surfaces."
+        },
+        "interface_density": {
+          "label": "Interface density",
+          "description": "Set spacing for lists and dashboards."
+        }
+      }
     },
     "language": {
       "title": "Language",

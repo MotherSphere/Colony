@@ -3,8 +3,6 @@
 #include "controllers/navigation_controller.hpp"
 #include "core/content.hpp"
 #include "core/localization_manager.hpp"
-#include "frontend/models/library_view_model.hpp"
-#include "frontend/utils/debounce.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/library_panel.hpp"
 #include "ui/navigation.hpp"
@@ -88,7 +86,6 @@ class Application
     [[nodiscard]] float GetAppearanceCustomizationValue(std::string_view id) const;
     void ApplyInterfaceDensity() const;
     void ApplyAppearanceCustomizations();
-    void QueueLibraryFilterUpdate();
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -151,7 +148,6 @@ class Application
     ui::SettingsPanel settingsPanel_;
 
     std::unordered_map<std::string, ui::ProgramVisuals> programVisuals_;
-    frontend::models::LibraryViewModel libraryViewModel_{};
     std::vector<int> channelSelections_;
     int activeChannelIndex_ = 0;
     std::string activeProgramId_;
@@ -181,8 +177,6 @@ class Application
     std::vector<SDL_Rect> channelButtonRects_;
     std::vector<SDL_Rect> programTileRects_;
     std::optional<SDL_Rect> addAppButtonRect_;
-    std::optional<SDL_Rect> libraryFilterInputRect_;
-    std::vector<ui::LibraryRenderResult::SortChipHitbox> librarySortChipHitboxes_;
     std::optional<SDL_Rect> heroActionRect_;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
@@ -200,10 +194,6 @@ class Application
         {"background_depth", 0.5f},
         {"interface_density", 0.5f},
     };
-
-    std::string libraryFilterDraft_;
-    bool libraryFilterFocused_ = false;
-    frontend::utils::Debouncer libraryFilterDebouncer_{0.2};
 
     struct AddAppDialogState
     {

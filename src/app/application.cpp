@@ -44,22 +44,6 @@ bool SDLCallSucceeded(int result)
     return true;
 }
 
-void RemoveLastUtf8Codepoint(std::string& value)
-{
-    if (value.empty())
-    {
-        return;
-    }
-
-    auto it = value.end();
-    do
-    {
-        --it;
-    } while (it != value.begin() && ((*it & 0xC0) == 0x80));
-
-    value.erase(it, value.end());
-}
-
 } // namespace
 
 namespace
@@ -774,23 +758,6 @@ void Application::HandleMouseClick(int x, int y)
         }
     }
 
-    if (libraryFilterInputRect_.has_value() && PointInRect(*libraryFilterInputRect_, x, y))
-    {
-        if (!libraryFilterFocused_)
-        {
-            libraryFilterFocused_ = true;
-            UpdateTextInputState();
-        }
-        return;
-    }
-    if (libraryFilterFocused_)
-    {
-        libraryFilterFocused_ = false;
-        UpdateTextInputState();
-        const double nowSeconds = static_cast<double>(SDL_GetTicks64()) / 1000.0;
-        libraryFilterDebouncer_.Flush(nowSeconds);
-    }
-
     for (std::size_t i = 0; i < channelButtonRects_.size(); ++i)
     {
         if (PointInRect(channelButtonRects_[i], x, y))
@@ -815,17 +782,6 @@ void Application::HandleMouseClick(int x, int y)
         if (channelIdLower == localIdLower && PointInRect(*addAppButtonRect_, x, y))
         {
             ShowAddAppDialog();
-            return;
-        }
-    }
-
-    for (const auto& chip : librarySortChipHitboxes_)
-    {
-        if (PointInRect(chip.rect, x, y))
-        {
-            const double nowSeconds = static_cast<double>(SDL_GetTicks64()) / 1000.0;
-            libraryFilterDebouncer_.Flush(nowSeconds);
-            libraryViewModel_.SetSortOption(chip.option);
             return;
         }
     }
@@ -1222,31 +1178,6 @@ void Application::HandleKeyDown(SDL_Keycode key)
         return;
     }
 
-    if (libraryFilterFocused_)
-    {
-        switch (key)
-        {
-        case SDLK_BACKSPACE:
-            if (!libraryFilterDraft_.empty())
-            {
-                RemoveLastUtf8Codepoint(libraryFilterDraft_);
-                QueueLibraryFilterUpdate();
-            }
-            return;
-        case SDLK_ESCAPE:
-            libraryFilterFocused_ = false;
-            UpdateTextInputState();
-            libraryFilterDebouncer_.Flush(static_cast<double>(SDL_GetTicks64()) / 1000.0);
-            return;
-        case SDLK_RETURN:
-        case SDLK_KP_ENTER:
-            libraryFilterDebouncer_.Flush(static_cast<double>(SDL_GetTicks64()) / 1000.0);
-            return;
-        default:
-            break;
-        }
-    }
-
     switch (key)
     {
     case SDLK_UP:
@@ -1292,19 +1223,6 @@ bool Application::HandleTextInput(const SDL_TextInputEvent& event)
         return true;
     }
 
-    if (libraryFilterFocused_)
-    {
-        constexpr std::size_t kMaxFilterLength = 120;
-        const std::size_t currentLength = libraryFilterDraft_.size();
-        const std::size_t incomingLength = std::strlen(event.text);
-        if (incomingLength > 0 && currentLength < kMaxFilterLength)
-        {
-            libraryFilterDraft_.append(event.text, std::min(incomingLength, kMaxFilterLength - currentLength));
-            QueueLibraryFilterUpdate();
-        }
-        return true;
-    }
-
     return false;
 }
 
@@ -1323,8 +1241,6 @@ void Application::RenderFrame(double deltaSeconds)
     SDL_RenderClear(renderer_.get());
 
     const double timeSeconds = animationTimeSeconds_;
-    const double realtimeSeconds = static_cast<double>(SDL_GetTicks64()) / 1000.0;
-    libraryFilterDebouncer_.Flush(realtimeSeconds);
 
     if (!layoutSizesInitialized_)
     {
@@ -1434,32 +1350,21 @@ void Application::RenderFrame(double deltaSeconds)
         showAddButton = channelIdLower == localIdLower;
     }
 
-    const auto sortChips = libraryViewModel_.BuildSortChips([this](std::string_view key) {
-        return GetLocalizedString(key);
-    });
-    auto programEntries = libraryViewModel_.BuildProgramList(content_, activeChannelIndex_, channelSelections_);
-
     const auto libraryResult = libraryPanel_.Render(
         renderer_.get(),
         theme_,
         libraryRect,
         content_,
         activeChannelIndex_,
+        channelSelections_,
         programVisuals_,
         fonts_.channel.get(),
-        fonts_.tileMeta.get(),
         showAddButton,
         timeSeconds,
-        deltaSeconds,
-        libraryFilterDraft_,
-        libraryFilterFocused_,
-        programEntries,
-        sortChips);
+        deltaSeconds);
     programTileRects_ = libraryResult.tileRects;
     addAppButtonRect_ = libraryResult.addButtonRect;
     programTileProgramIds_ = libraryResult.programIds;
-    libraryFilterInputRect_ = libraryResult.filterInputRect;
-    librarySortChipHitboxes_ = libraryResult.sortChipHitboxes;
 
     heroActionRect_.reset();
     SDL_Rect previousSettingsViewport = settingsRenderResult_.viewport;
@@ -1752,15 +1657,6 @@ void Application::ApplyAppearanceCustomizations()
         theme_.heroGradientFallbackStart = adjust(theme_.heroGradientFallbackStart);
         theme_.heroGradientFallbackEnd = adjust(theme_.heroGradientFallbackEnd);
     }
-}
-
-void Application::QueueLibraryFilterUpdate()
-{
-    const double nowSeconds = static_cast<double>(SDL_GetTicks64()) / 1000.0;
-    libraryFilterDebouncer_.Schedule(nowSeconds, [this, draft = libraryFilterDraft_]() {
-        libraryViewModel_.SetFilter(draft);
-        libraryFilterDraft_ = libraryViewModel_.Filter();
-    });
 }
 
 std::string Application::ColorToHex(SDL_Color color)
@@ -4700,8 +4596,7 @@ bool Application::ApplyEditUserAppChanges()
 
 void Application::UpdateTextInputState()
 {
-    const bool shouldEnable = libraryFilterFocused_
-        || (addAppDialog_.visible && addAppDialog_.searchFocused)
+    const bool shouldEnable = (addAppDialog_.visible && addAppDialog_.searchFocused)
         || (editAppDialog_.visible && (editAppDialog_.nameFocused || editAppDialog_.colorFocused))
         || (customThemeDialog_.visible && customThemeDialog_.focusedIndex >= 0);
 

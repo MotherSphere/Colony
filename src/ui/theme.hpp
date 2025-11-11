@@ -44,6 +44,7 @@ class ThemeManager
     [[nodiscard]] const ColorScheme& ActiveScheme() const noexcept { return *active_; }
     [[nodiscard]] const std::vector<ColorScheme>& Schemes() const noexcept { return schemes_; }
 
+    const ColorScheme& AddCustomScheme(ColorScheme scheme, bool makeActive = false);
     bool SetActiveScheme(std::string_view id);
 
   private:

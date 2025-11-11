@@ -62,6 +62,23 @@ class SettingsView : public colony::View
     std::vector<ToggleRow> toggles_;
     std::optional<SDL_Rect> primaryActionRect_;
     int lastLayoutWidth_ = 0;
+
+    static std::vector<NavLink> BuildNavLinks(
+        SDL_Renderer* renderer,
+        TTF_Font* font,
+        SDL_Color color);
+
+    static std::vector<SectionLabel> BuildSectionLabels(
+        SDL_Renderer* renderer,
+        TTF_Font* font,
+        SDL_Color color);
+
+    static std::vector<ToggleRow> BuildToggleRows(
+        SDL_Renderer* renderer,
+        TTF_Font* titleFont,
+        TTF_Font* bodyFont,
+        SDL_Color titleColor,
+        SDL_Color bodyColor);
 };
 
 } // namespace colony::frontend::views

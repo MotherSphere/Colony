@@ -24,43 +24,6 @@
           "label": "इंटरफ़ेस घनत्व",
           "description": "सूचियों और डैशबोर्ड के अंतराल को निर्धारित करें।"
         }
-      },
-      "custom_theme": {
-        "button": {
-          "label": "कस्टम पैलेट बनाएँ",
-          "description": "हर इंटरफ़ेस रंग को स्वयं चुनें।"
-        },
-        "dialog": {
-          "title": "कस्टम रंग बनाएँ",
-          "name_label": "पैलेट नाम",
-          "name_placeholder": "नाम दर्ज करें",
-          "save": "पैलेट सहेजें",
-          "cancel": "रद्द करें",
-          "fields": {
-            "background": "पृष्ठभूमि",
-            "navRail": "नेविगेशन रेल",
-            "libraryBackground": "लाइब्रेरी पृष्ठभूमि",
-            "libraryCard": "लाइब्रेरी कार्ड",
-            "libraryCardHover": "लाइब्रेरी होवर",
-            "libraryCardActive": "सक्रिय लाइब्रेरी",
-            "navText": "नेविगेशन पाठ",
-            "heroTitle": "हीरो शीर्षक",
-            "heroBody": "हीरो मुख्य पाठ",
-            "muted": "म्यूट किया हुआ पाठ",
-            "border": "सीमा",
-            "statusBar": "स्थिति पट्टी",
-            "statusBarText": "स्थिति पाठ",
-            "channelBadge": "चैनल बैज",
-            "heroGradientFallbackStart": "ग्रेडिएंट आरंभ",
-            "heroGradientFallbackEnd": "ग्रेडिएंट समाप्त"
-          },
-          "errors": {
-            "name_required": "कृपया पैलेट का नाम दर्ज करें।",
-            "colors_required": "हर रंग के लिए मान सेट करें।",
-            "color_format": "#RGB या #RRGGBB रंग कोड का उपयोग करें।",
-            "duplicate_name": "इस नाम का पैलेट पहले से मौजूद है।"
-          }
-        }
       }
     },
     "language": {

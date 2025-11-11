@@ -494,9 +494,10 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             const SDL_Color borderColor = isActive ? theme.heroTitle : colony::color::Mix(theme.border, theme.libraryCard, 0.4f);
 
             SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-            colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 18);
+            constexpr int languageCardCorners = colony::drawing::CornerTopRight | colony::drawing::CornerBottomRight;
+            colony::drawing::RenderFilledRoundedRect(renderer, cardRect, 18, languageCardCorners);
             SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-            colony::drawing::RenderRoundedRect(renderer, cardRect, 18);
+            colony::drawing::RenderRoundedRect(renderer, cardRect, 18, languageCardCorners);
 
             const int accentWidth = Scale(6);
             SDL_Rect accentRect{logicalCardRect.x, logicalCardRect.y, accentWidth, logicalCardRect.h};

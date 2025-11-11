@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/content.hpp"
+#include "frontend/models/library_view_model.hpp"
 #include "ui/program_visuals.hpp"
 #include "ui/theme.hpp"
 #include "utils/text.hpp"
@@ -22,6 +23,14 @@ struct LibraryRenderResult
     std::vector<SDL_Rect> tileRects;
     std::optional<SDL_Rect> addButtonRect;
     std::vector<std::string> programIds;
+    std::optional<SDL_Rect> filterInputRect;
+
+    struct SortChipHitbox
+    {
+        SDL_Rect rect{0, 0, 0, 0};
+        colony::frontend::models::LibrarySortOption option = colony::frontend::models::LibrarySortOption::RecentlyPlayed;
+    };
+    std::vector<SortChipHitbox> sortChipHitboxes;
 };
 
 class LibraryPanelRenderer
@@ -39,17 +48,21 @@ class LibraryPanelRenderer
         const SDL_Rect& libraryRect,
         const colony::AppContent& content,
         int activeChannelIndex,
-        const std::vector<int>& channelSelections,
         const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
         TTF_Font* channelFont,
+        TTF_Font* bodyFont,
         bool showAddButton,
         double timeSeconds,
-        double deltaSeconds) const;
+        double deltaSeconds,
+        std::string_view filterText,
+        bool filterFocused,
+        const std::vector<colony::frontend::models::LibraryProgramEntry>& programs,
+        const std::vector<colony::frontend::models::LibrarySortChip>& sortChips) const;
 
   private:
     struct LibraryChrome
     {
-        colony::TextTexture filterLabel;
+        colony::TextTexture filterPlaceholder;
     };
 
     LibraryChrome chrome_;

@@ -428,6 +428,7 @@ void HeroPanelRenderer::RenderSettings(
     int scrollOffset,
     std::string_view activeSchemeId,
     std::string_view activeLanguageId,
+    const SettingsPanel::SectionStates& sectionStates,
     const std::unordered_map<std::string, bool>& toggleStates,
     SettingsPanel::RenderResult& outResult,
     double timeSeconds) const
@@ -456,7 +457,15 @@ void HeroPanelRenderer::RenderSettings(
     {
         SDL_RenderSetClipRect(renderer, &contentRect);
     }
-    outResult = panel.Render(renderer, contentRect, scrollOffset, theme, activeSchemeId, activeLanguageId, toggleStates);
+    outResult = panel.Render(
+        renderer,
+        contentRect,
+        scrollOffset,
+        theme,
+        activeSchemeId,
+        activeLanguageId,
+        sectionStates,
+        toggleStates);
     if (hasClip)
     {
         SDL_RenderSetClipRect(renderer, nullptr);

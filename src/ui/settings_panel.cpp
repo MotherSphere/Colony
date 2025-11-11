@@ -398,12 +398,45 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             cursorY += hintRect.h + Scale(16);
         }
 
-        const int customizationCardHeight = Scale(112);
         const int customizationSpacing = Scale(16);
         for (std::size_t index = 0; index < appearanceCustomizations_.size(); ++index)
         {
             const auto& customization = appearanceCustomizations_[index];
-            SDL_Rect cardRect{bounds.x + horizontalPadding, cursorY, availableWidth, customizationCardHeight};
+            const int accentWidth = Scale(5);
+            const int contentPadding = Scale(20);
+            const int topPadding = Scale(20);
+            const int labelSpacing = Scale(10);
+            const int descriptionSpacing = Scale(16);
+            const int sliderSpacing = Scale(20);
+            const int bottomPadding = Scale(28);
+            const int sliderHeight = Scale(12);
+            const int knobSize = Scale(28);
+
+            int cardHeight = topPadding + knobSize + bottomPadding;
+            if (customization.label.texture)
+            {
+                cardHeight += customization.label.height;
+                if (customization.description.texture)
+                {
+                    cardHeight += labelSpacing;
+                }
+                else
+                {
+                    cardHeight += sliderSpacing;
+                }
+            }
+
+            if (customization.description.texture)
+            {
+                cardHeight += customization.description.height;
+                cardHeight += descriptionSpacing;
+            }
+            else if (!customization.label.texture)
+            {
+                cardHeight += sliderSpacing;
+            }
+
+            SDL_Rect cardRect{bounds.x + horizontalPadding, cursorY, availableWidth, cardHeight};
             SDL_Rect drawCardRect = offsetRect(cardRect);
             SDL_Color cardBase = colony::color::Mix(theme.libraryCard, theme.background, 0.35f);
             SDL_SetRenderDrawColor(renderer, cardBase.r, cardBase.g, cardBase.b, cardBase.a);
@@ -411,37 +444,50 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
             colony::drawing::RenderRoundedRect(renderer, drawCardRect, 18, kRightRoundedCorners);
 
-            const int accentWidth = Scale(5);
             SDL_Rect accentRect{cardRect.x, cardRect.y, accentWidth, cardRect.h};
             SDL_Rect drawAccentRect = offsetRect(accentRect);
             SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
             SDL_RenderFillRect(renderer, &drawAccentRect);
 
-            const int contentX = cardRect.x + Scale(20) + accentWidth;
-            int contentY = cardRect.y + Scale(20);
+            const int contentX = cardRect.x + contentPadding + accentWidth;
+            int contentY = cardRect.y + topPadding;
             if (customization.label.texture)
             {
                 SDL_Rect labelRect{contentX, contentY, customization.label.width, customization.label.height};
                 colony::RenderTexture(renderer, customization.label, offsetRect(labelRect));
-                contentY += labelRect.h + Scale(10);
+                contentY += labelRect.h;
+                if (customization.description.texture)
+                {
+                    contentY += labelSpacing;
+                }
+                else
+                {
+                    contentY += sliderSpacing;
+                }
             }
 
             if (customization.description.texture)
             {
                 SDL_Rect descriptionRect{contentX, contentY, customization.description.width, customization.description.height};
                 colony::RenderTexture(renderer, customization.description, offsetRect(descriptionRect));
-                contentY += descriptionRect.h + Scale(16);
+                contentY += descriptionRect.h + descriptionSpacing;
+            }
+            else if (!customization.label.texture)
+            {
+                contentY += sliderSpacing;
             }
 
             const int sliderWidth = std::max(Scale(120), cardRect.w - Scale(120));
-            const int sliderHeight = Scale(12);
-            SDL_Rect sliderRect{contentX, cardRect.y + cardRect.h - Scale(40), sliderWidth, sliderHeight};
+            SDL_Rect sliderRect{
+                contentX,
+                contentY + (knobSize - sliderHeight) / 2,
+                sliderWidth,
+                sliderHeight};
             SDL_Rect drawSliderRect = offsetRect(sliderRect);
             SDL_Color trackColor = colony::color::Mix(theme.muted, theme.libraryCard, 0.5f);
             SDL_SetRenderDrawColor(renderer, trackColor.r, trackColor.g, trackColor.b, trackColor.a);
             colony::drawing::RenderFilledRoundedRect(renderer, drawSliderRect, sliderHeight / 2);
 
-            const int knobSize = Scale(28);
             const int knobTravel = std::max(0, sliderRect.w - knobSize);
             float sliderValue = 0.5f;
             if (auto valueIt = customizationValues.find(customization.id); valueIt != customizationValues.end())
@@ -473,7 +519,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
                 RenderResult::InteractionType::Customization,
                 offsetRect(interactionRect));
 
-            cursorY += customizationCardHeight + customizationSpacing;
+            cursorY += cardRect.h + customizationSpacing;
         }
     }
 

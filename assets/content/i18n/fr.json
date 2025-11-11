@@ -24,43 +24,6 @@
           "label": "Densité de l'interface",
           "description": "Définissez l'espacement des listes et des tableaux de bord."
         }
-      },
-      "custom_theme": {
-        "button": {
-          "label": "Créer une palette personnalisée",
-          "description": "Définissez chaque couleur de l'interface manuellement."
-        },
-        "dialog": {
-          "title": "Créer des couleurs personnalisées",
-          "name_label": "Nom du thème",
-          "name_placeholder": "Saisissez un nom",
-          "save": "Enregistrer la palette",
-          "cancel": "Annuler",
-          "fields": {
-            "background": "Arrière-plan",
-            "navRail": "Rail de navigation",
-            "libraryBackground": "Arrière-plan de la bibliothèque",
-            "libraryCard": "Carte de bibliothèque",
-            "libraryCardHover": "Survol de la bibliothèque",
-            "libraryCardActive": "Bibliothèque active",
-            "navText": "Texte de navigation",
-            "heroTitle": "Titre héros",
-            "heroBody": "Corps héros",
-            "muted": "Texte atténué",
-            "border": "Bordure",
-            "statusBar": "Barre d'état",
-            "statusBarText": "Texte d'état",
-            "channelBadge": "Badge de canal",
-            "heroGradientFallbackStart": "Début du dégradé",
-            "heroGradientFallbackEnd": "Fin du dégradé"
-          },
-          "errors": {
-            "name_required": "Fournissez un nom de thème.",
-            "colors_required": "Définissez une valeur pour chaque couleur.",
-            "color_format": "Utilisez des codes couleur #RGB ou #RRGGBB.",
-            "duplicate_name": "Un thème avec ce nom existe déjà."
-          }
-        }
       }
     },
     "language": {

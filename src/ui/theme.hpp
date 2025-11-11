@@ -34,7 +34,6 @@ struct ColorScheme
     std::string id;
     std::string name;
     ThemeColors colors;
-    bool isCustom = false;
 };
 
 class ThemeManager

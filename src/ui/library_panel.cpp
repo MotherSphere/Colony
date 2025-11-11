@@ -11,11 +11,6 @@
 
 namespace colony::ui
 {
-namespace
-{
-constexpr int kRightRoundedCorners = colony::drawing::CornerTopRight | colony::drawing::CornerBottomRight;
-}
-
 
 void LibraryPanelRenderer::Build(
     SDL_Renderer* renderer,
@@ -230,14 +225,14 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         }
 
         SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, tileRect, 14, kRightRoundedCorners);
+        colony::drawing::RenderFilledRoundedRect(renderer, tileRect, 14);
         SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        colony::drawing::RenderRoundedRect(renderer, tileRect, 14, kRightRoundedCorners);
+        colony::drawing::RenderRoundedRect(renderer, tileRect, 14);
 
         const int accentWidth = Scale(4);
         SDL_Rect accentStrip{tileRect.x, tileRect.y, accentWidth, tileRect.h};
         SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
-        SDL_RenderFillRect(renderer, &accentStrip);
+        colony::drawing::RenderFilledRoundedRect(renderer, accentStrip, 3);
 
         const int iconSize = Scale(46);
         const int iconOffset = static_cast<int>(std::round(std::sin(timeSeconds * 2.0 + index) * Scale(3)));

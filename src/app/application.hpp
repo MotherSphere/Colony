@@ -68,6 +68,8 @@ class Application
     [[nodiscard]] std::string GetActiveProgramId() const;
     void HandleEvent(const SDL_Event& event, bool& running);
     void HandleMouseClick(int x, int y);
+    void HandleMouseButtonUp(int x, int y);
+    void HandleMouseMotion(const SDL_MouseMotionEvent& motion);
     void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
     void HandleKeyDown(SDL_Keycode key);
     void HandleMouseRightClick(int x, int y);
@@ -112,6 +114,11 @@ class Application
     static bool IsValidHexColor(const std::string& value);
     static std::string TrimString(std::string value);
 
+    void UpdateLayoutForOutputWidth(int outputWidth);
+    void BeginResizeDrag(int x, int y, bool adjustNavRail);
+    void EndResizeDrag();
+    void UpdateResizeDrag(int x);
+
     static constexpr std::string_view kLocalAppsChannelId = "local_apps";
     static constexpr std::string_view kLocalAppsChannelLabel = "Local Apps";
 
@@ -134,6 +141,28 @@ class Application
     std::vector<int> channelSelections_;
     int activeChannelIndex_ = 0;
     std::string activeProgramId_;
+
+    int navRailWidth_ = 0;
+    int libraryWidth_ = 0;
+    bool layoutSizesInitialized_ = false;
+    SDL_Rect navRailRect_{0, 0, 0, 0};
+    SDL_Rect libraryRect_{0, 0, 0, 0};
+    SDL_Rect heroRect_{0, 0, 0, 0};
+    SDL_Rect navResizeHandleRect_{0, 0, 0, 0};
+    SDL_Rect libraryResizeHandleRect_{0, 0, 0, 0};
+
+    struct ResizeState
+    {
+        enum class Target
+        {
+            None,
+            NavRail,
+            Library
+        } target = Target::None;
+        int startX = 0;
+        int initialNavWidth = 0;
+        int initialLibraryWidth = 0;
+    } resizeState_{};
 
     std::vector<SDL_Rect> channelButtonRects_;
     std::vector<SDL_Rect> programTileRects_;

@@ -234,67 +234,8 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             sectionStates.appearanceExpanded,
             false);
 
-        const auto activeThemeIt = std::find_if(
-            themeOptions_.begin(),
-            themeOptions_.end(),
-            [&](const ThemeOption& option) { return option.id == activeSchemeId; });
-
-        const int dropdownHeight = Scale(74);
-        SDL_Rect dropdownRect{bounds.x + horizontalPadding, cursorY, availableWidth, dropdownHeight};
-        SDL_Rect drawDropdownRect = offsetRect(dropdownRect);
-        SDL_Color dropdownBase = colony::color::Mix(theme.libraryCardActive, theme.background, 0.12f);
-        SDL_Color dropdownBorder = colony::color::Mix(theme.border, theme.libraryCardActive, 0.45f);
-        SDL_SetRenderDrawColor(renderer, dropdownBase.r, dropdownBase.g, dropdownBase.b, dropdownBase.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, drawDropdownRect, 20);
-        SDL_SetRenderDrawColor(renderer, dropdownBorder.r, dropdownBorder.g, dropdownBorder.b, dropdownBorder.a);
-        colony::drawing::RenderRoundedRect(renderer, drawDropdownRect, 20);
-
-        const int dropdownPadding = Scale(22);
-        int dropdownContentX = dropdownRect.x + dropdownPadding;
-        const int dropdownContentY = dropdownRect.y + Scale(20);
-        if (activeThemeIt != themeOptions_.end() && activeThemeIt->label.texture)
-        {
-            SDL_Rect activeLabelRect{dropdownContentX, dropdownContentY, activeThemeIt->label.width, activeThemeIt->label.height};
-            colony::RenderTexture(renderer, activeThemeIt->label, offsetRect(activeLabelRect));
-            dropdownContentX += activeLabelRect.w + Scale(16);
-        }
-
-        if (activeThemeIt != themeOptions_.end())
-        {
-            const int swatchWidth = Scale(24);
-            const int swatchSpacing = Scale(6);
-            int swatchX = dropdownRect.x + dropdownRect.w - dropdownPadding - (swatchWidth * 3 + swatchSpacing * 2);
-            const int swatchY = dropdownRect.y + (dropdownHeight - swatchWidth) / 2;
-            for (const SDL_Color& color : activeThemeIt->swatch)
-            {
-                SDL_Rect swatchRect{swatchX, swatchY, swatchWidth, swatchWidth};
-                SDL_Rect drawSwatchRect = offsetRect(swatchRect);
-                SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-                colony::drawing::RenderFilledRoundedRect(renderer, drawSwatchRect, swatchWidth / 2);
-                SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-                colony::drawing::RenderRoundedRect(renderer, drawSwatchRect, swatchWidth / 2);
-                swatchX += swatchWidth + swatchSpacing;
-            }
-        }
-
-        const int chevronSize = Scale(12);
-        SDL_Point chevronCenter{dropdownRect.x + dropdownRect.w - dropdownPadding, dropdownRect.y + dropdownHeight / 2};
-        SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
-        SDL_RenderDrawLine(
-            renderer,
-            chevronCenter.x - chevronSize,
-            chevronCenter.y - chevronSize / 2,
-            chevronCenter.x,
-            chevronCenter.y + chevronSize / 2);
-        SDL_RenderDrawLine(
-            renderer,
-            chevronCenter.x,
-            chevronCenter.y + chevronSize / 2,
-            chevronCenter.x + chevronSize,
-            chevronCenter.y - chevronSize / 2);
-
-        cursorY += dropdownHeight + Scale(14);
-
+        SDL_Color menuBorder = colony::color::Mix(theme.border, theme.libraryCardActive, 0.45f);
+        cursorY += Scale(12);
         const int listPadding = Scale(18);
         const int themeRowHeight = Scale(82);
         const int themeRowSpacing = Scale(10);
@@ -310,7 +251,7 @@ SettingsPanel::RenderResult SettingsPanel::Render(
             SDL_Color menuBase = colony::color::Mix(theme.libraryCard, theme.background, 0.3f);
             SDL_SetRenderDrawColor(renderer, menuBase.r, menuBase.g, menuBase.b, menuBase.a);
             colony::drawing::RenderFilledRoundedRect(renderer, drawMenuRect, 18);
-            SDL_SetRenderDrawColor(renderer, dropdownBorder.r, dropdownBorder.g, dropdownBorder.b, dropdownBorder.a);
+            SDL_SetRenderDrawColor(renderer, menuBorder.r, menuBorder.g, menuBorder.b, menuBorder.a);
             colony::drawing::RenderRoundedRect(renderer, drawMenuRect, 18);
         }
 

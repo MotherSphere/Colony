@@ -661,6 +661,15 @@ void Application::HandleEvent(const SDL_Event& event, bool& running)
             HandleMouseRightClick(event.button.x, event.button.y);
         }
         break;
+    case SDL_MOUSEBUTTONUP:
+        if (event.button.button == SDL_BUTTON_LEFT)
+        {
+            HandleMouseButtonUp(event.button.x, event.button.y);
+        }
+        break;
+    case SDL_MOUSEMOTION:
+        HandleMouseMotion(event.motion);
+        break;
     case SDL_MOUSEWHEEL:
         HandleMouseWheel(event.wheel);
         break;
@@ -689,6 +698,26 @@ void Application::HandleMouseClick(int x, int y)
     {
         if (HandleAddAppDialogMouseClick(x, y))
         {
+            return;
+        }
+    }
+
+    if (resizeState_.target != ResizeState::Target::None)
+    {
+        return;
+    }
+
+    if (!editAppDialog_.visible && !addAppDialog_.visible)
+    {
+        if (PointInRect(navResizeHandleRect_, x, y))
+        {
+            BeginResizeDrag(x, y, true);
+            return;
+        }
+
+        if (PointInRect(libraryResizeHandleRect_, x, y))
+        {
+            BeginResizeDrag(x, y, false);
             return;
         }
     }
@@ -854,6 +883,27 @@ void Application::HandleMouseRightClick(int x, int y)
     }
 }
 
+void Application::HandleMouseButtonUp(int x, int y)
+{
+    (void)x;
+    (void)y;
+
+    if (resizeState_.target != ResizeState::Target::None)
+    {
+        EndResizeDrag();
+    }
+}
+
+void Application::HandleMouseMotion(const SDL_MouseMotionEvent& motion)
+{
+    if (resizeState_.target == ResizeState::Target::None)
+    {
+        return;
+    }
+
+    UpdateResizeDrag(motion.x);
+}
+
 void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
 {
     if (editAppDialog_.visible)
@@ -947,6 +997,120 @@ void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
     visuals.sectionsScrollOffset = std::clamp(visuals.sectionsScrollOffset + delta, 0, maxScroll);
 }
 
+void Application::BeginResizeDrag(int x, int y, bool adjustNavRail)
+{
+    (void)y;
+
+    if (!renderer_)
+    {
+        return;
+    }
+
+    resizeState_.target = adjustNavRail ? ResizeState::Target::NavRail : ResizeState::Target::Library;
+    resizeState_.startX = x;
+    resizeState_.initialNavWidth = navRailWidth_;
+    resizeState_.initialLibraryWidth = libraryWidth_;
+    layoutSizesInitialized_ = true;
+    SDL_CaptureMouse(SDL_TRUE);
+}
+
+void Application::EndResizeDrag()
+{
+    resizeState_.target = ResizeState::Target::None;
+    resizeState_.startX = 0;
+    SDL_CaptureMouse(SDL_FALSE);
+}
+
+void Application::UpdateResizeDrag(int x)
+{
+    if (!renderer_ || resizeState_.target == ResizeState::Target::None)
+    {
+        return;
+    }
+
+    int outputWidth = 0;
+    int outputHeight = 0;
+    SDL_GetRendererOutputSize(renderer_.get(), &outputWidth, &outputHeight);
+
+    if (resizeState_.target == ResizeState::Target::NavRail)
+    {
+        const int delta = x - resizeState_.startX;
+        navRailWidth_ = resizeState_.initialNavWidth + delta;
+    }
+    else if (resizeState_.target == ResizeState::Target::Library)
+    {
+        const int delta = x - resizeState_.startX;
+        libraryWidth_ = resizeState_.initialLibraryWidth + delta;
+    }
+
+    UpdateLayoutForOutputWidth(outputWidth);
+}
+
+void Application::UpdateLayoutForOutputWidth(int outputWidth)
+{
+    if (outputWidth <= 0)
+    {
+        return;
+    }
+
+    const int navMin = ui::Scale(72);
+    const int navMax = ui::Scale(160);
+    const int libraryMin = ui::Scale(220);
+    const int libraryMax = ui::Scale(560);
+    const int heroMin = ui::Scale(220);
+
+    if (navRailWidth_ <= 0)
+    {
+        navRailWidth_ = ui::Scale(88);
+    }
+
+    if (libraryWidth_ <= 0)
+    {
+        const int defaultLibrary = std::clamp(outputWidth / 4, ui::Scale(220), ui::Scale(320));
+        libraryWidth_ = defaultLibrary;
+    }
+
+    const int maxNavAllowed = std::max(navMin, std::min(navMax, outputWidth - libraryMin - heroMin));
+    navRailWidth_ = std::clamp(navRailWidth_, navMin, maxNavAllowed);
+
+    const int maxLibraryAllowed = std::max(libraryMin, std::min(libraryMax, outputWidth - navRailWidth_ - heroMin));
+    libraryWidth_ = std::clamp(libraryWidth_, libraryMin, maxLibraryAllowed);
+
+    int heroSpace = outputWidth - navRailWidth_ - libraryWidth_;
+    if (heroSpace < heroMin)
+    {
+        const int deficit = heroMin - heroSpace;
+        const int reducibleLibrary = std::max(0, libraryWidth_ - libraryMin);
+        const int libraryReduction = std::min(deficit, reducibleLibrary);
+        libraryWidth_ -= libraryReduction;
+
+        const int remainingDeficit = deficit - libraryReduction;
+        if (remainingDeficit > 0)
+        {
+            const int reducibleNav = std::max(0, navRailWidth_ - navMin);
+            const int navReduction = std::min(remainingDeficit, reducibleNav);
+            navRailWidth_ -= navReduction;
+        }
+    }
+
+    heroSpace = outputWidth - navRailWidth_ - libraryWidth_;
+    if (heroSpace < heroMin)
+    {
+        libraryWidth_ = std::max(0, outputWidth - navRailWidth_ - heroMin);
+        heroSpace = outputWidth - navRailWidth_ - libraryWidth_;
+    }
+
+    if (heroSpace < 0)
+    {
+        heroSpace = 0;
+    }
+
+    navRailWidth_ = std::clamp(navRailWidth_, std::max(0, navMin), std::min(navMax, std::max(navMin, outputWidth - heroMin)));
+    libraryWidth_ = std::clamp(libraryWidth_, 0, std::min(libraryMax, std::max(0, outputWidth - navRailWidth_ - heroMin)));
+
+    layoutSizesInitialized_ = true;
+}
+
 void Application::HandleKeyDown(SDL_Keycode key)
 {
     if (editAppDialog_.visible && HandleEditUserAppDialogKey(key))
@@ -1018,13 +1182,20 @@ void Application::RenderFrame(double deltaSeconds)
 
     const double timeSeconds = animationTimeSeconds_;
 
-    const int navRailWidth = ui::Scale(88);
-    const int libraryWidth = std::clamp(outputWidth / 4, ui::Scale(280), ui::Scale(320));
-    SDL_Rect navRailRect{0, 0, navRailWidth, outputHeight};
+    if (!layoutSizesInitialized_)
+    {
+        navRailWidth_ = ui::Scale(88);
+        libraryWidth_ = std::clamp(outputWidth / 4, ui::Scale(280), ui::Scale(320));
+        layoutSizesInitialized_ = true;
+    }
+
+    UpdateLayoutForOutputWidth(outputWidth);
+
+    SDL_Rect navRailRect{0, 0, std::max(0, navRailWidth_), outputHeight};
     SDL_SetRenderDrawColor(renderer_.get(), theme_.navRail.r, theme_.navRail.g, theme_.navRail.b, theme_.navRail.a);
     SDL_RenderFillRect(renderer_.get(), &navRailRect);
 
-    SDL_Rect libraryRect{navRailWidth, 0, libraryWidth, outputHeight};
+    SDL_Rect libraryRect{navRailRect.w, 0, std::max(0, libraryWidth_), outputHeight};
     SDL_SetRenderDrawColor(
         renderer_.get(),
         theme_.libraryBackground.r,
@@ -1033,7 +1204,31 @@ void Application::RenderFrame(double deltaSeconds)
         theme_.libraryBackground.a);
     SDL_RenderFillRect(renderer_.get(), &libraryRect);
 
-    const SDL_Rect heroRect{navRailWidth + libraryWidth, 0, outputWidth - navRailWidth - libraryWidth, outputHeight};
+    const int heroWidth = std::max(0, outputWidth - navRailRect.w - libraryRect.w);
+    const SDL_Rect heroRect{navRailRect.w + libraryRect.w, 0, heroWidth, outputHeight};
+
+    navRailRect_ = navRailRect;
+    libraryRect_ = libraryRect;
+    heroRect_ = heroRect;
+
+    const int handleWidth = std::max(4, ui::Scale(12));
+    const int navHandleX = std::clamp(
+        navRailRect.x + navRailRect.w - handleWidth / 2,
+        navRailRect.x,
+        navRailRect.x + std::max(0, navRailRect.w - handleWidth));
+    navResizeHandleRect_ = SDL_Rect{navHandleX, navRailRect.y, std::min(handleWidth, std::max(0, navRailRect.w)), navRailRect.h};
+
+    const int libraryHandleXOrigin = libraryRect.x + libraryRect.w - handleWidth / 2;
+    const int libraryHandleX = std::clamp(
+        libraryHandleXOrigin,
+        libraryRect.x,
+        libraryRect.x + std::max(0, libraryRect.w - handleWidth));
+    libraryResizeHandleRect_ = SDL_Rect{
+        libraryHandleX,
+        libraryRect.y,
+        std::min(handleWidth, std::max(0, libraryRect.w)),
+        libraryRect.h};
+
     const auto visualsIt = programVisuals_.find(activeProgramId_);
     const ui::ProgramVisuals* activeVisuals = visualsIt != programVisuals_.end() ? &visualsIt->second : nullptr;
     if (activeVisuals != nullptr)
@@ -1060,6 +1255,12 @@ void Application::RenderFrame(double deltaSeconds)
     SDL_Rect navDivider{navRailRect.x + navRailRect.w - 2, 0, 2, outputHeight};
     SDL_SetRenderDrawColor(renderer_.get(), theme_.border.r, theme_.border.g, theme_.border.b, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(renderer_.get(), &navDivider);
+
+    if (libraryRect.w > 0)
+    {
+        SDL_Rect libraryDivider{libraryRect.x + libraryRect.w - 2, 0, 2, outputHeight};
+        SDL_RenderFillRect(renderer_.get(), &libraryDivider);
+    }
 
     const int statusBarHeight = ui::Scale(kStatusBarHeight);
 

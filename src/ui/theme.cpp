@@ -254,6 +254,57 @@ ThemeManager::ThemeManager()
     }
 }
 
+const ColorScheme& ThemeManager::AddCustomScheme(ColorScheme scheme, bool makeActive)
+{
+    const auto findById = [&](std::string_view id) {
+        return std::find_if(schemes_.begin(), schemes_.end(), [&](const ColorScheme& candidate) {
+            return candidate.id == id;
+        });
+    };
+
+    const std::string currentActiveId = active_ ? active_->id : std::string{};
+    auto existingIt = findById(scheme.id);
+    if (existingIt != schemes_.end())
+    {
+        const bool wasActive = active_ == &*existingIt;
+        *existingIt = std::move(scheme);
+        if (makeActive || wasActive)
+        {
+            active_ = &*existingIt;
+        }
+        else if (!currentActiveId.empty())
+        {
+            auto activeIt = findById(currentActiveId);
+            if (activeIt != schemes_.end())
+            {
+                active_ = &*activeIt;
+            }
+        }
+        return *existingIt;
+    }
+
+    schemes_.push_back(std::move(scheme));
+    const std::string desiredActiveId = makeActive ? schemes_.back().id : currentActiveId;
+    if (!desiredActiveId.empty())
+    {
+        auto activeIt = findById(desiredActiveId);
+        if (activeIt != schemes_.end())
+        {
+            active_ = &*activeIt;
+        }
+        else
+        {
+            active_ = &schemes_.back();
+        }
+    }
+    else
+    {
+        active_ = &schemes_.back();
+    }
+
+    return schemes_.back();
+}
+
 bool ThemeManager::SetActiveScheme(std::string_view id)
 {
     const auto it = std::find_if(schemes_.begin(), schemes_.end(), [&](const ColorScheme& scheme) {

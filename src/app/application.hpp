@@ -79,6 +79,10 @@ class Application
     void LaunchArcadeApp();
     void LoadSettings();
     void SaveSettings() const;
+    bool SetAppearanceCustomizationValue(const std::string& id, float value);
+    [[nodiscard]] float GetAppearanceCustomizationValue(std::string_view id) const;
+    void ApplyInterfaceDensity() const;
+    void ApplyAppearanceCustomizations();
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -144,6 +148,11 @@ class Application
         {"sound", true},
         {"auto_updates", true},
         {"reduced_motion", false},
+    };
+    std::unordered_map<std::string, float> appearanceCustomizationValues_{
+        {"accent_intensity", 0.5f},
+        {"background_depth", 0.5f},
+        {"interface_density", 0.5f},
     };
 
     struct AddAppDialogState

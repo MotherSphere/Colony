@@ -24,6 +24,43 @@
           "label": "Interface density",
           "description": "Set spacing for lists and dashboards."
         }
+      },
+      "custom_theme": {
+        "button": {
+          "label": "Create custom palette",
+          "description": "Define each interface color manually."
+        },
+        "dialog": {
+          "title": "Create custom colors",
+          "name_label": "Scheme name",
+          "name_placeholder": "Enter a name",
+          "save": "Save palette",
+          "cancel": "Cancel",
+          "fields": {
+            "background": "Background",
+            "navRail": "Navigation rail",
+            "libraryBackground": "Library background",
+            "libraryCard": "Library card",
+            "libraryCardHover": "Library hover",
+            "libraryCardActive": "Library active",
+            "navText": "Navigation text",
+            "heroTitle": "Hero title",
+            "heroBody": "Hero body",
+            "muted": "Muted text",
+            "border": "Border",
+            "statusBar": "Status bar",
+            "statusBarText": "Status text",
+            "channelBadge": "Channel badge",
+            "heroGradientFallbackStart": "Gradient start",
+            "heroGradientFallbackEnd": "Gradient end"
+          },
+          "errors": {
+            "name_required": "Provide a scheme name.",
+            "colors_required": "Set a value for every color.",
+            "color_format": "Use #RGB or #RRGGBB color codes.",
+            "duplicate_name": "A scheme with this name already exists."
+          }
+        }
       }
     },
     "language": {

@@ -47,7 +47,26 @@ SDL_Color Blend(const SDL_Color& a, const SDL_Color& b, float t)
     return colony::color::Mix(a, b, std::clamp(t, 0.0f, 1.0f));
 }
 
-std::vector<SettingsView::ToggleRow> BuildToggleRows(
+std::unordered_map<std::string, frontend::components::ThemeSwatchText> BuildLanguageSamples()
+{
+    using frontend::components::ThemeSwatchText;
+    return {
+        {"en", ThemeSwatchText{"All systems go", "Primary panels and actions stay focused."}},
+        {"fr", ThemeSwatchText{"Tout est prêt", "Les commandes restent accessibles et soignées."}},
+        {"de", ThemeSwatchText{"Bereit", "Die wichtigsten Werkzeuge bleiben im Blick."}},
+        {"hi", ThemeSwatchText{"सब तैयार है", "आपके लिए प्राथमिक नियंत्रण स्पष्ट रहते हैं."}},
+        {"zh", ThemeSwatchText{"系统就绪", "关键操作保持清晰易达。"}},
+        {"ar", ThemeSwatchText{"كل شيء جاهز", "تظل عناصر التحكم الأساسية واضحة ومتاحة."}}};
+}
+
+frontend::components::ThemeSwatchText MakeThemeSampleText(std::string_view name)
+{
+    return frontend::components::ThemeSwatchText{name, "See controls, cards, and typography in context."};
+}
+
+} // namespace
+
+std::vector<SettingsView::ToggleRow> SettingsView::BuildToggleRows(
     SDL_Renderer* renderer,
     TTF_Font* titleFont,
     TTF_Font* bodyFont,
@@ -89,12 +108,12 @@ std::vector<SettingsView::ToggleRow> BuildToggleRows(
             "Download new builds in the background when your device is idle.",
             false}};
 
-    std::vector<SettingsView::ToggleRow> rows;
+    std::vector<ToggleRow> rows;
     rows.reserve(definitions.size());
 
     for (const auto& def : definitions)
     {
-        SettingsView::ToggleRow row;
+        ToggleRow row;
         row.id = def.id;
         row.prominent = def.prominent;
         row.label = colony::CreateTextTexture(renderer, titleFont, def.label, titleColor);
@@ -105,7 +124,7 @@ std::vector<SettingsView::ToggleRow> BuildToggleRows(
     return rows;
 }
 
-std::vector<SettingsView::SectionLabel> BuildSectionLabels(
+std::vector<SettingsView::SectionLabel> SettingsView::BuildSectionLabels(
     SDL_Renderer* renderer,
     TTF_Font* font,
     SDL_Color color)
@@ -115,14 +134,14 @@ std::vector<SettingsView::SectionLabel> BuildSectionLabels(
         return {};
     }
 
-    std::vector<SettingsView::SectionLabel> labels;
+    std::vector<SectionLabel> labels;
     const std::array<std::pair<const char*, const char*>, 3> data{
         {{"appearance", "Appearance"}, {"language", "Language"}, {"toggles", "Toggles"}}};
 
     labels.reserve(data.size());
     for (const auto& [id, label] : data)
     {
-        SettingsView::SectionLabel sectionLabel;
+        SectionLabel sectionLabel;
         sectionLabel.id = id;
         sectionLabel.label = colony::CreateTextTexture(renderer, font, label, color);
         labels.emplace_back(std::move(sectionLabel));
@@ -131,7 +150,7 @@ std::vector<SettingsView::SectionLabel> BuildSectionLabels(
     return labels;
 }
 
-std::vector<SettingsView::NavLink> BuildNavLinks(
+std::vector<SettingsView::NavLink> SettingsView::BuildNavLinks(
     SDL_Renderer* renderer,
     TTF_Font* font,
     SDL_Color color)
@@ -141,14 +160,14 @@ std::vector<SettingsView::NavLink> BuildNavLinks(
         return {};
     }
 
-    std::vector<SettingsView::NavLink> nav;
+    std::vector<NavLink> nav;
     const std::array<std::pair<const char*, const char*>, 3> data{
         {{"appearance", "Appearance"}, {"language", "Language"}, {"toggles", "Toggles"}}};
 
     nav.reserve(data.size());
     for (const auto& [id, label] : data)
     {
-        SettingsView::NavLink link;
+        NavLink link;
         link.id = id;
         link.label = colony::CreateTextTexture(renderer, font, label, color);
         nav.emplace_back(std::move(link));
@@ -156,25 +175,6 @@ std::vector<SettingsView::NavLink> BuildNavLinks(
 
     return nav;
 }
-
-std::unordered_map<std::string, frontend::components::ThemeSwatchText> BuildLanguageSamples()
-{
-    using frontend::components::ThemeSwatchText;
-    return {
-        {"en", ThemeSwatchText{"All systems go", "Primary panels and actions stay focused."}},
-        {"fr", ThemeSwatchText{"Tout est prêt", "Les commandes restent accessibles et soignées."}},
-        {"de", ThemeSwatchText{"Bereit", "Die wichtigsten Werkzeuge bleiben im Blick."}},
-        {"hi", ThemeSwatchText{"सब तैयार है", "आपके लिए प्राथमिक नियंत्रण स्पष्ट रहते हैं."}},
-        {"zh", ThemeSwatchText{"系统就绪", "关键操作保持清晰易达。"}},
-        {"ar", ThemeSwatchText{"كل شيء جاهز", "تظل عناصر التحكم الأساسية واضحة ومتاحة."}}};
-}
-
-frontend::components::ThemeSwatchText MakeThemeSampleText(std::string_view name)
-{
-    return frontend::components::ThemeSwatchText{name, "See controls, cards, and typography in context."};
-}
-
-} // namespace
 
 SettingsView::SettingsView(std::string id) : id_(std::move(id)) {}
 

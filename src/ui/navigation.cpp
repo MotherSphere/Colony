@@ -49,7 +49,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
 {
     std::vector<SDL_Rect> buttonRects(content.channels.size());
 
-    const int navPadding = Scale(20);
+    const int navPadding = Scale(28);
     if (chrome_.brand.texture)
     {
         SDL_Rect brandRect{
@@ -76,9 +76,11 @@ std::vector<SDL_Rect> NavigationRail::Render(
         return theme.channelBadge;
     };
 
-    int channelStartY = navPadding + (chrome_.brand.height > 0 ? chrome_.brand.height + Scale(24) : Scale(38));
-    const int channelButtonSize = Scale(40);
-    const int channelSpacing = Scale(26);
+    const int brandSpacing = chrome_.brand.height > 0 ? chrome_.brand.height + Scale(36) : Scale(42);
+    int channelStartY = navPadding + brandSpacing;
+    const int channelButtonSize = Scale(44);
+    const int channelSpacing = Scale(30);
+    const int buttonCornerRadius = Scale(16);
 
     const auto renderChannelButton = [&](int index, int y) {
         const bool isActive = static_cast<int>(index) == activeChannelIndex;
@@ -92,12 +94,23 @@ std::vector<SDL_Rect> NavigationRail::Render(
             channelButtonSize};
 
         SDL_Color baseColor = channelAccentColor(index);
-        SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.25f + glow * 0.2f)
-                                       : colony::color::Mix(baseColor, theme.navRail, 0.15f + glow * 0.15f);
+        SDL_Color fillColor = isActive ? colony::color::Mix(baseColor, theme.heroTitle, 0.18f + glow * 0.25f)
+                                       : colony::color::Mix(baseColor, theme.navRail, 0.22f + glow * 0.18f);
+        SDL_Color outlineColor = isActive ? colony::color::Mix(theme.heroTitle, baseColor, 0.4f)
+                                          : colony::color::Mix(theme.border, baseColor, 0.35f);
+
+        SDL_Rect shadowRect = buttonRect;
+        shadowRect.x += Scale(2);
+        shadowRect.y += Scale(3);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, 60);
+        colony::drawing::RenderFilledRoundedRect(renderer, shadowRect, buttonCornerRadius + Scale(2));
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
         SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 14);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        colony::drawing::RenderRoundedRect(renderer, buttonRect, 14);
+        colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, buttonCornerRadius);
+        SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a);
+        colony::drawing::RenderRoundedRect(renderer, buttonRect, buttonCornerRadius);
 
         if (isActive)
         {
@@ -107,9 +120,9 @@ std::vector<SDL_Rect> NavigationRail::Render(
             haloRect.w += Scale(8);
             haloRect.h += Scale(8);
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-            SDL_Color haloColor = colony::color::Mix(fillColor, theme.heroTitle, 0.5f);
-            SDL_SetRenderDrawColor(renderer, haloColor.r, haloColor.g, haloColor.b, 48);
-            colony::drawing::RenderFilledRoundedRect(renderer, haloRect, 18);
+            SDL_Color haloColor = colony::color::Mix(fillColor, theme.heroTitle, 0.45f);
+            SDL_SetRenderDrawColor(renderer, haloColor.r, haloColor.g, haloColor.b, 52);
+            colony::drawing::RenderFilledRoundedRect(renderer, haloRect, buttonCornerRadius + Scale(6));
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
 

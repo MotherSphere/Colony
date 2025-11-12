@@ -157,7 +157,7 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
 
     heroCursorY += Scale(12);
 
-    const int buttonHeight = Scale(52);
+    const int buttonHeight = Scale(56);
     int buttonWidth = textColumnWidth > 0 ? std::min(textColumnWidth, Scale(200)) : Scale(200);
     const int iconBoxSize = std::min(Scale(20), buttonHeight - Scale(16));
     if (visuals.actionLabel.texture)
@@ -183,11 +183,20 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     }
     SDL_Rect buttonRect{heroContentX, heroCursorY, buttonWidth, buttonHeight};
     const float buttonPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 3.2));
-    SDL_Color buttonColor = colony::color::Mix(visuals.accent, theme.heroTitle, 0.18f + 0.22f * buttonPulse);
+    SDL_Color buttonColor = colony::color::Mix(visuals.accent, theme.heroTitle, 0.2f + 0.25f * buttonPulse);
+    SDL_Color buttonOutline = colony::color::Mix(visuals.accent, theme.heroTitle, 0.35f);
+
+    SDL_Rect buttonShadow = buttonRect;
+    buttonShadow.y += Scale(3);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, 55);
+    colony::drawing::RenderFilledRoundedRect(renderer, buttonShadow, 22);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
     SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
-    colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 18);
-    SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
-    colony::drawing::RenderRoundedRect(renderer, buttonRect, 18);
+    colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, 22);
+    SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, buttonOutline.a);
+    colony::drawing::RenderRoundedRect(renderer, buttonRect, 22);
 
     const bool hasButtonClip = buttonRect.w > 0 && buttonRect.h > 0;
     if (hasButtonClip)
@@ -198,14 +207,14 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     if (iconBoxSize > 0)
     {
         SDL_Rect iconRect{
-            buttonRect.x + Scale(16),
+            buttonRect.x + Scale(18),
             buttonRect.y + (buttonRect.h - iconBoxSize) / 2,
             iconBoxSize,
             iconBoxSize};
-        SDL_Color iconFill = colony::color::Mix(visuals.accent, theme.heroTitle, 0.25f + buttonPulse * 0.3f);
+        SDL_Color iconFill = colony::color::Mix(visuals.accent, buttonColor, 0.4f + buttonPulse * 0.2f);
         SDL_SetRenderDrawColor(renderer, iconFill.r, iconFill.g, iconFill.b, iconFill.a);
         colony::drawing::RenderFilledRoundedRect(renderer, iconRect, iconRect.h / 2);
-        SDL_SetRenderDrawColor(renderer, visuals.accent.r, visuals.accent.g, visuals.accent.b, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, SDL_ALPHA_OPAQUE);
         colony::drawing::RenderRoundedRect(renderer, iconRect, iconRect.h / 2);
 
         SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
@@ -216,7 +225,7 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
             {iconRect.x + iconRect.w / 2 - 3, iconRect.y + iconRect.h / 4}};
         SDL_RenderDrawLines(renderer, arrowPoints, 4);
 
-        buttonLabelLeft = iconRect.x + iconRect.w + Scale(8);
+        buttonLabelLeft = iconRect.x + iconRect.w + Scale(10);
     }
     if (visuals.actionLabel.texture)
     {
@@ -245,10 +254,19 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
         }
         const float chipGlow = static_cast<float>(0.25 + 0.25 * std::sin(timeSeconds * 1.8 + metaIndex * 1.3));
         SDL_Rect chipRect{chipCursorX, heroCursorY, texture.width + Scale(22), texture.height + Scale(10)};
-        SDL_Color chipBase = colony::color::Mix(theme.statusBar, visuals.accent, chipGlow * 0.3f);
+        SDL_Color chipBase = colony::color::Mix(theme.statusBar, visuals.accent, 0.2f + chipGlow * 0.35f);
+        SDL_Color chipOutline = colony::color::Mix(visuals.accent, theme.heroTitle, 0.3f);
+
+        SDL_Rect chipShadow = chipRect;
+        chipShadow.y += Scale(2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, chipOutline.r, chipOutline.g, chipOutline.b, 45);
+        colony::drawing::RenderFilledRoundedRect(renderer, chipShadow, chipShadow.h / 2 + Scale(2));
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
         SDL_SetRenderDrawColor(renderer, chipBase.r, chipBase.g, chipBase.b, chipBase.a);
         colony::drawing::RenderFilledRoundedRect(renderer, chipRect, chipRect.h / 2);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
+        SDL_SetRenderDrawColor(renderer, chipOutline.r, chipOutline.g, chipOutline.b, chipOutline.a);
         colony::drawing::RenderRoundedRect(renderer, chipRect, chipRect.h / 2);
         SDL_Rect textRect{
             chipRect.x + Scale(10),

@@ -24,6 +24,48 @@ ThemeColors MakeTheme(
     std::string_view statusBarText,
     std::string_view channelBadge,
     std::string_view gradientStart,
+    std::string_view gradientEnd);
+
+void AddColonySignature(std::vector<ColorScheme>& schemes)
+{
+    schemes.push_back(ColorScheme{
+        .id = "colony_aurora",
+        .name = "Colony Aurora",
+        .colors = MakeTheme(
+            "#0d111f",
+            "#11182a",
+            "#131b2f",
+            "#1a2437",
+            "#222d42",
+            "#2b3750",
+            "#f4f6ff",
+            "#f8faff",
+            "#cad3f5",
+            "#8a93b2",
+            "#2f3a52",
+            "#0b1220",
+            "#aab6d6",
+            "#5b7cfa",
+            "#1f2b45",
+            "#0d1424")});
+}
+
+ThemeColors MakeTheme(
+    std::string_view background,
+    std::string_view nav,
+    std::string_view library,
+    std::string_view card,
+    std::string_view cardHover,
+    std::string_view cardActive,
+    std::string_view navText,
+    std::string_view heroTitle,
+    std::string_view heroBody,
+    std::string_view muted,
+    std::string_view border,
+    std::string_view statusBar,
+    std::string_view statusBarText,
+    std::string_view channelBadge,
+    std::string_view gradientStart,
     std::string_view gradientEnd)
 {
     ThemeColors colors;
@@ -246,6 +288,7 @@ void AddClassicSchemes(std::vector<ColorScheme>& schemes)
 ThemeManager::ThemeManager()
 {
     schemes_.reserve(10);
+    AddColonySignature(schemes_);
     AddCatppuccin(schemes_);
     AddClassicSchemes(schemes_);
     if (!schemes_.empty())

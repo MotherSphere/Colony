@@ -353,19 +353,19 @@ bool Application::InitializeFonts()
 
     const auto openPrimaryFont = [&](int size) { return openFont(fontConfiguration.primaryFontPath, size); };
 
-    fonts_.brand = openPrimaryFont(30);
-    fonts_.navigation = openPrimaryFont(16);
-    fonts_.channel = openPrimaryFont(20);
-    fonts_.tileTitle = openPrimaryFont(20);
-    fonts_.tileSubtitle = openPrimaryFont(14);
-    fonts_.tileMeta = openPrimaryFont(14);
-    fonts_.heroTitle = openPrimaryFont(40);
-    fonts_.heroSubtitle = openPrimaryFont(20);
-    fonts_.heroBody = openPrimaryFont(16);
-    fonts_.patchTitle = openPrimaryFont(16);
-    fonts_.patchBody = openPrimaryFont(14);
-    fonts_.button = openPrimaryFont(20);
-    fonts_.status = openPrimaryFont(14);
+    fonts_.brand = openPrimaryFont(34);
+    fonts_.navigation = openPrimaryFont(18);
+    fonts_.channel = openPrimaryFont(22);
+    fonts_.tileTitle = openPrimaryFont(22);
+    fonts_.tileSubtitle = openPrimaryFont(15);
+    fonts_.tileMeta = openPrimaryFont(15);
+    fonts_.heroTitle = openPrimaryFont(44);
+    fonts_.heroSubtitle = openPrimaryFont(22);
+    fonts_.heroBody = openPrimaryFont(18);
+    fonts_.patchTitle = openPrimaryFont(18);
+    fonts_.patchBody = openPrimaryFont(15);
+    fonts_.button = openPrimaryFont(22);
+    fonts_.status = openPrimaryFont(15);
 
     if (!fonts_.brand || !fonts_.navigation || !fonts_.channel || !fonts_.tileTitle || !fonts_.tileSubtitle || !fonts_.tileMeta
         || !fonts_.heroTitle || !fonts_.heroSubtitle || !fonts_.heroBody || !fonts_.patchTitle || !fonts_.patchBody

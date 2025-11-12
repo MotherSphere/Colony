@@ -23,6 +23,7 @@ add_library(colony_ui
     src/frontend/models/library_view_model.cpp
     src/ui/theme.cpp
     src/ui/program_visuals.cpp
+    src/ui/hub_panel.cpp
     src/ui/navigation.cpp
     src/ui/library_panel.cpp
     src/ui/hero_panel.cpp

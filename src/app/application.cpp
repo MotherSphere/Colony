@@ -294,6 +294,16 @@ int Application::Run()
     return EXIT_SUCCESS;
 }
 
+void Application::ShowHub()
+{
+    interfaceState_ = InterfaceState::Hub;
+}
+
+void Application::EnterMainInterface()
+{
+    interfaceState_ = InterfaceState::MainInterface;
+}
+
 bool Application::InitializeSDL()
 {
     if (!SDLCallSucceeded(SDL_Init(SDL_INIT_VIDEO)))
@@ -1358,6 +1368,25 @@ bool Application::HandleTextInput(const SDL_TextInputEvent& event)
 }
 
 void Application::RenderFrame(double deltaSeconds)
+{
+    switch (interfaceState_)
+    {
+    case InterfaceState::Hub:
+        RenderHubFrame(deltaSeconds);
+        break;
+    case InterfaceState::MainInterface:
+        RenderMainInterfaceFrame(deltaSeconds);
+        break;
+    }
+}
+
+void Application::RenderHubFrame(double deltaSeconds)
+{
+    // The hub screen is not yet implemented. Reuse the main interface rendering until it is available.
+    RenderMainInterfaceFrame(deltaSeconds);
+}
+
+void Application::RenderMainInterfaceFrame(double deltaSeconds)
 {
     if (!renderer_)
     {

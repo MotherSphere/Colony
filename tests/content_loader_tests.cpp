@@ -8,6 +8,7 @@
 #undef private
 #include "utils/color.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -17,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <SDL2/SDL.h>
 
 namespace
@@ -199,7 +201,10 @@ TEST_CASE("Default content defines navigation channels for programs, addons, and
     const auto appContentPath = ResolveDefaultContentPath();
     auto content = colony::LoadContentFromFile(appContentPath.string());
 
-    auto requireChannel = [&](std::string_view id, std::string_view expectedLabel) {
+    auto requireChannel = [&](
+                               std::string_view id,
+                               std::string_view expectedLabel,
+                               const std::vector<std::string>& expectedPrograms) {
         INFO("checking channel: " << id);
         const auto it = std::find_if(
             content.channels.begin(),
@@ -208,6 +213,19 @@ TEST_CASE("Default content defines navigation channels for programs, addons, and
         REQUIRE_MESSAGE(it != content.channels.end(), "Missing channel for " << id);
         CHECK(it->label == expectedLabel);
         REQUIRE_FALSE_MESSAGE(it->programs.empty(), "Channel " << id << " must list at least one program");
+
+        if (!expectedPrograms.empty())
+        {
+            CHECK_MESSAGE(
+                it->programs.size() == expectedPrograms.size(),
+                "Channel " << id << " should expose " << expectedPrograms.size() << " programs");
+            for (const auto& expectedProgram : expectedPrograms)
+            {
+                CHECK_MESSAGE(
+                    std::find(it->programs.begin(), it->programs.end(), expectedProgram) != it->programs.end(),
+                    "Channel " << id << " is missing expected program " << expectedProgram);
+            }
+        }
 
         for (const auto& programId : it->programs)
         {
@@ -218,9 +236,18 @@ TEST_CASE("Default content defines navigation channels for programs, addons, and
         }
     };
 
-    requireChannel("programs", "Programs");
-    requireChannel("addons", "Addons");
-    requireChannel("games", "Games");
+    requireChannel(
+        "programs",
+        "Programs",
+        {"PROGRAMS_CORE_SUITE", "PROGRAMS_SIGNAL_MATRIX", "PROGRAMS_AUTOMATION_DIRECTOR"});
+    requireChannel(
+        "addons",
+        "Addons",
+        {"ADDONS_EXTENSION_BAY", "ADDONS_REACTIVE_SHIELDING", "ADDONS_SYNAPSE_BRIDGE"});
+    requireChannel(
+        "games",
+        "Games",
+        {"GAMES_SIMULATION_DECK", "GAMES_TACTICAL_BRIEFING", "GAMES_STARFORGE_TRAINER"});
 }
 
 TEST_CASE("RenderVerticalGradient draws within bounds")

@@ -77,6 +77,7 @@ class Application
     void HandleKeyDown(SDL_Keycode key);
     void HandleMouseRightClick(int x, int y);
     bool HandleTextInput(const SDL_TextInputEvent& event);
+    bool UpdateCustomizationValueFromPosition(const std::string& id, int mouseX);
     void RenderFrame(double deltaSeconds);
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
@@ -188,6 +189,7 @@ class Application
     int settingsScrollOffset_ = 0;
     ui::SettingsPanel::SectionStates settingsSectionStates_{};
     std::optional<std::string> pendingSettingsSectionId_{};
+    std::optional<std::string> activeCustomizationDragId_{};
     std::string activeLanguageId_ = "en";
     std::unordered_map<std::string, bool> basicToggleStates_{
         {"notifications", true},

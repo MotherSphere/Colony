@@ -60,6 +60,19 @@ void RemoveLastUtf8Codepoint(std::string& value)
     value.erase(it, value.end());
 }
 
+float ComputeCustomizationSliderValue(const SDL_Rect& rect, int mouseX)
+{
+    const int knobSize = ui::Scale(28);
+    const int knobTravel = std::max(1, rect.w - knobSize);
+    const int relative = std::clamp(mouseX - rect.x - knobSize / 2, 0, knobTravel);
+    if (knobTravel <= 0)
+    {
+        return 0.0f;
+    }
+
+    return static_cast<float>(relative) / static_cast<float>(knobTravel);
+}
+
 } // namespace
 
 namespace
@@ -730,6 +743,8 @@ void Application::HandleEvent(const SDL_Event& event, bool& running)
 
 void Application::HandleMouseClick(int x, int y)
 {
+    activeCustomizationDragId_.reset();
+
     if (customThemeDialog_.visible)
     {
         if (HandleCustomThemeDialogMouseClick(x, y))
@@ -886,16 +901,12 @@ void Application::HandleMouseClick(int x, int y)
                 break;
             case ui::SettingsPanel::RenderResult::InteractionType::Customization:
             {
-                const int knobSize = ui::Scale(28);
-                const int knobTravel = std::max(1, region.rect.w - knobSize);
-                const int relative = std::clamp(x - region.rect.x - knobSize / 2, 0, knobTravel);
-                const float newValue = knobTravel > 0
-                    ? static_cast<float>(relative) / static_cast<float>(knobTravel)
-                    : 0.0f;
+                const float newValue = ComputeCustomizationSliderValue(region.rect, x);
                 if (SetAppearanceCustomizationValue(region.id, newValue))
                 {
                     RebuildTheme();
                 }
+                activeCustomizationDragId_ = region.id;
                 break;
             }
             case ui::SettingsPanel::RenderResult::InteractionType::SectionToggle:
@@ -977,6 +988,8 @@ void Application::HandleMouseButtonUp(int x, int y)
     (void)x;
     (void)y;
 
+    activeCustomizationDragId_.reset();
+
     if (resizeState_.target != ResizeState::Target::None)
     {
         EndResizeDrag();
@@ -985,6 +998,18 @@ void Application::HandleMouseButtonUp(int x, int y)
 
 void Application::HandleMouseMotion(const SDL_MouseMotionEvent& motion)
 {
+    if (activeCustomizationDragId_)
+    {
+        if ((motion.state & SDL_BUTTON_LMASK) == 0)
+        {
+            activeCustomizationDragId_.reset();
+        }
+        else
+        {
+            UpdateCustomizationValueFromPosition(*activeCustomizationDragId_, motion.x);
+        }
+    }
+
     if (resizeState_.target == ResizeState::Target::None)
     {
         return;
@@ -1089,6 +1114,30 @@ void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
     const int scrollStep = ui::Scale(40);
     const int delta = -wheelY * scrollStep;
     visuals.sectionsScrollOffset = std::clamp(visuals.sectionsScrollOffset + delta, 0, maxScroll);
+}
+
+bool Application::UpdateCustomizationValueFromPosition(const std::string& id, int mouseX)
+{
+    const auto it = std::find_if(
+        settingsRenderResult_.interactiveRegions.begin(),
+        settingsRenderResult_.interactiveRegions.end(),
+        [&](const ui::SettingsPanel::RenderResult::InteractiveRegion& region) {
+            return region.type == ui::SettingsPanel::RenderResult::InteractionType::Customization && region.id == id;
+        });
+
+    if (it == settingsRenderResult_.interactiveRegions.end())
+    {
+        return false;
+    }
+
+    const float newValue = ComputeCustomizationSliderValue(it->rect, mouseX);
+    if (SetAppearanceCustomizationValue(id, newValue))
+    {
+        RebuildTheme();
+        return true;
+    }
+
+    return false;
 }
 
 void Application::BeginResizeDrag(int x, int y, bool adjustNavRail)

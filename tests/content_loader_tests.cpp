@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -84,6 +85,46 @@ const char* kValidViewSection = R"({
 const char* kValidChannelsSection = R"([
     {"id": "alpha", "label": "Alpha", "programs": ["PROGRAM"]}
 ])";
+
+std::filesystem::path ResolveDefaultContentPath()
+{
+    const std::filesystem::path relative{"assets/content/app_content.json"};
+
+    auto search = [&](std::filesystem::path start) -> std::optional<std::filesystem::path> {
+        for (int depth = 0; depth < 8 && !start.empty(); ++depth)
+        {
+            const auto candidate = start / relative;
+            if (std::filesystem::exists(candidate))
+            {
+                return std::filesystem::weakly_canonical(candidate);
+            }
+            if (!start.has_parent_path())
+            {
+                break;
+            }
+            start = start.parent_path();
+        }
+        return std::nullopt;
+    };
+
+    if (auto found = search(std::filesystem::current_path()))
+    {
+        return *found;
+    }
+
+    std::filesystem::path sourceRoot = std::filesystem::path(__FILE__).parent_path();
+    if (!sourceRoot.is_absolute())
+    {
+        sourceRoot = std::filesystem::current_path() / sourceRoot;
+    }
+    sourceRoot = std::filesystem::weakly_canonical(sourceRoot);
+    if (auto found = search(sourceRoot))
+    {
+        return *found;
+    }
+
+    throw std::runtime_error("Unable to locate assets/content/app_content.json");
+}
 }
 
 TEST_CASE("LoadContentFromFile parses minimal valid document")
@@ -151,6 +192,35 @@ TEST_CASE("Application PointInRect honors exclusive bounds and dimensions")
 
     SDL_Rect emptyHeight{0, 0, 5, 0};
     CHECK_FALSE(app.PointInRect(emptyHeight, 0, 0));
+}
+
+TEST_CASE("Default content defines navigation channels for programs, addons, and games")
+{
+    const auto appContentPath = ResolveDefaultContentPath();
+    auto content = colony::LoadContentFromFile(appContentPath.string());
+
+    auto requireChannel = [&](std::string_view id, std::string_view expectedLabel) {
+        INFO("checking channel: " << id);
+        const auto it = std::find_if(
+            content.channels.begin(),
+            content.channels.end(),
+            [&](const colony::Channel& channel) { return channel.id == id; });
+        REQUIRE_MESSAGE(it != content.channels.end(), "Missing channel for " << id);
+        CHECK(it->label == expectedLabel);
+        REQUIRE_FALSE_MESSAGE(it->programs.empty(), "Channel " << id << " must list at least one program");
+
+        for (const auto& programId : it->programs)
+        {
+            INFO("verifying view for program: " << programId);
+            CHECK_MESSAGE(
+                content.views.contains(programId),
+                "Missing view for program " << programId);
+        }
+    };
+
+    requireChannel("programs", "Programs");
+    requireChannel("addons", "Addons");
+    requireChannel("games", "Games");
 }
 
 TEST_CASE("RenderVerticalGradient draws within bounds")

@@ -6,6 +6,7 @@
 #include "frontend/models/library_view_model.hpp"
 #include "frontend/utils/debounce.hpp"
 #include "ui/hero_panel.hpp"
+#include "ui/hub_panel.hpp"
 #include "ui/library_panel.hpp"
 #include "ui/navigation.hpp"
 #include "ui/program_visuals.hpp"
@@ -100,6 +101,15 @@ class Application
     void ApplyInterfaceDensity() const;
     void ApplyAppearanceCustomizations();
     void QueueLibraryFilterUpdate();
+    void BuildHubPanel();
+    void HandleHubMouseClick(int x, int y);
+    void HandleHubMouseMotion(const SDL_MouseMotionEvent& motion);
+    void HandleHubMouseWheel(const SDL_MouseWheelEvent& wheel);
+    bool HandleHubKeyDown(SDL_Keycode key);
+    void ActivateHubBranch(const std::string& branchId);
+    void ActivateHubBranchByIndex(int index);
+    [[nodiscard]] int FindHubBranchIndexById(const std::string& branchId) const;
+    void ResetHubInteractionState();
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -159,6 +169,7 @@ class Application
     ui::NavigationRail navigationRail_;
     ui::LibraryPanelRenderer libraryPanel_;
     ui::HeroPanelRenderer heroPanel_;
+    ui::HubPanelRenderer hubPanel_;
     ui::SettingsPanel settingsPanel_;
 
     std::unordered_map<std::string, ui::ProgramVisuals> programVisuals_;
@@ -196,6 +207,10 @@ class Application
     std::optional<SDL_Rect> libraryFilterInputRect_;
     std::vector<ui::LibraryRenderResult::SortChipHitbox> librarySortChipHitboxes_;
     std::optional<SDL_Rect> heroActionRect_;
+    std::optional<SDL_Rect> hubButtonRect_;
+    std::vector<ui::HubRenderResult::BranchHitbox> hubBranchHitboxes_;
+    int hoveredHubBranchIndex_ = -1;
+    int focusedHubBranchIndex_ = -1;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
     ui::SettingsPanel::SectionStates settingsSectionStates_{};

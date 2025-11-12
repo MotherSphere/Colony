@@ -36,7 +36,7 @@ void NavigationRail::Build(
     (void)metaFont;
 }
 
-std::vector<SDL_Rect> NavigationRail::Render(
+NavigationRenderResult NavigationRail::Render(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& navRailRect,
@@ -47,7 +47,8 @@ std::vector<SDL_Rect> NavigationRail::Render(
     const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
     double timeSeconds) const
 {
-    std::vector<SDL_Rect> buttonRects(content.channels.size());
+    NavigationRenderResult result;
+    result.channelButtonRects.resize(content.channels.size());
 
     const int navPadding = Scale(28);
     if (chrome_.brand.texture)
@@ -58,6 +59,11 @@ std::vector<SDL_Rect> NavigationRail::Render(
             chrome_.brand.width,
             chrome_.brand.height};
         colony::RenderTexture(renderer, chrome_.brand, brandRect);
+        result.hubButtonRect = brandRect;
+    }
+    else
+    {
+        result.hubButtonRect.reset();
     }
 
     auto channelAccentColor = [&](int index) {
@@ -136,7 +142,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
             colony::RenderTexture(renderer, chrome_.settingsLabel, labelRect);
         }
 
-        buttonRects[static_cast<std::size_t>(index)] = buttonRect;
+        result.channelButtonRects[static_cast<std::size_t>(index)] = buttonRect;
         return y + channelButtonSize + channelSpacing;
     };
 
@@ -186,7 +192,7 @@ std::vector<SDL_Rect> NavigationRail::Render(
         renderChannelButton(settingsChannelIndex, settingsY);
     }
 
-    return buttonRects;
+    return result;
 }
 
 } // namespace colony::ui

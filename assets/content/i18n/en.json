@@ -3,6 +3,31 @@
     "capabilities": "CAPABILITIES",
     "patch_notes": "PATCH NOTES"
   },
+  "hub": {
+    "hero": {
+      "headline": "Welcome back to Colony",
+      "description": "Your mission console gathers every branch here. Choose where to dock next."
+    },
+    "status": "Select a destination to continue.",
+    "branches": {
+      "programs": {
+        "title": "Command Programs",
+        "body": "Launch the orchestration suites that keep operations, signals, and automation aligned."
+      },
+      "addons": {
+        "title": "Extensions & Addons",
+        "body": "Explore curated augmentations to expand diagnostics, production, and research reach."
+      },
+      "games": {
+        "title": "Arcade & Training",
+        "body": "Drop into competitive simulations to sharpen pilots and entertain the crew."
+      },
+      "settings": {
+        "title": "Control Center",
+        "body": "Tune appearance, language, and everyday comforts before heading back to duty."
+      }
+    }
+  },
   "library": {
     "filter_label": "Installed programs"
   },

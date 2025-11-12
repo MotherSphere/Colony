@@ -4,6 +4,44 @@
     "name": "Operator Lyra",
     "status": "Online"
   },
+  "hub": {
+    "headlineKey": "hub.hero.headline",
+    "descriptionKey": "hub.hero.description",
+    "branches": [
+      {
+        "id": "hub_programs",
+        "titleKey": "hub.branches.programs.title",
+        "descriptionKey": "hub.branches.programs.body",
+        "accentColor": "#3B82F6",
+        "channelId": "programs",
+        "programId": "PROGRAMS_CORE_SUITE"
+      },
+      {
+        "id": "hub_addons",
+        "titleKey": "hub.branches.addons.title",
+        "descriptionKey": "hub.branches.addons.body",
+        "accentColor": "#F59E0B",
+        "channelId": "addons",
+        "programId": "ADDONS_EXTENSION_BAY"
+      },
+      {
+        "id": "hub_games",
+        "titleKey": "hub.branches.games.title",
+        "descriptionKey": "hub.branches.games.body",
+        "accentColor": "#60A5FA",
+        "channelId": "games",
+        "programId": "GAMES_STARFORGE_TRAINER"
+      },
+      {
+        "id": "hub_settings",
+        "titleKey": "hub.branches.settings.title",
+        "descriptionKey": "hub.branches.settings.body",
+        "accentColor": "#7FDBFF",
+        "channelId": "settings",
+        "programId": "SETTINGS_APPEARANCE"
+      }
+    ]
+  },
   "channels": [
     {
       "id": "applications",

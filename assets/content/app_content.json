@@ -11,6 +11,27 @@
       "programs": []
     },
     {
+      "id": "programs",
+      "label": "Programs",
+      "programs": [
+        "PROGRAMS_CORE_SUITE"
+      ]
+    },
+    {
+      "id": "addons",
+      "label": "Addons",
+      "programs": [
+        "ADDONS_EXTENSION_BAY"
+      ]
+    },
+    {
+      "id": "games",
+      "label": "Games",
+      "programs": [
+        "GAMES_SIMULATION_DECK"
+      ]
+    },
+    {
       "id": "settings",
       "label": "Settings",
       "programs": [
@@ -21,6 +42,108 @@
     }
   ],
   "views": {
+    "PROGRAMS_CORE_SUITE": {
+      "heading": "Command Programs",
+      "tagline": "Deploy essential command software to coordinate every wing of the station.",
+      "paragraphs": [
+        "Launch colony-wide dashboards for logistics, observatories, and research bays from a single terminal.",
+        "Bundle operations-critical tooling into quick-access loadouts for shift leads and mission control."
+      ],
+      "heroHighlights": [
+        "Unified launcher for tactical, logistical, and engineering suites",
+        "Role-focused workspaces that remember favorite program stacks",
+        "Instant hand-off between bridge crew with synced states"
+      ],
+      "sections": [
+        {
+          "title": "Featured programs",
+          "options": [
+            "Logistics Control",
+            "Signal Uplink",
+            "Survey Cartographer"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch program",
+      "statusMessage": "Select a command program to prepare its console.",
+      "version": "Command stack v4.2",
+      "installState": "Installed",
+      "availability": "Ready",
+      "lastLaunched": "Executed earlier today",
+      "accentColor": "#3B82F6",
+      "heroGradient": [
+        "#0F1D35",
+        "#081120"
+      ]
+    },
+    "ADDONS_EXTENSION_BAY": {
+      "heading": "Extension Bay",
+      "tagline": "Discover addons that extend Colony with specialist capabilities.",
+      "paragraphs": [
+        "Browse curated augmentations to expand analytics, automation, and habitat management.",
+        "Stage experimental modules in a sandbox before rolling them out to the fleet."
+      ],
+      "heroHighlights": [
+        "Verified integrations reviewed by mission control",
+        "Automated compatibility checks across installed programs",
+        "Rapid rollback with snapshot-based deployment"
+      ],
+      "sections": [
+        {
+          "title": "Trending addons",
+          "options": [
+            "Atmosphere Harmonizer",
+            "Drone Swarm Planner",
+            "Bio-Dome Diagnostics"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Install addon",
+      "statusMessage": "Inspect an addon to review its deployment plan.",
+      "version": "Catalog build 318",
+      "installState": "Marketplace",
+      "availability": "Available",
+      "lastLaunched": "Curated moments ago",
+      "accentColor": "#F59E0B",
+      "heroGradient": [
+        "#29140A",
+        "#120804"
+      ]
+    },
+    "GAMES_SIMULATION_DECK": {
+      "heading": "Simulation Deck",
+      "tagline": "Brief the crew with immersive training and downtime experiences.",
+      "paragraphs": [
+        "Rotate through mission drills, exploration sims, and morale-boosting challenges.",
+        "Capture performance analytics to calibrate future training runs."
+      ],
+      "heroHighlights": [
+        "Campaign playlists with shared crew progress",
+        "Spectator console for live telemetry",
+        "Cross-platform saves synchronized to crew IDs"
+      ],
+      "sections": [
+        {
+          "title": "Featured experiences",
+          "options": [
+            "Nebula Cart Run",
+            "Colony Defense Uplink",
+            "Voidwalker Expedition"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch simulation",
+      "statusMessage": "Choose a simulation to ready the holodeck.",
+      "version": "Simulation deck v2.6",
+      "installState": "Installed",
+      "availability": "Ready",
+      "lastLaunched": "Rotated yesterday",
+      "accentColor": "#10B981",
+      "heroGradient": [
+        "#08211A",
+        "#04120D"
+      ]
+    },
     "SETTINGS_APPEARANCE": {
       "heading": "Appearance",
       "tagline": "Personalize the Colony interface to match your mission tempo.",

@@ -14,21 +14,27 @@
       "id": "programs",
       "label": "Programs",
       "programs": [
-        "PROGRAMS_CORE_SUITE"
+        "PROGRAMS_CORE_SUITE",
+        "PROGRAMS_SIGNAL_MATRIX",
+        "PROGRAMS_AUTOMATION_DIRECTOR"
       ]
     },
     {
       "id": "addons",
       "label": "Addons",
       "programs": [
-        "ADDONS_EXTENSION_BAY"
+        "ADDONS_EXTENSION_BAY",
+        "ADDONS_REACTIVE_SHIELDING",
+        "ADDONS_SYNAPSE_BRIDGE"
       ]
     },
     {
       "id": "games",
       "label": "Games",
       "programs": [
-        "GAMES_SIMULATION_DECK"
+        "GAMES_SIMULATION_DECK",
+        "GAMES_TACTICAL_BRIEFING",
+        "GAMES_STARFORGE_TRAINER"
       ]
     },
     {
@@ -76,6 +82,74 @@
         "#081120"
       ]
     },
+    "PROGRAMS_SIGNAL_MATRIX": {
+      "heading": "Signal Matrix",
+      "tagline": "Synchronise fleet communications with adaptive quantum relays.",
+      "paragraphs": [
+        "Continuously retune long-range antennas to keep convoys connected across stellar drift.",
+        "Resolve interference instantly with automated spectrum sweeps and corrective beamforming."
+      ],
+      "heroHighlights": [
+        "Dynamic beam steering keeps channels clear for priority directives",
+        "Predictive diagnostics forecast outages before they interrupt command chatter",
+        "Encrypted channels refresh with mission-grade authentication"
+      ],
+      "sections": [
+        {
+          "title": "Uplink presets",
+          "options": [
+            "Fleet broadcast",
+            "Recon covert band",
+            "Engineering maintenance mesh"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Stabilise link",
+      "statusMessage": "Signal Matrix is regulating colony-wide communications.",
+      "version": "Relay core v7.1",
+      "installState": "Installed",
+      "availability": "Live",
+      "lastLaunched": "Recalibrated moments ago",
+      "accentColor": "#6366F1",
+      "heroGradient": [
+        "#11123A",
+        "#090A1F"
+      ]
+    },
+    "PROGRAMS_AUTOMATION_DIRECTOR": {
+      "heading": "Automation Director",
+      "tagline": "Coordinate maintenance drones and production lines without manual oversight.",
+      "paragraphs": [
+        "Author workflow templates that distribute tasks across fabrication bays instantly.",
+        "Monitor progress with anomaly alerts that surface just what the crew needs to check."
+      ],
+      "heroHighlights": [
+        "Drag-and-drop routines for drones, printers, and inspection teams",
+        "Automatic throttling keeps resource loads balanced",
+        "AI generated recommendations fine tune throughput"
+      ],
+      "sections": [
+        {
+          "title": "Automation kits",
+          "options": [
+            "Hull patching swarm",
+            "Habitat climate stabiliser",
+            "Fabrication line optimiser"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Deploy automation",
+      "statusMessage": "Automation Director is balancing maintenance routines.",
+      "version": "Director build 3.5",
+      "installState": "Installed",
+      "availability": "Ready",
+      "lastLaunched": "Triggered within the hour",
+      "accentColor": "#22D3EE",
+      "heroGradient": [
+        "#0D1E25",
+        "#071015"
+      ]
+    },
     "ADDONS_EXTENSION_BAY": {
       "heading": "Extension Bay",
       "tagline": "Discover addons that extend Colony with specialist capabilities.",
@@ -110,6 +184,74 @@
         "#120804"
       ]
     },
+    "ADDONS_REACTIVE_SHIELDING": {
+      "heading": "Reactive Shielding",
+      "tagline": "Layer adaptive hull shielding tuned to the storm ahead.",
+      "paragraphs": [
+        "Blend magnetic and plasma barriers based on telemetry from deep-space sensors.",
+        "Automate fallback patterns that cocoon sensitive decks during volatile encounters."
+      ],
+      "heroHighlights": [
+        "Profiles cross-reference threat libraries curated by mission control",
+        "Telemetry integration provides live attenuation feedback",
+        "Failsafe discharge vents to keep power systems stable"
+      ],
+      "sections": [
+        {
+          "title": "Shield templates",
+          "options": [
+            "Particle storm deflection",
+            "Micro-meteor mesh",
+            "High-energy pulse dampening"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Install shield",
+      "statusMessage": "Reactive Shielding calibrations are queued for deployment.",
+      "version": "Shield core 2.9",
+      "installState": "Marketplace",
+      "availability": "Available",
+      "lastLaunched": "Downloaded earlier today",
+      "accentColor": "#FB7185",
+      "heroGradient": [
+        "#2B1016",
+        "#14080C"
+      ]
+    },
+    "ADDONS_SYNAPSE_BRIDGE": {
+      "heading": "Synapse Bridge",
+      "tagline": "Pipe telemetry from independent research domes directly into command analytics.",
+      "paragraphs": [
+        "Consolidate findings from roaming science crews without forcing them onto the main network.",
+        "Flag anomalies instantly with anomaly scrubbing tuned for frontier expeditions."
+      ],
+      "heroHighlights": [
+        "Offline caching keeps samples safe until the uplink stabilises",
+        "Role based channels respect research embargoes",
+        "Data normalisation aligns every module with the command schema"
+      ],
+      "sections": [
+        {
+          "title": "Integration presets",
+          "options": [
+            "Bio-dome analytics",
+            "Astrometrics uplink",
+            "Field lab dropbox"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Connect bridge",
+      "statusMessage": "Synapse Bridge is staging new data feeds.",
+      "version": "Bridge release 1.4",
+      "installState": "Marketplace",
+      "availability": "Available",
+      "lastLaunched": "Synced minutes ago",
+      "accentColor": "#A855F7",
+      "heroGradient": [
+        "#1F0F2C",
+        "#0E0616"
+      ]
+    },
     "GAMES_SIMULATION_DECK": {
       "heading": "Simulation Deck",
       "tagline": "Brief the crew with immersive training and downtime experiences.",
@@ -142,6 +284,74 @@
       "heroGradient": [
         "#08211A",
         "#04120D"
+      ]
+    },
+    "GAMES_TACTICAL_BRIEFING": {
+      "heading": "Tactical Briefing",
+      "tagline": "Recreate mission-critical encounters for rapid crew alignment.",
+      "paragraphs": [
+        "Inject live starfield intelligence and map overlays straight into the holodeck.",
+        "Let squad leads annotate stratagems collaboratively before the drop."
+      ],
+      "heroHighlights": [
+        "Scenario scripting mirrors real fleet telemetry",
+        "Briefing exports shareable to every ops console",
+        "Adaptive AI tunes resistance levels in real time"
+      ],
+      "sections": [
+        {
+          "title": "Briefing rotations",
+          "options": [
+            "Boarding drill",
+            "Asteroid chase",
+            "Convoy extraction"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Launch briefing",
+      "statusMessage": "Tactical Briefing is awaiting squad confirmation.",
+      "version": "Briefing suite 5.0",
+      "installState": "Installed",
+      "availability": "Ready",
+      "lastLaunched": "Simulated earlier today",
+      "accentColor": "#F472B6",
+      "heroGradient": [
+        "#261022",
+        "#10050F"
+      ]
+    },
+    "GAMES_STARFORGE_TRAINER": {
+      "heading": "Starforge Trainer",
+      "tagline": "Test piloting instincts against procedurally forged skirmishes.",
+      "paragraphs": [
+        "Assemble craft loadouts and flight paths in seconds with modular templates.",
+        "Compete asynchronously with other wings to climb the colony leaderboard."
+      ],
+      "heroHighlights": [
+        "Weekly challenges curated by mission control",
+        "Ghost runs let rookies shadow ace pilots",
+        "Spectator mode streams telemetry to the mess hall"
+      ],
+      "sections": [
+        {
+          "title": "Simulation playlists",
+          "options": [
+            "Orbital gauntlet",
+            "Nebula sprint",
+            "Hull weaving trials"
+          ]
+        }
+      ],
+      "primaryActionLabel": "Start training",
+      "statusMessage": "Starforge Trainer is preloading skirmish data.",
+      "version": "Trainer build 2.1",
+      "installState": "Installed",
+      "availability": "Ready",
+      "lastLaunched": "Rotated this shift",
+      "accentColor": "#60A5FA",
+      "heroGradient": [
+        "#0E1B32",
+        "#060D19"
       ]
     },
     "SETTINGS_APPEARANCE": {

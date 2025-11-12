@@ -32,9 +32,25 @@ void HubPanelRenderer::Build(
     tileBodyFont_ = tileBodyFont;
 
     hero_.headline = colony::CreateTextTexture(renderer, headlineFont, content.headline, theme.heroTitle);
+    hero_.eyebrow = {};
+    hero_.metaLine = {};
     hero_.description = content.description;
     hero_.descriptionWidth = 0;
     hero_.descriptionLines.clear();
+
+    if (tileBodyFont_ != nullptr)
+    {
+        SDL_Color eyebrowColor = colony::color::Mix(theme.heroTitle, theme.heroGradientFallbackEnd, 0.5f);
+        hero_.eyebrow = colony::CreateTextTexture(renderer, tileBodyFont_, "Control Hub Overview", eyebrowColor);
+
+        if (!content.branches.empty())
+        {
+            const int branchCount = static_cast<int>(content.branches.size());
+            std::string metaLineText = std::to_string(branchCount) + (branchCount == 1 ? " destination ready for you" : " destinations ready for you");
+            SDL_Color metaColor = colony::color::Mix(theme.heroBody, theme.heroTitle, 0.35f);
+            hero_.metaLine = colony::CreateTextTexture(renderer, tileBodyFont_, metaLineText, metaColor);
+        }
+    }
 
     branches_.clear();
     branches_.reserve(content.branches.size());
@@ -47,6 +63,11 @@ void HubPanelRenderer::Build(
         branch.descriptionWidth = 0;
         branch.bodyLines.clear();
         branch.title = colony::CreateTextTexture(renderer, tileTitleFont, branchContent.title, theme.heroTitle);
+        if (tileBodyFont_ != nullptr)
+        {
+            SDL_Color chipTextColor = theme.background;
+            branch.chipLabel = colony::CreateTextTexture(renderer, tileBodyFont_, branchContent.title, chipTextColor);
+        }
         branches_.emplace_back(std::move(branch));
     }
 }
@@ -114,6 +135,7 @@ HubRenderResult HubPanelRenderer::Render(
     SDL_Color accentColor = branches_.empty() ? theme.channelBadge : resolveAccent(branches_.front());
     const float orbit = static_cast<float>(std::sin(timeSeconds * 0.7));
     const int accentDiameter = Scale(240);
+    const int heroPadding = Scale(48);
     SDL_Rect accentDisc{heroRect.x + heroRect.w - accentDiameter - Scale(80),
                         heroRect.y + heroRect.h / 2 - accentDiameter / 2 + static_cast<int>(orbit * Scale(16)),
                         accentDiameter,
@@ -129,9 +151,23 @@ HubRenderResult HubPanelRenderer::Render(
     SDL_Color accentFillSmall = colony::color::Mix(accentColor, theme.heroTitle, 0.2f);
     SDL_SetRenderDrawColor(renderer, accentFillSmall.r, accentFillSmall.g, accentFillSmall.b, 64);
     colony::drawing::RenderFilledRoundedRect(renderer, accentDiscSmall, accentDiscSmall.w / 2);
+
+    SDL_Rect heroGrid{heroRect.x + heroPadding / 2, heroRect.y + heroPadding / 2, heroRect.w - heroPadding, heroRect.h - heroPadding};
+    if (heroGrid.w > 0 && heroGrid.h > 0)
+    {
+        SDL_Color gridColor = colony::color::Mix(accentColor, gradientEnd, 0.55f);
+        SDL_SetRenderDrawColor(renderer, gridColor.r, gridColor.g, gridColor.b, 38);
+        for (int x = heroGrid.x; x <= heroGrid.x + heroGrid.w; x += Scale(56))
+        {
+            SDL_RenderDrawLine(renderer, x, heroGrid.y, x, heroGrid.y + heroGrid.h);
+        }
+        for (int y = heroGrid.y; y <= heroGrid.y + heroGrid.h; y += Scale(44))
+        {
+            SDL_RenderDrawLine(renderer, heroGrid.x, y, heroGrid.x + heroGrid.w, y);
+        }
+    }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-    const int heroPadding = Scale(48);
     const int heroContentWidth = std::max(0, heroRect.w - heroPadding * 2);
     const int heroContentX = heroRect.x + heroPadding;
     int heroCursorY = heroRect.y + heroPadding;
@@ -139,12 +175,38 @@ HubRenderResult HubPanelRenderer::Render(
 
     RebuildHeroDescription(renderer, heroTextWidth, theme.heroBody);
 
+    if (hero_.eyebrow.texture)
+    {
+        const int eyebrowPaddingX = Scale(18);
+        const int eyebrowPaddingY = Scale(8);
+        SDL_Rect eyebrowRect{
+            heroContentX,
+            heroCursorY,
+            hero_.eyebrow.width + eyebrowPaddingX * 2,
+            hero_.eyebrow.height + eyebrowPaddingY * 2};
+        SDL_Color eyebrowFill = colony::color::Mix(accentColor, theme.heroTitle, 0.45f);
+        SDL_Color eyebrowOutline = colony::color::Mix(accentColor, theme.heroTitle, 0.25f);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, eyebrowFill.r, eyebrowFill.g, eyebrowFill.b, 130);
+        colony::drawing::RenderFilledRoundedRect(renderer, eyebrowRect, eyebrowRect.h / 2);
+        SDL_SetRenderDrawColor(renderer, eyebrowOutline.r, eyebrowOutline.g, eyebrowOutline.b, 160);
+        colony::drawing::RenderRoundedRect(renderer, eyebrowRect, eyebrowRect.h / 2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        SDL_Rect eyebrowTextRect{
+            eyebrowRect.x + eyebrowPaddingX,
+            eyebrowRect.y + eyebrowPaddingY,
+            hero_.eyebrow.width,
+            hero_.eyebrow.height};
+        colony::RenderTexture(renderer, hero_.eyebrow, eyebrowTextRect);
+        heroCursorY += eyebrowRect.h + Scale(20);
+    }
+
     if (hero_.headline.texture)
     {
-        SDL_Rect accentRule{heroContentX, heroCursorY - Scale(18), Scale(54), Scale(6)};
+        SDL_Rect accentRule{heroContentX, heroCursorY - Scale(18), Scale(64), Scale(6)};
         SDL_Color accentRuleColor = colony::color::Mix(accentColor, theme.heroTitle, 0.35f);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, accentRuleColor.r, accentRuleColor.g, accentRuleColor.b, 140);
+        SDL_SetRenderDrawColor(renderer, accentRuleColor.r, accentRuleColor.g, accentRuleColor.b, 150);
         colony::drawing::RenderFilledRoundedRect(renderer, accentRule, accentRule.h / 2);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
@@ -170,7 +232,76 @@ HubRenderResult HubPanelRenderer::Render(
         }
     }
 
-    heroCursorY += Scale(14);
+    if (hero_.metaLine.texture)
+    {
+        heroCursorY += Scale(18);
+        SDL_Rect metaRect{heroContentX, heroCursorY, hero_.metaLine.width, hero_.metaLine.height};
+        colony::RenderTexture(renderer, hero_.metaLine, metaRect);
+        heroCursorY += hero_.metaLine.height;
+    }
+
+    int chipCursorX = heroContentX;
+    int chipCursorY = heroCursorY + Scale(22);
+    int chipRowHeight = 0;
+    const int chipPaddingX = Scale(18);
+    const int chipPaddingY = Scale(10);
+    const int chipSpacing = Scale(12);
+    int chipsRendered = 0;
+    const int maxChips = 4;
+    for (std::size_t index = 0; index < branches_.size() && chipsRendered < maxChips; ++index)
+    {
+        const BranchChrome& branch = branches_[index];
+        if (!branch.chipLabel.texture)
+        {
+            continue;
+        }
+
+        const int chipWidth = branch.chipLabel.width + chipPaddingX * 2;
+        const int chipHeight = branch.chipLabel.height + chipPaddingY * 2;
+        if (chipCursorX + chipWidth > heroContentX + heroTextWidth && chipCursorX > heroContentX)
+        {
+            chipCursorX = heroContentX;
+            chipCursorY += chipRowHeight + chipSpacing;
+            chipRowHeight = 0;
+        }
+
+        SDL_Rect chipRect{chipCursorX, chipCursorY, chipWidth, chipHeight};
+        SDL_Color branchAccent = resolveAccent(branch);
+        SDL_Color chipFill = MixWithBackground(branchAccent, theme.heroTitle, 0.35f);
+        SDL_Color chipOutline = colony::color::Mix(branchAccent, theme.heroTitle, 0.45f);
+        SDL_Color chipHighlight = colony::color::Mix(branchAccent, theme.heroTitle, 0.65f);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, chipFill.r, chipFill.g, chipFill.b, 200);
+        colony::drawing::RenderFilledRoundedRect(renderer, chipRect, chipRect.h / 2);
+        SDL_Rect chipHighlightRect{
+            chipRect.x + chipRect.w / 2,
+            chipRect.y,
+            chipRect.w / 2,
+            chipRect.h};
+        SDL_SetRenderDrawColor(renderer, chipHighlight.r, chipHighlight.g, chipHighlight.b, 70);
+        colony::drawing::RenderFilledRoundedRect(
+            renderer,
+            chipHighlightRect,
+            chipRect.h / 2,
+            colony::drawing::CornerTopRight | colony::drawing::CornerBottomRight);
+        SDL_SetRenderDrawColor(renderer, chipOutline.r, chipOutline.g, chipOutline.b, 210);
+        colony::drawing::RenderRoundedRect(renderer, chipRect, chipRect.h / 2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+        SDL_Rect chipTextRect{chipRect.x + chipPaddingX, chipRect.y + chipPaddingY, branch.chipLabel.width, branch.chipLabel.height};
+        colony::RenderTexture(renderer, branch.chipLabel, chipTextRect);
+
+        chipCursorX += chipRect.w + chipSpacing;
+        chipRowHeight = std::max(chipRowHeight, chipRect.h);
+        ++chipsRendered;
+    }
+
+    if (chipRowHeight > 0)
+    {
+        heroCursorY = chipCursorY + chipRowHeight;
+    }
+
+    heroCursorY += Scale(28);
     SDL_Rect heroBottomGlow{heroContentX, heroCursorY, heroTextWidth, Scale(6)};
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
     SDL_Color heroGlowColor = colony::color::Mix(accentColor, theme.heroTitle, 0.3f);
@@ -178,7 +309,7 @@ HubRenderResult HubPanelRenderer::Render(
     SDL_RenderFillRect(renderer, &heroBottomGlow);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-    const int gridTop = heroRect.y + heroRect.h + Scale(40);
+    const int gridTop = heroRect.y + heroRect.h + Scale(32);
     const int gridPaddingX = Scale(40);
     const int gridWidth = std::max(0, bounds.w - gridPaddingX * 2);
     const int tileGap = Scale(24);
@@ -223,7 +354,7 @@ HubRenderResult HubPanelRenderer::Render(
         }
 
         BranchChrome& branch = branches_[index];
-        const int tilePadding = Scale(28);
+        const int tilePadding = Scale(32);
         const int textWidth = std::max(0, tileWidth - tilePadding * 2);
         RebuildBranchDescription(renderer, branch, textWidth, theme.muted);
 
@@ -252,8 +383,8 @@ HubRenderResult HubPanelRenderer::Render(
                 }
             }
         }
-        tileHeight += Scale(36);
-        tileHeight = std::max(tileHeight, Scale(220));
+        tileHeight += Scale(44);
+        tileHeight = std::max(tileHeight, Scale(240));
 
         const int tileX = bounds.x + gridPaddingX + column * (tileWidth + tileGap);
         const int tileY = columnOffsets[static_cast<std::size_t>(column)];
@@ -286,6 +417,30 @@ HubRenderResult HubPanelRenderer::Render(
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         SDL_SetRenderDrawColor(renderer, baseFill.r, baseFill.g, baseFill.b, baseFill.a);
         colony::drawing::RenderFilledRoundedRect(renderer, drawRect, Scale(24));
+
+        SDL_Rect headerRect = drawRect;
+        headerRect.h = std::min(Scale(120), drawRect.h / 2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        for (int layer = 0; layer < 3; ++layer)
+        {
+            SDL_Rect layerRect = headerRect;
+            layerRect.y += layer * Scale(12);
+            layerRect.h -= layer * Scale(10);
+            if (layerRect.h <= 0)
+            {
+                continue;
+            }
+            SDL_Color layerColor = colony::color::Mix(branchAccent, theme.heroTitle, 0.22f + 0.16f * static_cast<float>(layer));
+            const Uint8 layerAlpha = static_cast<Uint8>(96 - layer * 18);
+            SDL_SetRenderDrawColor(renderer, layerColor.r, layerColor.g, layerColor.b, layerAlpha);
+            colony::drawing::RenderFilledRoundedRect(
+                renderer,
+                layerRect,
+                Scale(24),
+                colony::drawing::CornerTopLeft | colony::drawing::CornerTopRight);
+        }
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
         SDL_SetRenderDrawColor(renderer, outline.r, outline.g, outline.b, outline.a);
         colony::drawing::RenderRoundedRect(renderer, drawRect, Scale(24));
 
@@ -303,13 +458,26 @@ HubRenderResult HubPanelRenderer::Render(
         }
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-        const int textStartX = drawRect.x + tilePadding;
-        int textCursorY = drawRect.y + tilePadding;
+        SDL_Rect badgeRect{drawRect.x + drawRect.w - Scale(44), drawRect.y + Scale(20), Scale(20), Scale(20)};
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_Color badgeColor = colony::color::Mix(branchAccent, theme.heroTitle, isActive ? 0.5f : 0.35f);
+        SDL_SetRenderDrawColor(renderer, badgeColor.r, badgeColor.g, badgeColor.b, 200);
+        colony::drawing::RenderFilledRoundedRect(renderer, badgeRect, badgeRect.h / 2);
+        SDL_Rect badgeInner{badgeRect.x + Scale(6), badgeRect.y + Scale(6), std::max(0, badgeRect.w - Scale(12)), std::max(0, badgeRect.h - Scale(12))};
+        if (badgeInner.w > 0 && badgeInner.h > 0)
+        {
+            SDL_SetRenderDrawColor(renderer, theme.background.r, theme.background.g, theme.background.b, 220);
+            colony::drawing::RenderFilledRoundedRect(renderer, badgeInner, badgeInner.h / 2);
+        }
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-        SDL_Rect tileAccentBar{textStartX, textCursorY - Scale(14), Scale(48), Scale(6)};
+        const int textStartX = drawRect.x + tilePadding;
+        int textCursorY = drawRect.y + tilePadding + Scale(6);
+
+        SDL_Rect tileAccentBar{textStartX, textCursorY - Scale(16), Scale(64), Scale(6)};
         SDL_Color barColor = colony::color::Mix(branchAccent, theme.heroTitle, 0.45f);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, barColor.r, barColor.g, barColor.b, 160);
+        SDL_SetRenderDrawColor(renderer, barColor.r, barColor.g, barColor.b, 170);
         colony::drawing::RenderFilledRoundedRect(renderer, tileAccentBar, tileAccentBar.h / 2);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
@@ -342,6 +510,12 @@ HubRenderResult HubPanelRenderer::Render(
         const int arrowSize = Scale(26);
         SDL_Rect actionRect{drawRect.x + drawRect.w - arrowSize - tilePadding, drawRect.y + drawRect.h - arrowSize - tilePadding,
                             arrowSize, arrowSize};
+        SDL_Rect actionBackdrop{
+            actionRect.x - Scale(10), actionRect.y - Scale(10), actionRect.w + Scale(20), actionRect.h + Scale(20)};
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_Color actionBackground = MixWithBackground(branchAccent, theme.heroTitle, isHovered ? 0.4f : 0.25f);
+        SDL_SetRenderDrawColor(renderer, actionBackground.r, actionBackground.g, actionBackground.b, isHovered ? 150 : 110);
+        colony::drawing::RenderFilledRoundedRect(renderer, actionBackdrop, actionBackdrop.h / 2);
         SDL_SetRenderDrawColor(renderer, hoverGlow.r, hoverGlow.g, hoverGlow.b, SDL_ALPHA_OPAQUE);
         SDL_RenderDrawLine(renderer, actionRect.x, actionRect.y + actionRect.h / 2, actionRect.x + actionRect.w, actionRect.y + actionRect.h / 2);
         SDL_RenderDrawLine(
@@ -356,6 +530,7 @@ HubRenderResult HubPanelRenderer::Render(
             actionRect.y + actionRect.h,
             actionRect.x + actionRect.w,
             actionRect.y + actionRect.h / 2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
         result.branchHitboxes.push_back(HubRenderResult::BranchHitbox{branch.id, drawRect});
     }

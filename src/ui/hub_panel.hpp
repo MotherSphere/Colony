@@ -65,8 +65,6 @@ class HubPanelRenderer
     struct HeroChrome
     {
         colony::TextTexture headline;
-        colony::TextTexture eyebrow;
-        colony::TextTexture metaLine;
         std::string description;
         mutable int descriptionWidth = 0;
         mutable std::vector<colony::TextTexture> descriptionLines;
@@ -76,7 +74,6 @@ class HubPanelRenderer
     {
         std::string id;
         colony::TextTexture title;
-        colony::TextTexture chipLabel;
         std::string description;
         SDL_Color accent{0, 0, 0, SDL_ALPHA_OPAQUE};
         mutable int descriptionWidth = 0;

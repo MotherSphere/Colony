@@ -44,12 +44,30 @@ struct UserProfile
     std::string status{"Offline"};
 };
 
+struct HubBranch
+{
+    std::string id;
+    std::string titleLocalizationKey;
+    std::string descriptionLocalizationKey;
+    std::string accentColor;
+    std::string channelId;
+    std::string programId;
+};
+
+struct HubConfiguration
+{
+    std::string headlineLocalizationKey;
+    std::string descriptionLocalizationKey;
+    std::vector<HubBranch> branches;
+};
+
 struct AppContent
 {
     std::string brandName;
     UserProfile user;
     std::vector<Channel> channels;
     std::unordered_map<std::string, ViewContent> views;
+    HubConfiguration hub;
 };
 
 } // namespace colony

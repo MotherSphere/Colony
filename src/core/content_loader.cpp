@@ -14,6 +14,7 @@ const char* kViewsKey = "views";
 const char* kChannelsKey = "channels";
 const char* kUserKey = "user";
 const char* kBrandKey = "brand";
+const char* kHubKey = "hub";
 
 std::ifstream OpenFile(const std::string& filePath)
 {
@@ -42,8 +43,87 @@ AppContent ContentValidator::ParseDocument(const nlohmann::json& document) const
     ParseUserSection(document, content);
     ParseViewsSection(document, content);
     ParseChannelsSection(document, content);
+    ParseHubSection(document, content);
 
     return content;
+}
+
+void ContentValidator::ParseHubSection(const nlohmann::json& document, AppContent& content) const
+{
+    content.hub = {};
+
+    if (!document.contains(kHubKey))
+    {
+        return;
+    }
+
+    const auto& hubJson = document[kHubKey];
+    if (!hubJson.is_object())
+    {
+        throw std::runtime_error("Content file field \"hub\" must be an object.");
+    }
+
+    auto requireString = [](const nlohmann::json& node, const char* field) -> std::string {
+        if (!node.contains(field) || !node[field].is_string())
+        {
+            throw std::runtime_error(std::string{"Hub field \""} + field + "\" must be a string.");
+        }
+        const std::string value = node[field].get<std::string>();
+        if (value.empty())
+        {
+            throw std::runtime_error(std::string{"Hub field \""} + field + "\" must not be empty.");
+        }
+        return value;
+    };
+
+    content.hub.headlineLocalizationKey = requireString(hubJson, "headlineKey");
+    content.hub.descriptionLocalizationKey = requireString(hubJson, "descriptionKey");
+
+    if (!hubJson.contains("branches"))
+    {
+        return;
+    }
+
+    const auto& branchesJson = hubJson["branches"];
+    if (!branchesJson.is_array())
+    {
+        throw std::runtime_error("Hub branches must be declared as an array.");
+    }
+
+    for (const auto& branchJson : branchesJson)
+    {
+        content.hub.branches.emplace_back(ParseHubBranch(branchJson));
+    }
+}
+
+HubBranch ContentValidator::ParseHubBranch(const nlohmann::json& json) const
+{
+    if (!json.is_object())
+    {
+        throw std::runtime_error("Each hub branch entry must be a JSON object.");
+    }
+
+    auto requireString = [](const nlohmann::json& node, const char* field) -> std::string {
+        if (!node.contains(field) || !node[field].is_string())
+        {
+            throw std::runtime_error(std::string{"Hub branch field \""} + field + "\" must be a string.");
+        }
+        const std::string value = node[field].get<std::string>();
+        if (value.empty())
+        {
+            throw std::runtime_error(std::string{"Hub branch field \""} + field + "\" must not be empty.");
+        }
+        return value;
+    };
+
+    HubBranch branch;
+    branch.id = requireString(json, "id");
+    branch.titleLocalizationKey = requireString(json, "titleKey");
+    branch.descriptionLocalizationKey = requireString(json, "descriptionKey");
+    branch.accentColor = json.value("accentColor", "");
+    branch.channelId = json.value("channelId", "");
+    branch.programId = json.value("programId", "");
+    return branch;
 }
 
 void ContentValidator::ParseUserSection(const nlohmann::json& document, AppContent& content) const

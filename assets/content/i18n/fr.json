@@ -3,6 +3,31 @@
     "capabilities": "CAPACITÉS",
     "patch_notes": "NOTES DE MISE À JOUR"
   },
+  "hub": {
+    "hero": {
+      "headline": "Bienvenue sur le hub Colony",
+      "description": "Votre console rassemble toutes les branches ici. Choisissez votre prochaine destination."
+    },
+    "status": "Sélectionnez une destination pour continuer.",
+    "branches": {
+      "programs": {
+        "title": "Programmes de commande",
+        "body": "Lancez les suites d'orchestration qui alignent opérations, signaux et automatisation."
+      },
+      "addons": {
+        "title": "Extensions & modules",
+        "body": "Explorez des augmentations sélectionnées pour étendre diagnostics, production et recherche."
+      },
+      "games": {
+        "title": "Arcade & entraînement",
+        "body": "Plongez dans des simulations compétitives pour aiguiser les pilotes et divertir l'équipage."
+      },
+      "settings": {
+        "title": "Centre de contrôle",
+        "body": "Réglez l'apparence, la langue et le confort quotidien avant de reprendre le service."
+      }
+    }
+  },
   "library": {
     "filter_label": "Programmes installés"
   },

@@ -7,11 +7,18 @@
 
 #include <SDL2/SDL.h>
 
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
 namespace colony::ui
 {
+
+struct NavigationRenderResult
+{
+    std::vector<SDL_Rect> channelButtonRects;
+    std::optional<SDL_Rect> hubButtonRect;
+};
 
 class NavigationRail
 {
@@ -24,7 +31,7 @@ class NavigationRail
         const colony::AppContent& content,
         const ThemeColors& theme);
 
-    std::vector<SDL_Rect> Render(
+    NavigationRenderResult Render(
         SDL_Renderer* renderer,
         const ThemeColors& theme,
         const SDL_Rect& navRailRect,

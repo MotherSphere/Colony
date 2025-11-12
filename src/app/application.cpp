@@ -297,11 +297,23 @@ int Application::Run()
 void Application::ShowHub()
 {
     interfaceState_ = InterfaceState::Hub;
+    ResetHubInteractionState();
+    HideAddAppDialog();
+    HideEditUserAppDialog();
+    HideCustomThemeDialog();
+    activeCustomizationDragId_.reset();
+    libraryFilterFocused_ = false;
+    UpdateTextInputState();
+    const std::string statusText = GetLocalizedString("hub.status", "Select a destination to continue.");
+    UpdateStatusMessage(statusText);
 }
 
 void Application::EnterMainInterface()
 {
     interfaceState_ = InterfaceState::MainInterface;
+    hubBranchHitboxes_.clear();
+    hoveredHubBranchIndex_ = -1;
+    focusedHubBranchIndex_ = -1;
 }
 
 bool Application::InitializeSDL()
@@ -525,6 +537,7 @@ void Application::RebuildTheme()
         });
     settingsScrollOffset_ = std::max(0, previousSettingsScrollOffset);
 
+    BuildHubPanel();
     RebuildProgramVisuals();
     UpdateStatusMessage(statusBuffer_.empty() && !activeProgramId_.empty()
             ? content_.views.at(activeProgramId_).statusMessage
@@ -755,6 +768,12 @@ void Application::HandleMouseClick(int x, int y)
 {
     activeCustomizationDragId_.reset();
 
+    if (interfaceState_ == InterfaceState::Hub)
+    {
+        HandleHubMouseClick(x, y);
+        return;
+    }
+
     if (customThemeDialog_.visible)
     {
         if (HandleCustomThemeDialogMouseClick(x, y))
@@ -797,6 +816,12 @@ void Application::HandleMouseClick(int x, int y)
             BeginResizeDrag(x, y, false);
             return;
         }
+    }
+
+    if (hubButtonRect_.has_value() && PointInRect(*hubButtonRect_, x, y))
+    {
+        ShowHub();
+        return;
     }
 
     if (libraryFilterInputRect_.has_value() && PointInRect(*libraryFilterInputRect_, x, y))
@@ -954,6 +979,11 @@ void Application::HandleMouseClick(int x, int y)
 
 void Application::HandleMouseRightClick(int x, int y)
 {
+    if (interfaceState_ == InterfaceState::Hub)
+    {
+        return;
+    }
+
     if (customThemeDialog_.visible)
     {
         HandleCustomThemeDialogMouseClick(x, y);
@@ -1000,6 +1030,11 @@ void Application::HandleMouseButtonUp(int x, int y)
 
     activeCustomizationDragId_.reset();
 
+    if (interfaceState_ == InterfaceState::Hub)
+    {
+        return;
+    }
+
     if (resizeState_.target != ResizeState::Target::None)
     {
         EndResizeDrag();
@@ -1008,6 +1043,12 @@ void Application::HandleMouseButtonUp(int x, int y)
 
 void Application::HandleMouseMotion(const SDL_MouseMotionEvent& motion)
 {
+    if (interfaceState_ == InterfaceState::Hub)
+    {
+        HandleHubMouseMotion(motion);
+        return;
+    }
+
     if (activeCustomizationDragId_)
     {
         if ((motion.state & SDL_BUTTON_LMASK) == 0)
@@ -1030,6 +1071,12 @@ void Application::HandleMouseMotion(const SDL_MouseMotionEvent& motion)
 
 void Application::HandleMouseWheel(const SDL_MouseWheelEvent& wheel)
 {
+    if (interfaceState_ == InterfaceState::Hub)
+    {
+        HandleHubMouseWheel(wheel);
+        return;
+    }
+
     if (HandleCustomThemeDialogMouseWheel(wheel))
     {
         return;
@@ -1266,6 +1313,12 @@ void Application::UpdateLayoutForOutputWidth(int outputWidth)
 
 void Application::HandleKeyDown(SDL_Keycode key)
 {
+    if (interfaceState_ == InterfaceState::Hub)
+    {
+        HandleHubKeyDown(key);
+        return;
+    }
+
     if (customThemeDialog_.visible && HandleCustomThemeDialogKey(key))
     {
         return;
@@ -1319,6 +1372,13 @@ void Application::HandleKeyDown(SDL_Keycode key)
         break;
     case SDLK_RIGHT:
         navigationController_.Activate(activeChannelIndex_ + 1);
+        break;
+    case SDLK_h:
+    case SDLK_HOME:
+        if (!libraryFilterFocused_)
+        {
+            ShowHub();
+        }
         break;
     default:
         break;
@@ -1382,8 +1442,40 @@ void Application::RenderFrame(double deltaSeconds)
 
 void Application::RenderHubFrame(double deltaSeconds)
 {
-    // The hub screen is not yet implemented. Reuse the main interface rendering until it is available.
-    RenderMainInterfaceFrame(deltaSeconds);
+    (void)deltaSeconds;
+
+    if (!renderer_)
+    {
+        return;
+    }
+
+    int outputWidth = 0;
+    int outputHeight = 0;
+    SDL_GetRendererOutputSize(renderer_.get(), &outputWidth, &outputHeight);
+
+    SDL_SetRenderDrawColor(renderer_.get(), theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
+    SDL_RenderClear(renderer_.get());
+
+    const SDL_Rect bounds{0, 0, std::max(0, outputWidth), std::max(0, outputHeight)};
+    const double timeSeconds = animationTimeSeconds_;
+
+    int activeBranchIndex = focusedHubBranchIndex_;
+    if (activeBranchIndex < 0 || activeBranchIndex >= static_cast<int>(content_.hub.branches.size()))
+    {
+        activeBranchIndex = content_.hub.branches.empty() ? -1 : 0;
+    }
+
+    ui::HubRenderResult renderResult = hubPanel_.Render(
+        renderer_.get(),
+        theme_,
+        bounds,
+        timeSeconds,
+        hoveredHubBranchIndex_,
+        activeBranchIndex);
+
+    hubBranchHitboxes_ = std::move(renderResult.branchHitboxes);
+
+    SDL_RenderPresent(renderer_.get());
 }
 
 void Application::RenderMainInterfaceFrame(double deltaSeconds)
@@ -1486,7 +1578,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
 
     const int statusBarHeight = ui::Scale(kStatusBarHeight);
 
-    channelButtonRects_ = navigationRail_.Render(
+    ui::NavigationRenderResult navigationRender = navigationRail_.Render(
         renderer_.get(),
         theme_,
         navRailRect,
@@ -1496,6 +1588,8 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
         activeChannelIndex_,
         programVisuals_,
         timeSeconds);
+    channelButtonRects_ = std::move(navigationRender.channelButtonRects);
+    hubButtonRect_ = navigationRender.hubButtonRect;
 
     bool showAddButton = false;
     if (activeChannelIndex_ >= 0 && activeChannelIndex_ < static_cast<int>(content_.channels.size()))
@@ -1839,6 +1933,276 @@ void Application::QueueLibraryFilterUpdate()
         libraryViewModel_.SetFilter(draft);
         libraryFilterDraft_ = libraryViewModel_.Filter();
     });
+}
+
+void Application::BuildHubPanel()
+{
+    if (!renderer_)
+    {
+        return;
+    }
+
+    ui::HubContent hubContent;
+    const auto& hubConfig = content_.hub;
+
+    if (!hubConfig.headlineLocalizationKey.empty())
+    {
+        hubContent.headline = GetLocalizedString(
+            hubConfig.headlineLocalizationKey,
+            hubConfig.headlineLocalizationKey);
+    }
+
+    if (hubContent.headline.empty())
+    {
+        hubContent.headline = content_.brandName.empty() ? std::string{"COLONY"} : content_.brandName;
+    }
+
+    if (!hubConfig.descriptionLocalizationKey.empty())
+    {
+        hubContent.description = GetLocalizedString(
+            hubConfig.descriptionLocalizationKey,
+            hubConfig.descriptionLocalizationKey);
+    }
+
+    if (hubContent.description.empty())
+    {
+        hubContent.description = GetLocalizedString("hub.status", "Select a destination to continue.");
+    }
+
+    hubContent.branches.reserve(hubConfig.branches.size());
+    for (const auto& branch : hubConfig.branches)
+    {
+        ui::HubBranchContent branchContent;
+        branchContent.id = branch.id;
+        branchContent.title = branch.titleLocalizationKey.empty()
+            ? branch.id
+            : GetLocalizedString(branch.titleLocalizationKey, branch.id);
+        branchContent.description = branch.descriptionLocalizationKey.empty()
+            ? branch.id
+            : GetLocalizedString(branch.descriptionLocalizationKey, branch.descriptionLocalizationKey);
+        branchContent.accent = branch.accentColor.empty() ? theme_.channelBadge
+                                                          : color::ParseHexColor(branch.accentColor, theme_.channelBadge);
+        hubContent.branches.emplace_back(std::move(branchContent));
+    }
+
+    hubPanel_.Build(
+        renderer_.get(),
+        hubContent,
+        fonts_.heroTitle.get(),
+        fonts_.heroBody.get(),
+        fonts_.tileTitle.get(),
+        fonts_.tileSubtitle.get(),
+        theme_);
+}
+
+void Application::ResetHubInteractionState()
+{
+    hoveredHubBranchIndex_ = -1;
+    focusedHubBranchIndex_ = content_.hub.branches.empty() ? -1 : 0;
+    hubBranchHitboxes_.clear();
+}
+
+void Application::HandleHubMouseWheel(const SDL_MouseWheelEvent& wheel)
+{
+    (void)wheel;
+}
+
+void Application::HandleHubMouseClick(int x, int y)
+{
+    for (std::size_t i = 0; i < hubBranchHitboxes_.size(); ++i)
+    {
+        if (PointInRect(hubBranchHitboxes_[i].rect, x, y))
+        {
+            focusedHubBranchIndex_ = static_cast<int>(i);
+            hoveredHubBranchIndex_ = static_cast<int>(i);
+            ActivateHubBranch(hubBranchHitboxes_[i].id);
+            return;
+        }
+    }
+}
+
+void Application::HandleHubMouseMotion(const SDL_MouseMotionEvent& motion)
+{
+    int hoveredIndex = -1;
+    for (std::size_t i = 0; i < hubBranchHitboxes_.size(); ++i)
+    {
+        if (PointInRect(hubBranchHitboxes_[i].rect, motion.x, motion.y))
+        {
+            hoveredIndex = static_cast<int>(i);
+            break;
+        }
+    }
+    hoveredHubBranchIndex_ = hoveredIndex;
+}
+
+bool Application::HandleHubKeyDown(SDL_Keycode key)
+{
+    const int branchCount = static_cast<int>(content_.hub.branches.size());
+    switch (key)
+    {
+    case SDLK_ESCAPE:
+    case SDLK_BACKSPACE:
+        EnterMainInterface();
+        return true;
+    case SDLK_RETURN:
+    case SDLK_KP_ENTER:
+    case SDLK_SPACE:
+        if (focusedHubBranchIndex_ >= 0 && focusedHubBranchIndex_ < branchCount)
+        {
+            ActivateHubBranchByIndex(focusedHubBranchIndex_);
+        }
+        return true;
+    case SDLK_LEFT:
+    case SDLK_UP:
+    {
+        if (branchCount == 0)
+        {
+            return true;
+        }
+        if (focusedHubBranchIndex_ < 0)
+        {
+            focusedHubBranchIndex_ = branchCount - 1;
+        }
+        else
+        {
+            focusedHubBranchIndex_ = (focusedHubBranchIndex_ - 1 + branchCount) % branchCount;
+        }
+        return true;
+    }
+    case SDLK_RIGHT:
+    case SDLK_DOWN:
+    {
+        if (branchCount == 0)
+        {
+            return true;
+        }
+        if (focusedHubBranchIndex_ < 0)
+        {
+            focusedHubBranchIndex_ = 0;
+        }
+        else
+        {
+            focusedHubBranchIndex_ = (focusedHubBranchIndex_ + 1) % branchCount;
+        }
+        return true;
+    }
+    case SDLK_TAB:
+    {
+        if (branchCount == 0)
+        {
+            return true;
+        }
+        const bool reverse = (SDL_GetModState() & KMOD_SHIFT) != 0;
+        if (focusedHubBranchIndex_ < 0)
+        {
+            focusedHubBranchIndex_ = reverse ? branchCount - 1 : 0;
+        }
+        else if (reverse)
+        {
+            focusedHubBranchIndex_ = (focusedHubBranchIndex_ - 1 + branchCount) % branchCount;
+        }
+        else
+        {
+            focusedHubBranchIndex_ = (focusedHubBranchIndex_ + 1) % branchCount;
+        }
+        return true;
+    }
+    default:
+        break;
+    }
+
+    return false;
+}
+
+void Application::ActivateHubBranch(const std::string& branchId)
+{
+    const int index = FindHubBranchIndexById(branchId);
+    if (index < 0)
+    {
+        return;
+    }
+
+    focusedHubBranchIndex_ = index;
+    const auto& branch = content_.hub.branches[static_cast<std::size_t>(index)];
+
+    EnterMainInterface();
+
+    int targetChannelIndex = -1;
+    if (!branch.channelId.empty())
+    {
+        for (std::size_t i = 0; i < content_.channels.size(); ++i)
+        {
+            if (content_.channels[i].id == branch.channelId)
+            {
+                targetChannelIndex = static_cast<int>(i);
+                break;
+            }
+        }
+    }
+
+    auto findChannelForProgram = [&](const std::string& programId) {
+        for (std::size_t i = 0; i < content_.channels.size(); ++i)
+        {
+            const auto& channel = content_.channels[i];
+            if (std::find(channel.programs.begin(), channel.programs.end(), programId) != channel.programs.end())
+            {
+                return static_cast<int>(i);
+            }
+        }
+        return -1;
+    };
+
+    const bool hasProgramTarget = !branch.programId.empty();
+    if (targetChannelIndex == -1 && hasProgramTarget)
+    {
+        targetChannelIndex = findChannelForProgram(branch.programId);
+    }
+
+    if (targetChannelIndex != -1)
+    {
+        navigationController_.Activate(targetChannelIndex);
+        if (hasProgramTarget)
+        {
+            auto& channel = content_.channels[static_cast<std::size_t>(targetChannelIndex)];
+            auto it = std::find(channel.programs.begin(), channel.programs.end(), branch.programId);
+            if (it != channel.programs.end())
+            {
+                const int programIndex = static_cast<int>(std::distance(channel.programs.begin(), it));
+                channelSelections_[targetChannelIndex] = programIndex;
+                ActivateProgramInChannel(programIndex);
+            }
+            else
+            {
+                ActivateProgram(branch.programId);
+            }
+        }
+    }
+    else if (hasProgramTarget)
+    {
+        ActivateProgram(branch.programId);
+    }
+}
+
+void Application::ActivateHubBranchByIndex(int index)
+{
+    if (index < 0 || index >= static_cast<int>(content_.hub.branches.size()))
+    {
+        return;
+    }
+
+    ActivateHubBranch(content_.hub.branches[static_cast<std::size_t>(index)].id);
+}
+
+int Application::FindHubBranchIndexById(const std::string& branchId) const
+{
+    for (std::size_t i = 0; i < content_.hub.branches.size(); ++i)
+    {
+        if (content_.hub.branches[i].id == branchId)
+        {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
 }
 
 std::string Application::ColorToHex(SDL_Color color)

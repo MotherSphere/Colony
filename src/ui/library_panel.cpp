@@ -60,7 +60,7 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     result.programIds.clear();
     result.programIds.reserve(programs.size());
 
-    const int libraryPadding = Scale(22);
+    const int libraryPadding = Scale(28);
     int libraryCursorY = libraryPadding;
 
     if (activeChannelIndex >= 0 && activeChannelIndex < static_cast<int>(content.channels.size()))
@@ -71,21 +71,33 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         {
             SDL_Rect channelTitleRect{libraryRect.x + libraryPadding, libraryCursorY, channelTitleTexture.width, channelTitleTexture.height};
             colony::RenderTexture(renderer, channelTitleTexture, channelTitleRect);
-            libraryCursorY += channelTitleRect.h + Scale(18);
+            libraryCursorY += channelTitleRect.h + Scale(22);
         }
     }
 
-    SDL_Rect filterRect{libraryRect.x + libraryPadding, libraryCursorY, libraryRect.w - 2 * libraryPadding, Scale(32)};
-    SDL_Color filterFill = filterFocused ? colony::color::Mix(theme.libraryCardActive, theme.libraryBackground, 0.55f)
-                                         : theme.libraryCard;
+    const int filterHeight = Scale(44);
+    SDL_Rect filterRect{libraryRect.x + libraryPadding, libraryCursorY, libraryRect.w - 2 * libraryPadding, filterHeight};
+
+    SDL_Color filterBase = colony::color::Mix(theme.libraryCard, theme.libraryBackground, 0.35f);
+    SDL_Color filterFill = filterFocused ? colony::color::Mix(theme.libraryCardActive, theme.libraryBackground, 0.4f) : filterBase;
+    SDL_Color filterBorder = filterFocused ? colony::color::Mix(theme.channelBadge, theme.heroTitle, 0.25f)
+                                           : colony::color::Mix(theme.border, theme.libraryCardActive, 0.25f);
+
+    SDL_Rect filterShadow = filterRect;
+    filterShadow.y += Scale(3);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, filterBorder.r, filterBorder.g, filterBorder.b, 40);
+    colony::drawing::RenderFilledRoundedRect(renderer, filterShadow, 14);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
     SDL_SetRenderDrawColor(renderer, filterFill.r, filterFill.g, filterFill.b, filterFill.a);
-    colony::drawing::RenderFilledRoundedRect(renderer, filterRect, 12);
-    SDL_Color filterBorder = filterFocused ? theme.channelBadge : theme.border;
+    colony::drawing::RenderFilledRoundedRect(renderer, filterRect, 14);
     SDL_SetRenderDrawColor(renderer, filterBorder.r, filterBorder.g, filterBorder.b, filterBorder.a);
-    colony::drawing::RenderRoundedRect(renderer, filterRect, 12);
-    const int filterIconSize = filterRect.h - Scale(10);
-    int labelRightBound = filterRect.x + filterRect.w - Scale(10);
-    int textStartX = filterRect.x + Scale(12);
+    colony::drawing::RenderRoundedRect(renderer, filterRect, 14);
+
+    const int filterIconSize = filterRect.h - Scale(12);
+    int labelRightBound = filterRect.x + filterRect.w - Scale(14);
+    int textStartX = filterRect.x + Scale(16);
     if (filterIconSize > 0)
     {
         SDL_Rect filterIconRect{
@@ -93,34 +105,36 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             filterRect.y + (filterRect.h - filterIconSize) / 2,
             filterIconSize,
             filterIconSize};
-        SDL_Color filterIconColor = colony::color::Mix(theme.muted, theme.heroTitle, 0.25f);
-        SDL_Color filterIconFill = colony::color::Mix(theme.libraryCard, filterIconColor, 0.45f);
+        SDL_Color filterIconColor = colony::color::Mix(theme.channelBadge, theme.heroTitle, 0.2f);
+        SDL_Color filterIconFill = colony::color::Mix(filterFill, filterIconColor, 0.5f);
         SDL_SetRenderDrawColor(renderer, filterIconFill.r, filterIconFill.g, filterIconFill.b, filterIconFill.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, filterIconRect, std::max(filterIconSize / 3, Scale(3)));
+        const int iconCorner = std::max(filterIconSize / 3, Scale(4));
+        colony::drawing::RenderFilledRoundedRect(renderer, filterIconRect, iconCorner);
         SDL_SetRenderDrawColor(renderer, filterIconColor.r, filterIconColor.g, filterIconColor.b, filterIconColor.a);
-        colony::drawing::RenderRoundedRect(renderer, filterIconRect, std::max(filterIconSize / 3, Scale(3)));
+        colony::drawing::RenderRoundedRect(renderer, filterIconRect, iconCorner);
         SDL_RenderDrawLine(
             renderer,
-            filterIconRect.x + filterIconRect.w - Scale(4),
-            filterIconRect.y + filterIconRect.h - Scale(4),
-            filterIconRect.x + filterIconRect.w + Scale(2),
-            filterIconRect.y + filterIconRect.h + Scale(2));
-        textStartX = filterIconRect.x + filterIconRect.w + Scale(10);
+            filterIconRect.x + filterIconRect.w - Scale(6),
+            filterIconRect.y + filterIconRect.h - Scale(6),
+            filterIconRect.x + filterIconRect.w + Scale(4),
+            filterIconRect.y + filterIconRect.h + Scale(4));
+        textStartX = filterIconRect.x + filterIconRect.w + Scale(14);
         if (showAddButton)
         {
-            const int buttonSize = std::max(Scale(30), filterRect.h - Scale(6));
+            const int buttonSize = std::max(Scale(32), filterRect.h - Scale(8));
             SDL_Rect addButtonRect{
-                filterRect.x + filterRect.w - buttonSize - Scale(8),
+                filterRect.x + filterRect.w - buttonSize - Scale(10),
                 filterRect.y + (filterRect.h - buttonSize) / 2,
                 buttonSize,
                 buttonSize};
             result.addButtonRect = addButtonRect;
 
-            SDL_Color buttonFill = colony::color::Mix(theme.libraryCardActive, theme.libraryBackground, 0.5f);
+            SDL_Color buttonFill = colony::color::Mix(theme.channelBadge, theme.libraryCardActive, 0.35f);
+            SDL_Color buttonOutline = colony::color::Mix(theme.channelBadge, theme.heroTitle, 0.2f);
             SDL_SetRenderDrawColor(renderer, buttonFill.r, buttonFill.g, buttonFill.b, buttonFill.a);
-            colony::drawing::RenderFilledRoundedRect(renderer, addButtonRect, 10);
-            SDL_SetRenderDrawColor(renderer, theme.channelBadge.r, theme.channelBadge.g, theme.channelBadge.b, theme.channelBadge.a);
-            colony::drawing::RenderRoundedRect(renderer, addButtonRect, 10);
+            colony::drawing::RenderFilledRoundedRect(renderer, addButtonRect, 12);
+            SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, buttonOutline.a);
+            colony::drawing::RenderRoundedRect(renderer, addButtonRect, 12);
 
             SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, SDL_ALPHA_OPAQUE);
             const int centerX = addButtonRect.x + addButtonRect.w / 2;
@@ -136,19 +150,20 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     {
         if (showAddButton)
         {
-            const int buttonSize = std::max(Scale(30), filterRect.h - Scale(6));
+            const int buttonSize = std::max(Scale(32), filterRect.h - Scale(8));
             SDL_Rect addButtonRect{
-                filterRect.x + filterRect.w - buttonSize - Scale(8),
+                filterRect.x + filterRect.w - buttonSize - Scale(10),
                 filterRect.y + (filterRect.h - buttonSize) / 2,
                 buttonSize,
                 buttonSize};
             result.addButtonRect = addButtonRect;
 
-            SDL_Color buttonFill = colony::color::Mix(theme.libraryCardActive, theme.libraryBackground, 0.5f);
+            SDL_Color buttonFill = colony::color::Mix(theme.channelBadge, theme.libraryCardActive, 0.35f);
+            SDL_Color buttonOutline = colony::color::Mix(theme.channelBadge, theme.heroTitle, 0.2f);
             SDL_SetRenderDrawColor(renderer, buttonFill.r, buttonFill.g, buttonFill.b, buttonFill.a);
-            colony::drawing::RenderFilledRoundedRect(renderer, addButtonRect, 10);
-            SDL_SetRenderDrawColor(renderer, theme.channelBadge.r, theme.channelBadge.g, theme.channelBadge.b, theme.channelBadge.a);
-            colony::drawing::RenderRoundedRect(renderer, addButtonRect, 10);
+            colony::drawing::RenderFilledRoundedRect(renderer, addButtonRect, 12);
+            SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, buttonOutline.a);
+            colony::drawing::RenderRoundedRect(renderer, addButtonRect, 12);
 
             SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, SDL_ALPHA_OPAQUE);
             const int centerX = addButtonRect.x + addButtonRect.w / 2;
@@ -159,13 +174,13 @@ LibraryRenderResult LibraryPanelRenderer::Render(
 
             labelRightBound = addButtonRect.x - Scale(10);
         }
-        textStartX = filterRect.x + Scale(10);
+        textStartX = filterRect.x + Scale(16);
     }
 
     if (labelRightBound > filterRect.x)
     {
         const int textClipWidth = std::max(0, labelRightBound - textStartX);
-        SDL_Rect textClip{textStartX, filterRect.y + Scale(4), textClipWidth, filterRect.h - Scale(8)};
+        SDL_Rect textClip{textStartX, filterRect.y + Scale(6), textClipWidth, filterRect.h - Scale(12)};
 
         colony::TextTexture inputTexture = colony::CreateTextTexture(renderer, bodyFont, filterText, theme.heroTitle);
         const bool hasInputText = inputTexture.texture.get() != nullptr && inputTexture.width > 0;
@@ -228,11 +243,11 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             result.filterInputRect = focusRect;
         }
     }
-    libraryCursorY += filterRect.h + Scale(18);
+    libraryCursorY += filterRect.h + Scale(22);
 
-    const int chipPaddingX = Scale(14);
-    const int chipHeight = Scale(30);
-    const int chipSpacing = Scale(10);
+    const int chipPaddingX = Scale(18);
+    const int chipHeight = Scale(34);
+    const int chipSpacing = Scale(12);
     const int chipAreaStart = libraryRect.x + libraryPadding;
     const int chipAreaEnd = libraryRect.x + libraryRect.w - libraryPadding;
     const int chipAreaWidth = std::max(0, chipAreaEnd - chipAreaStart);
@@ -262,13 +277,22 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         const int chipWidth = std::min(desiredWidth, rowAvailableWidth);
 
         SDL_Rect chipRect{chipCursorX, chipCursorY, chipWidth, chipHeight};
-        SDL_Color chipFill = chip.active ? theme.libraryCardActive : theme.libraryCard;
-        SDL_Color chipBorder = chip.active ? theme.channelBadge : theme.border;
+        SDL_Color chipFill = chip.active ? colony::color::Mix(theme.libraryCardActive, theme.channelBadge, 0.2f)
+                                         : colony::color::Mix(theme.libraryCard, theme.libraryBackground, 0.3f);
+        SDL_Color chipBorder = chip.active ? colony::color::Mix(theme.channelBadge, theme.heroTitle, 0.3f)
+                                           : colony::color::Mix(theme.border, theme.libraryCardActive, 0.25f);
+
+        SDL_Rect chipShadow = chipRect;
+        chipShadow.y += Scale(2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, chipBorder.r, chipBorder.g, chipBorder.b, 40);
+        colony::drawing::RenderFilledRoundedRect(renderer, chipShadow, 14);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
         SDL_SetRenderDrawColor(renderer, chipFill.r, chipFill.g, chipFill.b, chipFill.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, chipRect, 12);
+        colony::drawing::RenderFilledRoundedRect(renderer, chipRect, 14);
         SDL_SetRenderDrawColor(renderer, chipBorder.r, chipBorder.g, chipBorder.b, chipBorder.a);
-        colony::drawing::RenderRoundedRect(renderer, chipRect, 12);
+        colony::drawing::RenderRoundedRect(renderer, chipRect, 14);
 
         if (chipTexture.texture)
         {
@@ -311,8 +335,8 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     result.tileRects.reserve(programs.size());
     (void)deltaSeconds;
 
-    const int tileHeight = Scale(82);
-    const int tileSpacing = Scale(14);
+    const int tileHeight = Scale(92);
+    const int tileSpacing = Scale(18);
 
     bool renderedAny = false;
     for (std::size_t index = 0; index < programs.size(); ++index)
@@ -331,61 +355,68 @@ LibraryRenderResult LibraryPanelRenderer::Render(
             libraryRect.w - 2 * libraryPadding,
             tileHeight};
 
-        SDL_Color baseColor = isActiveProgram ? theme.libraryCardActive : theme.libraryCard;
+        SDL_Rect tileShadow = tileRect;
+        tileShadow.y += Scale(3);
+        tileShadow.h += Scale(2);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, 50);
+        colony::drawing::RenderFilledRoundedRect(renderer, tileShadow, 18, kRightRoundedCorners);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+        SDL_Color baseColor = colony::color::Mix(theme.libraryCard, theme.libraryBackground, 0.25f);
         if (isActiveProgram)
         {
             const float glow = static_cast<float>(0.35 + 0.35 * std::sin(timeSeconds * 1.5 + index));
-            baseColor = colony::color::Mix(baseColor, programIt->second.accent, 0.25f + glow * 0.25f);
+            baseColor = colony::color::Mix(theme.libraryCardActive, programIt->second.accent, 0.3f + glow * 0.25f);
         }
         else
         {
-            const float shimmer = static_cast<float>(0.1 + 0.1 * std::sin(timeSeconds + index));
+            const float shimmer = static_cast<float>(0.08 + 0.1 * std::sin(timeSeconds + index));
             baseColor = colony::color::Mix(baseColor, theme.libraryCardActive, shimmer);
         }
 
-        SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, tileRect, 14, kRightRoundedCorners);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, theme.border.a);
-        colony::drawing::RenderRoundedRect(renderer, tileRect, 14, kRightRoundedCorners);
+        SDL_Color tileOutline = isActiveProgram ? colony::color::Mix(programIt->second.accent, theme.heroTitle, 0.3f)
+                                                : colony::color::Mix(theme.border, theme.libraryCardActive, 0.3f);
 
-        const int accentWidth = Scale(4);
+        SDL_SetRenderDrawColor(renderer, baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+        colony::drawing::RenderFilledRoundedRect(renderer, tileRect, 18, kRightRoundedCorners);
+        SDL_SetRenderDrawColor(renderer, tileOutline.r, tileOutline.g, tileOutline.b, tileOutline.a);
+        colony::drawing::RenderRoundedRect(renderer, tileRect, 18, kRightRoundedCorners);
+
+        const int accentWidth = Scale(6);
         SDL_Rect accentStrip{tileRect.x, tileRect.y, accentWidth, tileRect.h};
-        SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
+        SDL_Color accentColor = colony::color::Mix(programIt->second.accent, theme.heroTitle, 0.15f);
+        SDL_SetRenderDrawColor(renderer, accentColor.r, accentColor.g, accentColor.b, SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(renderer, &accentStrip);
 
-        const int iconSize = Scale(46);
+        const int iconSize = Scale(50);
         const int iconOffset = static_cast<int>(std::round(std::sin(timeSeconds * 2.0 + index) * Scale(3)));
         SDL_Rect iconRect{
-            tileRect.x + Scale(14),
+            tileRect.x + Scale(16),
             tileRect.y + (tileRect.h - iconSize) / 2 + iconOffset,
             iconSize,
             iconSize};
-        SDL_Color iconFill = colony::color::Mix(programIt->second.accent, baseColor, 0.25f);
+        SDL_Color iconFill = colony::color::Mix(programIt->second.accent, baseColor, 0.3f);
         SDL_SetRenderDrawColor(renderer, iconFill.r, iconFill.g, iconFill.b, iconFill.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, iconRect, 14);
-        SDL_SetRenderDrawColor(renderer, programIt->second.accent.r, programIt->second.accent.g, programIt->second.accent.b, SDL_ALPHA_OPAQUE);
-        colony::drawing::RenderRoundedRect(renderer, iconRect, 14);
-        const int glyphSize = Scale(16);
+        colony::drawing::RenderFilledRoundedRect(renderer, iconRect, 16);
+        SDL_SetRenderDrawColor(renderer, accentColor.r, accentColor.g, accentColor.b, SDL_ALPHA_OPAQUE);
+        colony::drawing::RenderRoundedRect(renderer, iconRect, 16);
+        const int glyphSize = Scale(18);
         SDL_Rect glyphRect{
             iconRect.x + iconRect.w / 2 - glyphSize / 2,
             iconRect.y + iconRect.h / 2 - glyphSize / 2,
             glyphSize,
             glyphSize};
-        SDL_SetRenderDrawColor(renderer, theme.libraryCard.r, theme.libraryCard.g, theme.libraryCard.b, theme.libraryCard.a);
-        colony::drawing::RenderRoundedRect(renderer, glyphRect, 6);
-        SDL_RenderDrawLine(
-            renderer,
-            glyphRect.x,
-            glyphRect.y + glyphRect.h,
-            glyphRect.x + glyphRect.w,
-            glyphRect.y);
+        SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, theme.heroTitle.a);
+        colony::drawing::RenderRoundedRect(renderer, glyphRect, 8);
+        SDL_RenderDrawLine(renderer, glyphRect.x, glyphRect.y + glyphRect.h, glyphRect.x + glyphRect.w, glyphRect.y);
 
-        int textX = iconRect.x + iconRect.w + Scale(12);
+        int textX = iconRect.x + iconRect.w + Scale(16);
         SDL_Rect textClip{
             textX,
-            tileRect.y + Scale(10),
-            tileRect.x + tileRect.w - textX - Scale(14),
-            tileRect.h - Scale(20)};
+            tileRect.y + Scale(12),
+            tileRect.x + tileRect.w - textX - Scale(18),
+            tileRect.h - Scale(24)};
         const bool hasTextClip = textClip.w > 0 && textClip.h > 0;
         if (hasTextClip)
         {
@@ -396,13 +427,13 @@ LibraryRenderResult LibraryPanelRenderer::Render(
         {
             SDL_Rect titleRect{textX, textY, programIt->second.tileTitle.width, programIt->second.tileTitle.height};
             colony::RenderTexture(renderer, programIt->second.tileTitle, titleRect);
-            textY += titleRect.h + Scale(4);
+            textY += titleRect.h + Scale(6);
         }
         if (programIt->second.tileSubtitle.texture)
         {
             SDL_Rect subtitleRect{textX, textY, programIt->second.tileSubtitle.width, programIt->second.tileSubtitle.height};
             colony::RenderTexture(renderer, programIt->second.tileSubtitle, subtitleRect);
-            textY += subtitleRect.h + Scale(4);
+            textY += subtitleRect.h + Scale(6);
         }
         if (programIt->second.tileMeta.texture)
         {

@@ -35,8 +35,16 @@ class Application
   public:
     Application();
     int Run();
+    void ShowHub();
+    void EnterMainInterface();
 
   private:
+    enum class InterfaceState
+    {
+        Hub,
+        MainInterface
+    };
+
     struct FontResources
     {
         sdl::FontHandle brand;
@@ -79,6 +87,8 @@ class Application
     bool HandleTextInput(const SDL_TextInputEvent& event);
     bool UpdateCustomizationValueFromPosition(const std::string& id, int mouseX);
     void RenderFrame(double deltaSeconds);
+    void RenderHubFrame(double deltaSeconds);
+    void RenderMainInterfaceFrame(double deltaSeconds);
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
@@ -156,6 +166,7 @@ class Application
     std::vector<int> channelSelections_;
     int activeChannelIndex_ = 0;
     std::string activeProgramId_;
+    InterfaceState interfaceState_ = InterfaceState::Hub;
 
     int navRailWidth_ = 0;
     int libraryWidth_ = 0;

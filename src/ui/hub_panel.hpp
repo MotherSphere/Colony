@@ -23,6 +23,9 @@ struct HubBranchContent
     std::vector<std::string> tags;
     std::string actionLabel;
     std::string metrics;
+    std::string channelLabel;
+    std::string programLabel;
+    std::vector<std::string> detailBullets;
 };
 
 struct HubWidgetContent
@@ -38,6 +41,7 @@ struct HubContent
 {
     std::string headline;
     std::string description;
+    std::string searchPlaceholder;
     std::vector<HubBranchContent> branches;
     std::vector<std::string> highlights;
     std::string primaryActionLabel;
@@ -51,10 +55,35 @@ struct HubRenderResult
     {
         std::string id;
         SDL_Rect rect{0, 0, 0, 0};
+        int branchIndex = -1;
+    };
+
+    struct WidgetPagerHitbox
+    {
+        enum class Type
+        {
+            Previous,
+            Next,
+            Page
+        } type{Type::Page};
+
+        SDL_Rect rect{0, 0, 0, 0};
+        int pageIndex = 0;
+        bool enabled = true;
     };
 
     SDL_Rect heroRect{0, 0, 0, 0};
+    SDL_Rect heroToggleRect{0, 0, 0, 0};
+    SDL_Rect searchInputRect{0, 0, 0, 0};
+    SDL_Rect searchClearRect{0, 0, 0, 0};
+    SDL_Rect detailPanelRect{0, 0, 0, 0};
+    SDL_Rect detailActionRect{0, 0, 0, 0};
+    SDL_Rect scrollViewport{0, 0, 0, 0};
     std::vector<BranchHitbox> branchHitboxes;
+    std::vector<WidgetPagerHitbox> widgetPagerHitboxes;
+    int scrollableContentHeight = 0;
+    int visibleContentHeight = 0;
+    int widgetPageCount = 0;
 };
 
 class HubPanelRenderer
@@ -75,7 +104,14 @@ class HubPanelRenderer
         const SDL_Rect& bounds,
         double timeSeconds,
         int hoveredBranchIndex,
-        int activeBranchIndex) const;
+        int activeBranchIndex,
+        int detailBranchIndex,
+        int scrollOffset,
+        bool heroCollapsed,
+        std::string_view searchQuery,
+        bool searchFocused,
+        int widgetPage,
+        int widgetsPerPage) const;
 
   private:
     struct HeroChrome
@@ -103,6 +139,15 @@ class HubPanelRenderer
         colony::TextTexture actionLabel;
         colony::TextTexture metricsLabel;
         colony::TextTexture iconGlyph;
+        std::string channelLabelText;
+        std::string programLabelText;
+        std::vector<std::string> detailBullets;
+        colony::TextTexture channelLabel;
+        colony::TextTexture programLabel;
+        std::vector<std::vector<colony::TextTexture>> detailBulletLines;
+        mutable int detailBodyWidth = 0;
+        mutable std::vector<colony::TextTexture> detailBodyLines;
+        mutable int detailBulletWidth = 0;
     };
 
     struct WidgetChrome
@@ -118,15 +163,25 @@ class HubPanelRenderer
         SDL_Color accent{0, 0, 0, SDL_ALPHA_OPAQUE};
     };
 
+    struct SearchChrome
+    {
+        std::string placeholder;
+        mutable colony::TextTexture placeholderTexture;
+        mutable std::string lastQuery;
+        mutable colony::TextTexture queryTexture;
+    };
+
     void RebuildHeroDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const;
     void RebuildHeroActionDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const;
     void RebuildBranchDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color) const;
+    void RebuildBranchDetailDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color) const;
     void RebuildWidgetDescription(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const;
     void RebuildWidgetItems(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const;
 
     mutable HeroChrome hero_;
     mutable std::vector<BranchChrome> branches_;
     mutable std::vector<WidgetChrome> widgets_;
+    mutable SearchChrome search_{};
 
     TTF_Font* heroBodyFont_ = nullptr;
     TTF_Font* tileBodyFont_ = nullptr;

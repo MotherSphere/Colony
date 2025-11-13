@@ -69,7 +69,7 @@ SDL_Rect SidebarItem::Render(
         renderRect.w = icon.width;
         renderRect.h = icon.height;
         renderRect.y = itemRect.y + (itemRect.h - renderRect.h) / 2;
-        colony::RenderTexture(renderer, icon.texture, renderRect);
+        SDL_RenderCopy(renderer, icon.texture.get(), nullptr, &renderRect);
     }
 
     int textX = iconRect.x + iconRect.w + colony::ui::Scale(12);
@@ -79,7 +79,7 @@ SDL_Rect SidebarItem::Render(
         textColor = colony::color::Mix(textColor, theme.heroTitle, 0.35f);
     }
 
-    colony::TextTexture renderLabel = labelTexture_;
+    const colony::TextTexture& renderLabel = labelTexture_;
     if (renderLabel.texture)
     {
         SDL_Rect labelRect{

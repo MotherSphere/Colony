@@ -6,25 +6,80 @@
   "hub": {
     "hero": {
       "headline": "Bienvenue sur le hub Colony",
-      "description": "Votre console rassemble toutes les branches ici. Choisissez votre prochaine destination."
+      "description": "Votre console rassemble toutes les branches ici. Choisissez votre prochaine destination.",
+      "highlights": {
+        "queue": "3 pending updates awaiting review",
+        "briefing": "Mission briefing window opens in 12 minutes",
+        "telemetry": "Telemetry stream holding steady"
+      },
+      "action": {
+        "primary": "Review mission briefing",
+        "description": "Open the operations console to approve launch changes before the next shift."
+      }
     },
     "status": "Sélectionnez une destination pour continuer.",
     "branches": {
       "programs": {
         "title": "Programmes de commande",
-        "body": "Lancez les suites d'orchestration qui alignent opérations, signaux et automatisation."
+        "body": "Lancez les suites d'orchestration qui alignent opérations, signaux et automatisation.",
+        "tags": {
+          "command": "Command",
+          "orchestration": "Orchestration"
+        },
+        "action": "Deploy suite",
+        "metrics": "3 consoles primed"
       },
       "addons": {
         "title": "Extensions & modules",
-        "body": "Explorez des augmentations sélectionnées pour étendre diagnostics, production et recherche."
+        "body": "Explorez des augmentations sélectionnées pour étendre diagnostics, production et recherche.",
+        "tags": {
+          "upgrades": "Upgrades",
+          "integration": "Integration"
+        },
+        "action": "Install upgrade",
+        "metrics": "2 integrations queued"
       },
       "games": {
         "title": "Arcade & entraînement",
-        "body": "Plongez dans des simulations compétitives pour aiguiser les pilotes et divertir l'équipage."
+        "body": "Plongez dans des simulations compétitives pour aiguiser les pilotes et divertir l'équipage.",
+        "tags": {
+          "arcade": "Arcade",
+          "training": "Training"
+        },
+        "action": "Launch simulation",
+        "metrics": "New leaderboard posted"
       },
       "settings": {
         "title": "Centre de contrôle",
-        "body": "Réglez l'apparence, la langue et le confort quotidien avant de reprendre le service."
+        "body": "Réglez l'apparence, la langue et le confort quotidien avant de reprendre le service.",
+        "tags": {
+          "preferences": "Preferences",
+          "accessibility": "Accessibility"
+        },
+        "action": "Adjust settings",
+        "metrics": "2 comfort presets active"
+      }
+    },
+    "branch": {
+      "default_action": "Open"
+    },
+    "widgets": {
+      "status": {
+        "title": "Systems status",
+        "description": "Quick health summary for the main control deck.",
+        "items": {
+          "0": "Life-support grid operating at 98% efficiency",
+          "1": "Docking corridor pressurised and locked",
+          "2": "Comms relays synced to long-range uplink"
+        }
+      },
+      "missions": {
+        "title": "Mission log",
+        "description": "Recent activity across colony assignments.",
+        "items": {
+          "0": "Recon wing completed drift survey",
+          "1": "Logistics crew scheduled cargo transfer"
+        }
       }
     }
   },

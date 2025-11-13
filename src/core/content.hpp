@@ -52,12 +52,28 @@ struct HubBranch
     std::string accentColor;
     std::string channelId;
     std::string programId;
+    std::vector<std::string> tagLocalizationKeys;
+    std::string actionLocalizationKey;
+    std::string metricsLocalizationKey;
+};
+
+struct HubWidget
+{
+    std::string id;
+    std::string titleLocalizationKey;
+    std::string descriptionLocalizationKey;
+    std::vector<std::string> itemLocalizationKeys;
+    std::string accentColor;
 };
 
 struct HubConfiguration
 {
     std::string headlineLocalizationKey;
     std::string descriptionLocalizationKey;
+    std::vector<std::string> highlightLocalizationKeys;
+    std::string primaryActionLocalizationKey;
+    std::string primaryActionDescriptionLocalizationKey;
+    std::vector<HubWidget> widgets;
     std::vector<HubBranch> branches;
 };
 

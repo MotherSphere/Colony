@@ -21,6 +21,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <stdexcept>
 #include <system_error>
 #include <thread>
@@ -1969,6 +1970,31 @@ void Application::BuildHubPanel()
         hubContent.description = GetLocalizedString("hub.status", "Select a destination to continue.");
     }
 
+    for (const auto& highlightKey : hubConfig.highlightLocalizationKeys)
+    {
+        if (!highlightKey.empty())
+        {
+            hubContent.highlights.push_back(GetLocalizedString(highlightKey, highlightKey));
+        }
+    }
+
+    if (hubContent.highlights.empty())
+    {
+        const int branchCount = static_cast<int>(hubConfig.branches.size());
+        hubContent.highlights.push_back(std::to_string(branchCount) + " destinations online");
+    }
+
+    if (!hubConfig.primaryActionLocalizationKey.empty())
+    {
+        hubContent.primaryActionLabel = GetLocalizedString(hubConfig.primaryActionLocalizationKey, hubConfig.primaryActionLocalizationKey);
+    }
+    if (!hubConfig.primaryActionDescriptionLocalizationKey.empty())
+    {
+        hubContent.primaryActionDescription = GetLocalizedString(
+            hubConfig.primaryActionDescriptionLocalizationKey,
+            hubConfig.primaryActionDescriptionLocalizationKey);
+    }
+
     hubContent.branches.reserve(hubConfig.branches.size());
     for (const auto& branch : hubConfig.branches)
     {
@@ -1982,7 +2008,48 @@ void Application::BuildHubPanel()
             : GetLocalizedString(branch.descriptionLocalizationKey, branch.descriptionLocalizationKey);
         branchContent.accent = branch.accentColor.empty() ? theme_.channelBadge
                                                           : color::ParseHexColor(branch.accentColor, theme_.channelBadge);
+        for (const auto& tagKey : branch.tagLocalizationKeys)
+        {
+            if (!tagKey.empty())
+            {
+                branchContent.tags.push_back(GetLocalizedString(tagKey, tagKey));
+            }
+        }
+        if (!branch.actionLocalizationKey.empty())
+        {
+            branchContent.actionLabel = GetLocalizedString(branch.actionLocalizationKey, branchContent.title);
+        }
+        else
+        {
+            branchContent.actionLabel = GetLocalizedString("hub.branch.default_action", "Open");
+        }
+        if (!branch.metricsLocalizationKey.empty())
+        {
+            branchContent.metrics = GetLocalizedString(branch.metricsLocalizationKey, branch.metricsLocalizationKey);
+        }
         hubContent.branches.emplace_back(std::move(branchContent));
+    }
+
+    hubContent.widgets.reserve(hubConfig.widgets.size());
+    for (const auto& widget : hubConfig.widgets)
+    {
+        ui::HubWidgetContent widgetContent;
+        widgetContent.id = widget.id;
+        widgetContent.title = widget.titleLocalizationKey.empty() ? widget.id
+                                                                  : GetLocalizedString(widget.titleLocalizationKey, widget.id);
+        widgetContent.description = widget.descriptionLocalizationKey.empty()
+            ? std::string{}
+            : GetLocalizedString(widget.descriptionLocalizationKey, widget.descriptionLocalizationKey);
+        for (const auto& itemKey : widget.itemLocalizationKeys)
+        {
+            if (!itemKey.empty())
+            {
+                widgetContent.items.push_back(GetLocalizedString(itemKey, itemKey));
+            }
+        }
+        widgetContent.accent = widget.accentColor.empty() ? theme_.channelBadge
+                                                          : color::ParseHexColor(widget.accentColor, theme_.channelBadge);
+        hubContent.widgets.emplace_back(std::move(widgetContent));
     }
 
     hubPanel_.Build(

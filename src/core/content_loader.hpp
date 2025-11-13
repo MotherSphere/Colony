@@ -21,6 +21,7 @@ class ContentValidator
     void ParseChannelsSection(const nlohmann::json& document, AppContent& content) const;
     void ParseHubSection(const nlohmann::json& document, AppContent& content) const;
     HubBranch ParseHubBranch(const nlohmann::json& json) const;
+    HubWidget ParseHubWidget(const nlohmann::json& json) const;
 };
 
 AppContent LoadContentFromFile(const std::string& filePath);

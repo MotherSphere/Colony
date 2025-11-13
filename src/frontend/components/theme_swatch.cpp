@@ -103,6 +103,8 @@ void RenderThemeSwatch(
     const int indicatorSpacing = ScaleValue(6);
     const int lineSpacing = ScaleValue(4);
     const int paragraphSpacing = ScaleValue(6);
+    const int rowHeight = ScaleValue(8);
+    const int rowSpacing = ScaleValue(6);
 
     const int textAreaWidth = sampleHeadingRect.w;
     const int indicatorsTop = cardRect.y + cardRect.h - rowHeight * 2 - rowSpacing;
@@ -160,8 +162,6 @@ void RenderThemeSwatch(
         renderWrappedLines(bodyLines, bodyFont, bodyColor);
     }
 
-    const int rowHeight = ScaleValue(8);
-    const int rowSpacing = ScaleValue(6);
     SDL_Rect indicatorRect{
         cardRect.x + cardPadding,
         cardRect.y + cardRect.h - rowHeight * 2 - rowSpacing,

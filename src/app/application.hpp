@@ -79,7 +79,6 @@ class Application
     void ActivateProgramInChannel(int programIndex);
     void SyncNavigationEntries();
     int EnsureLocalAppsChannel();
-    void MoveSettingsChannelToEnd();
     [[nodiscard]] std::string GetActiveProgramId() const;
     void HandleEvent(const SDL_Event& event, bool& running);
     void HandleMouseClick(int x, int y);

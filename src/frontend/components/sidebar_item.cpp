@@ -57,18 +57,25 @@ SDL_Rect SidebarItem::Render(
         SDL_SetRenderDrawColor(renderer, outline.r, outline.g, outline.b, 235);
         colony::drawing::RenderRoundedRect(renderer, itemRect, radius);
     }
-
-    const int iconSize = colony::ui::Scale(28);
+    const int fallbackIconSize = colony::ui::Scale(28);
     const int padding = colony::ui::Scale(18);
-    const SDL_Rect iconRect{itemRect.x + padding, itemRect.y + (itemRect.h - iconSize) / 2, iconSize, iconSize};
-
     const auto& icon = icons::LoadSidebarIcon(renderer, id_, accent, theme);
+    const int iconWidth = icon.texture ? icon.width : fallbackIconSize;
+    const int iconHeight = icon.texture ? icon.height : fallbackIconSize;
+    const int iconBox = std::max(iconWidth, iconHeight);
+    const SDL_Rect iconRect{
+        itemRect.x + padding,
+        itemRect.y + (itemRect.h - iconBox) / 2,
+        iconBox,
+        iconBox};
+
     if (icon.texture)
     {
         SDL_Rect renderRect = iconRect;
         renderRect.w = icon.width;
         renderRect.h = icon.height;
-        renderRect.y = itemRect.y + (itemRect.h - renderRect.h) / 2;
+        renderRect.x = iconRect.x + (iconRect.w - renderRect.w) / 2;
+        renderRect.y = iconRect.y + (iconRect.h - renderRect.h) / 2;
         SDL_RenderCopy(renderer, icon.texture.get(), nullptr, &renderRect);
     }
 

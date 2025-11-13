@@ -7,6 +7,7 @@
 #include "frontend/utils/debounce.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/hub_panel.hpp"
+#include "ui/layout.hpp"
 #include "ui/library_panel.hpp"
 #include "ui/navigation.hpp"
 #include "ui/program_visuals.hpp"

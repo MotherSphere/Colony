@@ -4,9 +4,11 @@
 #include "utils/color.hpp"
 #include "utils/drawing.hpp"
 #include "utils/text.hpp"
+#include "utils/text_wrapping.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 namespace colony::frontend::components
 {
@@ -98,27 +100,64 @@ void RenderThemeSwatch(
     SDL_Color headingColor = theme.heroTitle;
     SDL_Color bodyColor = theme.heroBody;
 
-    colony::TextTexture headingTexture = colony::CreateTextTexture(renderer, headingFont, text.heading, headingColor);
-    colony::TextTexture bodyTexture = colony::CreateTextTexture(renderer, bodyFont, text.body, bodyColor);
+    const int indicatorSpacing = ScaleValue(6);
+    const int lineSpacing = ScaleValue(4);
+    const int paragraphSpacing = ScaleValue(6);
 
-    if (headingTexture.texture)
+    const int textAreaWidth = sampleHeadingRect.w;
+    const int indicatorsTop = cardRect.y + cardRect.h - rowHeight * 2 - rowSpacing;
+    const int textAreaBottom = indicatorsTop - indicatorSpacing;
+
+    int textCursorY = sampleHeadingRect.y;
+
+    const auto renderWrappedLines = [&](const std::vector<std::string>& lines, TTF_Font* font, SDL_Color color) {
+        for (std::size_t i = 0; i < lines.size(); ++i)
+        {
+            if (textCursorY >= textAreaBottom)
+            {
+                break;
+            }
+
+            colony::TextTexture texture = colony::CreateTextTexture(renderer, font, lines[i], color);
+            if (!texture.texture)
+            {
+                continue;
+            }
+
+            if (textCursorY + texture.height > textAreaBottom)
+            {
+                break;
+            }
+
+            SDL_Rect drawRect{
+                sampleHeadingRect.x,
+                textCursorY,
+                std::min(texture.width, textAreaWidth),
+                texture.height};
+            colony::RenderTexture(renderer, texture, drawRect);
+
+            textCursorY += texture.height;
+            if (i + 1 < lines.size())
+            {
+                textCursorY += lineSpacing;
+            }
+        }
+    };
+
+    const auto headingLines = colony::WrapTextToWidth(headingFont, text.heading, textAreaWidth);
+    if (!headingLines.empty())
     {
-        SDL_Rect drawHeadingRect{
-            sampleHeadingRect.x,
-            sampleHeadingRect.y,
-            std::min(headingTexture.width, sampleHeadingRect.w),
-            headingTexture.height};
-        colony::RenderTexture(renderer, headingTexture, drawHeadingRect);
+        renderWrappedLines(headingLines, headingFont, headingColor);
     }
 
-    if (bodyTexture.texture)
+    const auto bodyLines = colony::WrapTextToWidth(bodyFont, text.body, textAreaWidth);
+    if (!bodyLines.empty())
     {
-        SDL_Rect drawBodyRect{
-            sampleHeadingRect.x,
-            sampleHeadingRect.y + (headingTexture.texture ? headingTexture.height + ScaleValue(6) : 0),
-            std::min(bodyTexture.width, sampleHeadingRect.w),
-            bodyTexture.height};
-        colony::RenderTexture(renderer, bodyTexture, drawBodyRect);
+        if (!headingLines.empty() && textCursorY + paragraphSpacing < textAreaBottom)
+        {
+            textCursorY += paragraphSpacing;
+        }
+        renderWrappedLines(bodyLines, bodyFont, bodyColor);
     }
 
     const int rowHeight = ScaleValue(8);

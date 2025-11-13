@@ -78,6 +78,44 @@ void ContentValidator::ParseHubSection(const nlohmann::json& document, AppConten
 
     content.hub.headlineLocalizationKey = requireString(hubJson, "headlineKey");
     content.hub.descriptionLocalizationKey = requireString(hubJson, "descriptionKey");
+    content.hub.primaryActionLocalizationKey = hubJson.value("primaryActionKey", "");
+    content.hub.primaryActionDescriptionLocalizationKey = hubJson.value("primaryActionDescriptionKey", "");
+
+    content.hub.highlightLocalizationKeys.clear();
+    if (hubJson.contains("highlights"))
+    {
+        const auto& highlightsJson = hubJson["highlights"];
+        if (!highlightsJson.is_array())
+        {
+            throw std::runtime_error("Hub highlights must be an array of strings.");
+        }
+        for (const auto& highlight : highlightsJson)
+        {
+            if (!highlight.is_string())
+            {
+                throw std::runtime_error("Each hub highlight entry must be a string.");
+            }
+            const std::string highlightKey = highlight.get<std::string>();
+            if (!highlightKey.empty())
+            {
+                content.hub.highlightLocalizationKeys.push_back(highlightKey);
+            }
+        }
+    }
+
+    content.hub.widgets.clear();
+    if (hubJson.contains("widgets"))
+    {
+        const auto& widgetsJson = hubJson["widgets"];
+        if (!widgetsJson.is_array())
+        {
+            throw std::runtime_error("Hub widgets must be declared as an array.");
+        }
+        for (const auto& widgetJson : widgetsJson)
+        {
+            content.hub.widgets.emplace_back(ParseHubWidget(widgetJson));
+        }
+    }
 
     if (!hubJson.contains("branches"))
     {
@@ -123,7 +161,79 @@ HubBranch ContentValidator::ParseHubBranch(const nlohmann::json& json) const
     branch.accentColor = json.value("accentColor", "");
     branch.channelId = json.value("channelId", "");
     branch.programId = json.value("programId", "");
+    if (json.contains("tags"))
+    {
+        const auto& tagsJson = json["tags"];
+        if (!tagsJson.is_array())
+        {
+            throw std::runtime_error("Hub branch tags must be provided as an array.");
+        }
+        for (const auto& tagJson : tagsJson)
+        {
+            if (!tagJson.is_string())
+            {
+                throw std::runtime_error("Each hub branch tag must be a string.");
+            }
+            const std::string tagKey = tagJson.get<std::string>();
+            if (!tagKey.empty())
+            {
+                branch.tagLocalizationKeys.push_back(tagKey);
+            }
+        }
+    }
+    branch.actionLocalizationKey = json.value("actionKey", "");
+    branch.metricsLocalizationKey = json.value("metricsKey", "");
     return branch;
+}
+
+HubWidget ContentValidator::ParseHubWidget(const nlohmann::json& json) const
+{
+    if (!json.is_object())
+    {
+        throw std::runtime_error("Each hub widget entry must be a JSON object.");
+    }
+
+    auto requireString = [](const nlohmann::json& node, const char* field) -> std::string {
+        if (!node.contains(field) || !node[field].is_string())
+        {
+            throw std::runtime_error(std::string{"Hub widget field \""} + field + "\" must be a string.");
+        }
+        const std::string value = node[field].get<std::string>();
+        if (value.empty())
+        {
+            throw std::runtime_error(std::string{"Hub widget field \""} + field + "\" must not be empty.");
+        }
+        return value;
+    };
+
+    HubWidget widget;
+    widget.id = requireString(json, "id");
+    widget.titleLocalizationKey = requireString(json, "titleKey");
+    widget.descriptionLocalizationKey = requireString(json, "descriptionKey");
+    widget.accentColor = json.value("accentColor", "");
+
+    if (json.contains("items"))
+    {
+        const auto& itemsJson = json["items"];
+        if (!itemsJson.is_array())
+        {
+            throw std::runtime_error("Hub widget items must be declared as an array.");
+        }
+        for (const auto& itemJson : itemsJson)
+        {
+            if (!itemJson.is_string())
+            {
+                throw std::runtime_error("Each hub widget item must be a string.");
+            }
+            const std::string itemKey = itemJson.get<std::string>();
+            if (!itemKey.empty())
+            {
+                widget.itemLocalizationKeys.push_back(itemKey);
+            }
+        }
+    }
+
+    return widget;
 }
 
 void ContentValidator::ParseUserSection(const nlohmann::json& document, AppContent& content) const

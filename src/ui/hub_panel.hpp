@@ -20,6 +20,18 @@ struct HubBranchContent
     std::string title;
     std::string description;
     SDL_Color accent{0, 0, 0, SDL_ALPHA_OPAQUE};
+    std::vector<std::string> tags;
+    std::string actionLabel;
+    std::string metrics;
+};
+
+struct HubWidgetContent
+{
+    std::string id;
+    std::string title;
+    std::string description;
+    std::vector<std::string> items;
+    SDL_Color accent{0, 0, 0, SDL_ALPHA_OPAQUE};
 };
 
 struct HubContent
@@ -27,6 +39,10 @@ struct HubContent
     std::string headline;
     std::string description;
     std::vector<HubBranchContent> branches;
+    std::vector<std::string> highlights;
+    std::string primaryActionLabel;
+    std::string primaryActionDescription;
+    std::vector<HubWidgetContent> widgets;
 };
 
 struct HubRenderResult
@@ -68,6 +84,11 @@ class HubPanelRenderer
         std::string description;
         mutable int descriptionWidth = 0;
         mutable std::vector<colony::TextTexture> descriptionLines;
+        std::vector<colony::TextTexture> highlightChips;
+        colony::TextTexture primaryActionLabel;
+        std::string primaryActionDescription;
+        mutable int actionDescriptionWidth = 0;
+        mutable std::vector<colony::TextTexture> actionDescriptionLines;
     };
 
     struct BranchChrome
@@ -78,13 +99,34 @@ class HubPanelRenderer
         SDL_Color accent{0, 0, 0, SDL_ALPHA_OPAQUE};
         mutable int descriptionWidth = 0;
         mutable std::vector<colony::TextTexture> bodyLines;
+        std::vector<colony::TextTexture> tagChips;
+        colony::TextTexture actionLabel;
+        colony::TextTexture metricsLabel;
+        colony::TextTexture iconGlyph;
+    };
+
+    struct WidgetChrome
+    {
+        std::string id;
+        colony::TextTexture title;
+        std::string description;
+        mutable int descriptionWidth = 0;
+        mutable std::vector<colony::TextTexture> descriptionLines;
+        std::vector<std::string> items;
+        mutable int itemsWidth = 0;
+        mutable std::vector<std::vector<colony::TextTexture>> itemLines;
+        SDL_Color accent{0, 0, 0, SDL_ALPHA_OPAQUE};
     };
 
     void RebuildHeroDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const;
+    void RebuildHeroActionDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const;
     void RebuildBranchDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color) const;
+    void RebuildWidgetDescription(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const;
+    void RebuildWidgetItems(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const;
 
     mutable HeroChrome hero_;
     mutable std::vector<BranchChrome> branches_;
+    mutable std::vector<WidgetChrome> widgets_;
 
     TTF_Font* heroBodyFont_ = nullptr;
     TTF_Font* tileBodyFont_ = nullptr;

@@ -7,6 +7,36 @@
   "hub": {
     "headlineKey": "hub.hero.headline",
     "descriptionKey": "hub.hero.description",
+    "highlights": [
+      "hub.hero.highlights.queue",
+      "hub.hero.highlights.briefing",
+      "hub.hero.highlights.telemetry"
+    ],
+    "primaryActionKey": "hub.hero.action.primary",
+    "primaryActionDescriptionKey": "hub.hero.action.description",
+    "widgets": [
+      {
+        "id": "status",
+        "titleKey": "hub.widgets.status.title",
+        "descriptionKey": "hub.widgets.status.description",
+        "accentColor": "#3B82F6",
+        "items": [
+          "hub.widgets.status.items.0",
+          "hub.widgets.status.items.1",
+          "hub.widgets.status.items.2"
+        ]
+      },
+      {
+        "id": "missions",
+        "titleKey": "hub.widgets.missions.title",
+        "descriptionKey": "hub.widgets.missions.description",
+        "accentColor": "#F472B6",
+        "items": [
+          "hub.widgets.missions.items.0",
+          "hub.widgets.missions.items.1"
+        ]
+      }
+    ],
     "branches": [
       {
         "id": "hub_programs",
@@ -14,7 +44,13 @@
         "descriptionKey": "hub.branches.programs.body",
         "accentColor": "#3B82F6",
         "channelId": "programs",
-        "programId": "PROGRAMS_CORE_SUITE"
+        "programId": "PROGRAMS_CORE_SUITE",
+        "tags": [
+          "hub.branches.programs.tags.command",
+          "hub.branches.programs.tags.orchestration"
+        ],
+        "actionKey": "hub.branches.programs.action",
+        "metricsKey": "hub.branches.programs.metrics"
       },
       {
         "id": "hub_addons",
@@ -22,7 +58,13 @@
         "descriptionKey": "hub.branches.addons.body",
         "accentColor": "#F59E0B",
         "channelId": "addons",
-        "programId": "ADDONS_EXTENSION_BAY"
+        "programId": "ADDONS_EXTENSION_BAY",
+        "tags": [
+          "hub.branches.addons.tags.upgrades",
+          "hub.branches.addons.tags.integration"
+        ],
+        "actionKey": "hub.branches.addons.action",
+        "metricsKey": "hub.branches.addons.metrics"
       },
       {
         "id": "hub_games",
@@ -30,7 +72,13 @@
         "descriptionKey": "hub.branches.games.body",
         "accentColor": "#60A5FA",
         "channelId": "games",
-        "programId": "GAMES_STARFORGE_TRAINER"
+        "programId": "GAMES_STARFORGE_TRAINER",
+        "tags": [
+          "hub.branches.games.tags.arcade",
+          "hub.branches.games.tags.training"
+        ],
+        "actionKey": "hub.branches.games.action",
+        "metricsKey": "hub.branches.games.metrics"
       },
       {
         "id": "hub_settings",
@@ -38,7 +86,13 @@
         "descriptionKey": "hub.branches.settings.body",
         "accentColor": "#7FDBFF",
         "channelId": "settings",
-        "programId": "SETTINGS_APPEARANCE"
+        "programId": "SETTINGS_APPEARANCE",
+        "tags": [
+          "hub.branches.settings.tags.preferences",
+          "hub.branches.settings.tags.accessibility"
+        ],
+        "actionKey": "hub.branches.settings.action",
+        "metricsKey": "hub.branches.settings.metrics"
       }
     ]
   },

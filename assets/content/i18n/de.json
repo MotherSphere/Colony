@@ -115,5 +115,74 @@
         "description": "Begrenze Hero-Animationen für empfindliche Nutzende"
       }
     }
+  },
+  "hub": {
+    "hero": {
+      "highlights": {
+        "queue": "3 pending updates awaiting review",
+        "briefing": "Mission briefing window opens in 12 minutes",
+        "telemetry": "Telemetry stream holding steady"
+      },
+      "action": {
+        "primary": "Review mission briefing",
+        "description": "Open the operations console to approve launch changes before the next shift."
+      }
+    },
+    "branch": {
+      "default_action": "Open"
+    },
+    "branches": {
+      "programs": {
+        "tags": {
+          "command": "Command",
+          "orchestration": "Orchestration"
+        },
+        "action": "Deploy suite",
+        "metrics": "3 consoles primed"
+      },
+      "addons": {
+        "tags": {
+          "upgrades": "Upgrades",
+          "integration": "Integration"
+        },
+        "action": "Install upgrade",
+        "metrics": "2 integrations queued"
+      },
+      "games": {
+        "tags": {
+          "arcade": "Arcade",
+          "training": "Training"
+        },
+        "action": "Launch simulation",
+        "metrics": "New leaderboard posted"
+      },
+      "settings": {
+        "tags": {
+          "preferences": "Preferences",
+          "accessibility": "Accessibility"
+        },
+        "action": "Adjust settings",
+        "metrics": "2 comfort presets active"
+      }
+    },
+    "widgets": {
+      "status": {
+        "title": "Systems status",
+        "description": "Quick health summary for the main control deck.",
+        "items": {
+          "0": "Life-support grid operating at 98% efficiency",
+          "1": "Docking corridor pressurised and locked",
+          "2": "Comms relays synced to long-range uplink"
+        }
+      },
+      "missions": {
+        "title": "Mission log",
+        "description": "Recent activity across colony assignments.",
+        "items": {
+          "0": "Recon wing completed drift survey",
+          "1": "Logistics crew scheduled cargo transfer"
+        }
+      }
+    }
   }
 }

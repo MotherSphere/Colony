@@ -9,18 +9,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <numbers>
 
 namespace colony::ui
 {
-namespace
-{
-SDL_Color MixWithBackground(SDL_Color foreground, SDL_Color background, float factor)
-{
-    return colony::color::Mix(foreground, background, std::clamp(factor, 0.0f, 1.0f));
-}
-} // namespace
-
 void HubPanelRenderer::Build(
     SDL_Renderer* renderer,
     const HubContent& content,
@@ -218,27 +209,15 @@ HubRenderResult HubPanelRenderer::Render(
 
     SDL_Color gradientStart = theme.heroGradientFallbackStart;
     SDL_Color gradientEnd = theme.heroGradientFallbackEnd;
-    SDL_SetRenderDrawColor(renderer, gradientEnd.r, gradientEnd.g, gradientEnd.b, gradientEnd.a);
+    SDL_SetRenderDrawColor(renderer, gradientStart.r, gradientStart.g, gradientStart.b, gradientStart.a);
     SDL_RenderFillRect(renderer, &heroRect);
 
+    SDL_Rect bottomBlend = heroRect;
+    bottomBlend.h /= 2;
+    bottomBlend.y += bottomBlend.h;
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    for (int layer = 0; layer < 4; ++layer)
-    {
-        const float t = static_cast<float>(layer + 1) / 4.0f;
-        SDL_Rect layerRect = heroRect;
-        layerRect.x += Scale(8 * layer);
-        layerRect.y += Scale(6 * layer);
-        layerRect.w -= Scale(16 * layer);
-        layerRect.h -= Scale(12 * layer);
-        if (layerRect.w <= 0 || layerRect.h <= 0)
-        {
-            continue;
-        }
-        SDL_Color layerColor = colony::color::Mix(gradientStart, gradientEnd, t * 0.7f);
-        const Uint8 alpha = static_cast<Uint8>(100 - layer * 18);
-        SDL_SetRenderDrawColor(renderer, layerColor.r, layerColor.g, layerColor.b, alpha);
-        SDL_RenderFillRect(renderer, &layerRect);
-    }
+    SDL_SetRenderDrawColor(renderer, gradientEnd.r, gradientEnd.g, gradientEnd.b, 180);
+    SDL_RenderFillRect(renderer, &bottomBlend);
 
     const auto resolveAccent = [&](const BranchChrome& branch) {
         if (branch.accent.a == 0)
@@ -249,45 +228,18 @@ HubRenderResult HubPanelRenderer::Render(
     };
 
     SDL_Color accentColor = branches_.empty() ? theme.channelBadge : resolveAccent(branches_.front());
-    const float orbit = static_cast<float>(std::sin(timeSeconds * 0.7));
-    const int accentDiameter = Scale(240);
-    SDL_Rect accentDisc{heroRect.x + heroRect.w - accentDiameter - Scale(80),
-                        heroRect.y + heroRect.h / 2 - accentDiameter / 2 + static_cast<int>(orbit * Scale(16)),
-                        accentDiameter,
-                        accentDiameter};
-    SDL_Color accentFill = colony::color::Mix(accentColor, gradientEnd, 0.35f);
-    SDL_SetRenderDrawColor(renderer, accentFill.r, accentFill.g, accentFill.b, 72);
-    colony::drawing::RenderFilledRoundedRect(renderer, accentDisc, accentDiameter / 2);
-
-    SDL_Rect accentDiscSmall = accentDisc;
-    accentDiscSmall.x -= Scale(40);
-    accentDiscSmall.y += Scale(60);
-    accentDiscSmall.w = accentDiscSmall.h = accentDiameter / 2;
-    SDL_Color accentFillSmall = colony::color::Mix(accentColor, theme.heroTitle, 0.2f);
-    SDL_SetRenderDrawColor(renderer, accentFillSmall.r, accentFillSmall.g, accentFillSmall.b, 64);
-    colony::drawing::RenderFilledRoundedRect(renderer, accentDiscSmall, accentDiscSmall.w / 2);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-    const int particleCount = 6;
-    for (int i = 0; i < particleCount; ++i)
+    const int accentStripWidth = Scale(64);
+    SDL_Rect accentStrip{
+        heroRect.x + heroRect.w - accentStripWidth - Scale(32),
+        heroRect.y + Scale(32),
+        accentStripWidth,
+        heroRect.h - Scale(64)};
+    if (accentStrip.w > 0 && accentStrip.h > 0)
     {
-        const float offset = static_cast<float>(i) / static_cast<float>(particleCount);
-        const float phase = static_cast<float>(std::fmod(timeSeconds * 0.35 + offset, 1.0));
-        const float theta = phase * std::numbers::pi_v<float> * 2.0f;
-        const int radius = accentDiameter / 2 - Scale(24);
-        const int centerX = accentDisc.x + accentDiameter / 2;
-        const int centerY = accentDisc.y + accentDiameter / 2;
-        const int particleX = centerX + static_cast<int>(std::cos(theta) * radius);
-        const int particleY = centerY + static_cast<int>(std::sin(theta) * radius);
-        const int particleSize = Scale(8);
-        SDL_Rect particleRect{
-            particleX - particleSize / 2,
-            particleY - particleSize / 2,
-            particleSize,
-            particleSize};
-        SDL_Color particleColor = colony::color::Mix(accentColor, gradientStart, 0.4f);
-        const Uint8 particleAlpha = static_cast<Uint8>(120 * (0.5f + 0.5f * std::sin(theta + timeSeconds * 1.2)));
-        SDL_SetRenderDrawColor(renderer, particleColor.r, particleColor.g, particleColor.b, particleAlpha);
-        colony::drawing::RenderFilledRoundedRect(renderer, particleRect, particleSize / 2);
+        SDL_Color stripFill = colony::color::Mix(accentColor, gradientEnd, 0.25f);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, stripFill.r, stripFill.g, stripFill.b, 200);
+        colony::drawing::RenderFilledRoundedRect(renderer, accentStrip, Scale(24));
     }
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
@@ -336,16 +288,17 @@ HubRenderResult HubPanelRenderer::Render(
 
         if (!hero_.highlightChips.empty())
         {
-            const int chipPaddingX = Scale(16);
-            const int chipPaddingY = Scale(10);
-            const int chipGap = Scale(12);
+            const int chipPaddingX = Scale(14);
+            const int chipPaddingY = Scale(8);
+            const int chipGap = Scale(10);
             const int chipMaxWidth = heroTextWidth;
             int chipCursorX = heroContentX;
             int chipCursorY = heroCursorY;
             int chipLineHeight = 0;
-            for (std::size_t i = 0; i < hero_.highlightChips.size(); ++i)
+            SDL_Color chipFill = colony::color::Mix(accentColor, theme.libraryBackground, 0.2f);
+            SDL_Color chipOutline = colony::color::Mix(accentColor, theme.border, 0.3f);
+            for (const auto& chipTexture : hero_.highlightChips)
             {
-                const auto& chipTexture = hero_.highlightChips[i];
                 const int chipWidth = chipTexture.width + chipPaddingX * 2;
                 const int chipHeight = chipTexture.height + chipPaddingY * 2;
                 if (chipCursorX > heroContentX && chipCursorX + chipWidth > heroContentX + chipMaxWidth)
@@ -355,14 +308,11 @@ HubRenderResult HubPanelRenderer::Render(
                     chipLineHeight = 0;
                 }
                 SDL_Rect chipRect{chipCursorX, chipCursorY, chipWidth, chipHeight};
-                const float shimmer = 0.4f + 0.3f * static_cast<float>(std::sin(timeSeconds * 2.1 + static_cast<double>(i)));
-                SDL_Color chipFill = MixWithBackground(accentColor, theme.heroTitle, shimmer);
-                SDL_Color chipOutline = colony::color::Mix(accentColor, theme.heroTitle, 0.55f);
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(renderer, chipFill.r, chipFill.g, chipFill.b, 180);
-                colony::drawing::RenderFilledRoundedRect(renderer, chipRect, chipRect.h / 2);
-                SDL_SetRenderDrawColor(renderer, chipOutline.r, chipOutline.g, chipOutline.b, 200);
-                colony::drawing::RenderRoundedRect(renderer, chipRect, chipRect.h / 2);
+                SDL_SetRenderDrawColor(renderer, chipFill.r, chipFill.g, chipFill.b, 200);
+                colony::drawing::RenderFilledRoundedRect(renderer, chipRect, Scale(16));
+                SDL_SetRenderDrawColor(renderer, chipOutline.r, chipOutline.g, chipOutline.b, 180);
+                colony::drawing::RenderRoundedRect(renderer, chipRect, Scale(16));
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
                 SDL_Rect chipTextRect{
@@ -388,18 +338,14 @@ HubRenderResult HubPanelRenderer::Render(
         const int buttonHeight = hero_.primaryActionLabel.height + buttonPaddingY * 2;
         SDL_Rect buttonRect{heroContentX, heroCursorY, buttonWidth, buttonHeight};
 
-        const float pulse = 0.5f + 0.5f * static_cast<float>(std::sin(timeSeconds * 2.4));
-        SDL_Color buttonFill = MixWithBackground(accentColor, theme.heroTitle, 0.32f + 0.12f * pulse);
-        SDL_Color buttonOutline = colony::color::Mix(accentColor, theme.heroTitle, 0.6f);
-        SDL_Color buttonGlow = colony::color::Mix(accentColor, theme.heroTitle, 0.45f);
+        SDL_Color buttonFill = colony::color::Mix(accentColor, theme.libraryBackground, 0.25f);
+        SDL_Color buttonOutline = colony::color::Mix(accentColor, theme.border, 0.3f);
 
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, buttonFill.r, buttonFill.g, buttonFill.b, 205);
+        SDL_SetRenderDrawColor(renderer, buttonFill.r, buttonFill.g, buttonFill.b, 220);
         colony::drawing::RenderFilledRoundedRect(renderer, buttonRect, buttonRect.h / 2);
-        SDL_SetRenderDrawColor(renderer, buttonGlow.r, buttonGlow.g, buttonGlow.b, 160);
+        SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, 200);
         colony::drawing::RenderRoundedRect(renderer, buttonRect, buttonRect.h / 2);
-        SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, 220);
-        colony::drawing::RenderRoundedRect(renderer, buttonRect, buttonRect.h / 2 + Scale(1));
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
         SDL_Rect labelRect{
@@ -458,44 +404,46 @@ HubRenderResult HubPanelRenderer::Render(
         heroCursorY += Scale(16);
     }
 
-    if (!heroCollapsed)
-    {
-        SDL_Rect heroBottomGlow{heroContentX, heroCursorY, heroTextWidth, Scale(6)};
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-        SDL_Color heroGlowColor = colony::color::Mix(accentColor, theme.heroTitle, 0.3f);
-        SDL_SetRenderDrawColor(renderer, heroGlowColor.r, heroGlowColor.g, heroGlowColor.b, 70);
-        SDL_RenderFillRect(renderer, &heroBottomGlow);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-    }
-
-    const int toggleWidth = Scale(160);
-    const int toggleHeight = Scale(44);
+    const int toggleSize = Scale(48);
     SDL_Rect toggleRect{
-        heroRect.x + heroRect.w - heroPadding - toggleWidth,
-        heroRect.y + heroRect.h - toggleHeight - heroPadding / 2,
-        toggleWidth,
-        toggleHeight};
+        heroRect.x + heroRect.w - heroPadding - toggleSize,
+        heroRect.y + heroRect.h - toggleSize - heroPadding / 2,
+        toggleSize,
+        toggleSize};
     result.heroToggleRect = toggleRect;
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_Color toggleFill = MixWithBackground(accentColor, theme.heroTitle, heroCollapsed ? 0.18f : 0.32f);
-    SDL_Color toggleOutline = colony::color::Mix(accentColor, theme.heroTitle, 0.5f);
-    SDL_SetRenderDrawColor(renderer, toggleFill.r, toggleFill.g, toggleFill.b, 200);
-    colony::drawing::RenderFilledRoundedRect(renderer, toggleRect, toggleRect.h / 2);
-    SDL_SetRenderDrawColor(renderer, toggleOutline.r, toggleOutline.g, toggleOutline.b, 220);
-    colony::drawing::RenderRoundedRect(renderer, toggleRect, toggleRect.h / 2);
+    SDL_Color toggleFill = colony::color::Mix(accentColor, theme.libraryBackground, heroCollapsed ? 0.18f : 0.28f);
+    SDL_Color toggleOutline = colony::color::Mix(accentColor, theme.border, 0.35f);
+    SDL_SetRenderDrawColor(renderer, toggleFill.r, toggleFill.g, toggleFill.b, 220);
+    colony::drawing::RenderFilledRoundedRect(renderer, toggleRect, Scale(16));
+    SDL_SetRenderDrawColor(renderer, toggleOutline.r, toggleOutline.g, toggleOutline.b, 200);
+    colony::drawing::RenderRoundedRect(renderer, toggleRect, Scale(16));
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-    if (tileBodyFont_)
-    {
-        const char* toggleLabel = heroCollapsed ? "Expand hero" : "Collapse hero";
-        colony::TextTexture toggleTexture =
-            colony::CreateTextTexture(renderer, tileBodyFont_, toggleLabel, theme.heroTitle);
-        SDL_Rect toggleLabelRect{
-            toggleRect.x + toggleRect.w / 2 - toggleTexture.width / 2,
-            toggleRect.y + toggleRect.h / 2 - toggleTexture.height / 2,
-            toggleTexture.width,
-            toggleTexture.height};
-        colony::RenderTexture(renderer, toggleTexture, toggleLabelRect);
-    }
+
+    SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, SDL_ALPHA_OPAQUE);
+    const int chevronWidth = Scale(16);
+    const int chevronHeight = Scale(10);
+    const int chevronSpacing = Scale(4);
+    int centerX = toggleRect.x + toggleRect.w / 2;
+    int centerY = toggleRect.y + toggleRect.h / 2;
+    auto drawChevron = [&](int offsetY, bool pointingDown) {
+        const int halfWidth = chevronWidth / 2;
+        const int direction = pointingDown ? 1 : -1;
+        SDL_RenderDrawLine(
+            renderer,
+            centerX - halfWidth,
+            centerY + offsetY - direction * chevronHeight / 2,
+            centerX,
+            centerY + offsetY + direction * chevronHeight / 2);
+        SDL_RenderDrawLine(
+            renderer,
+            centerX + halfWidth,
+            centerY + offsetY - direction * chevronHeight / 2,
+            centerX,
+            centerY + offsetY + direction * chevronHeight / 2);
+    };
+    drawChevron(-chevronSpacing, heroCollapsed);
+    drawChevron(chevronSpacing, heroCollapsed);
 
     const int searchBarWidth = std::min(heroContentWidth, Scale(420));
     const int searchBarHeight = Scale(54);
@@ -507,12 +455,12 @@ HubRenderResult HubPanelRenderer::Render(
     result.searchInputRect = searchRect;
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_Color searchFill = MixWithBackground(theme.libraryBackground, theme.heroTitle, searchFocused ? 0.45f : 0.32f);
-    SDL_SetRenderDrawColor(renderer, searchFill.r, searchFill.g, searchFill.b, 215);
-    colony::drawing::RenderFilledRoundedRect(renderer, searchRect, searchRect.h / 2);
-    SDL_Color searchOutline = colony::color::Mix(accentColor, theme.heroTitle, searchFocused ? 0.48f : 0.36f);
-    SDL_SetRenderDrawColor(renderer, searchOutline.r, searchOutline.g, searchOutline.b, 230);
-    colony::drawing::RenderRoundedRect(renderer, searchRect, searchRect.h / 2);
+    SDL_Color searchFill = colony::color::Mix(theme.libraryBackground, theme.background, 0.35f);
+    SDL_SetRenderDrawColor(renderer, searchFill.r, searchFill.g, searchFill.b, 230);
+    colony::drawing::RenderFilledRoundedRect(renderer, searchRect, Scale(22));
+    SDL_Color searchOutline = searchFocused ? accentColor : theme.border;
+    SDL_SetRenderDrawColor(renderer, searchOutline.r, searchOutline.g, searchOutline.b, searchFocused ? 220 : 180);
+    colony::drawing::RenderRoundedRect(renderer, searchRect, Scale(22));
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
     if (search_.lastQuery != searchQuery)
@@ -531,11 +479,31 @@ HubRenderResult HubPanelRenderer::Render(
 
     const int searchPaddingX = Scale(18);
     const int searchPaddingY = Scale(12);
-    SDL_Rect searchTextRect{
+    const int searchIconSize = Scale(18);
+    SDL_Rect iconRect{
         searchRect.x + searchPaddingX,
+        searchRect.y + searchRect.h / 2 - searchIconSize / 2,
+        searchIconSize,
+        searchIconSize};
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, theme.libraryBackground.r, theme.libraryBackground.g, theme.libraryBackground.b, 220);
+    colony::drawing::RenderFilledRoundedRect(renderer, iconRect, iconRect.w / 2);
+    SDL_SetRenderDrawColor(renderer, theme.muted.r, theme.muted.g, theme.muted.b, SDL_ALPHA_OPAQUE);
+    colony::drawing::RenderRoundedRect(renderer, iconRect, iconRect.w / 2);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    SDL_RenderDrawLine(
+        renderer,
+        iconRect.x + iconRect.w - Scale(4),
+        iconRect.y + iconRect.h - Scale(4),
+        iconRect.x + iconRect.w + Scale(4),
+        iconRect.y + iconRect.h + Scale(4));
+
+    SDL_Rect searchTextRect{
+        searchRect.x + searchPaddingX + searchIconSize + Scale(12),
         searchRect.y + searchPaddingY,
         searchRect.w - searchPaddingX * 2,
         searchRect.h - searchPaddingY * 2};
+    searchTextRect.w -= searchIconSize + Scale(12);
 
     if (!search_.queryTexture.texture && search_.placeholderTexture.texture)
     {
@@ -589,15 +557,7 @@ HubRenderResult HubPanelRenderer::Render(
             clearSize,
             clearSize};
         result.searchClearRect = clearRect;
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_Color clearFill = MixWithBackground(theme.statusBar, theme.heroTitle, 0.3f);
-        SDL_SetRenderDrawColor(renderer, clearFill.r, clearFill.g, clearFill.b, 210);
-        colony::drawing::RenderFilledRoundedRect(renderer, clearRect, clearRect.w / 2);
-        SDL_Color clearOutline = colony::color::Mix(accentColor, theme.heroTitle, 0.5f);
-        SDL_SetRenderDrawColor(renderer, clearOutline.r, clearOutline.g, clearOutline.b, 230);
-        colony::drawing::RenderRoundedRect(renderer, clearRect, clearRect.w / 2);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, theme.muted.r, theme.muted.g, theme.muted.b, SDL_ALPHA_OPAQUE);
         SDL_RenderDrawLine(
             renderer,
             clearRect.x + Scale(4),
@@ -751,55 +711,35 @@ HubRenderResult HubPanelRenderer::Render(
 
         const bool isHovered = hoveredBranchIndex == static_cast<int>(index);
         const bool isActive = activeBranchIndex == static_cast<int>(index);
-        const float bobWave = static_cast<float>(std::sin(timeSeconds * 1.4 + static_cast<double>(index)));
-        int animatedYOffset = static_cast<int>(std::round(bobWave * Scale(3)));
-        if (isHovered)
-        {
-            animatedYOffset -= Scale(4);
-        }
 
         SDL_Rect drawRect = tileRect;
-        drawRect.y += animatedYOffset;
-        const int expansion = std::max(isHovered ? Scale(6) : 0, isActive ? Scale(4) : 0);
-        drawRect.x -= expansion;
-        drawRect.y -= expansion;
-        drawRect.w += expansion * 2;
-        drawRect.h += expansion * 2;
-
-        SDL_Rect shadowRect = drawRect;
-        shadowRect.x += Scale(4);
-        shadowRect.y += Scale(8);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, 42);
-        colony::drawing::RenderFilledRoundedRect(renderer, shadowRect, Scale(26));
+        if (isHovered)
+        {
+            drawRect.y -= Scale(2);
+        }
 
         SDL_Color branchAccent = resolveAccent(branch);
-        SDL_Color baseFill = MixWithBackground(branchAccent, theme.libraryCard, isActive ? 0.5f : (isHovered ? 0.34f : 0.24f));
-        SDL_Color outline = colony::color::Mix(branchAccent, theme.heroTitle, isActive ? 0.55f : 0.32f);
-        SDL_Color hoverGlow = colony::color::Mix(branchAccent, theme.heroTitle, 0.4f);
+        SDL_Color baseFill = isActive
+            ? theme.libraryCardActive
+            : (isHovered ? theme.libraryCardHover : theme.libraryCard);
+        SDL_Color outline = isActive ? branchAccent : theme.border;
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, baseFill.r, baseFill.g, baseFill.b, 230);
+        colony::drawing::RenderFilledRoundedRect(renderer, drawRect, Scale(22));
+        SDL_SetRenderDrawColor(renderer, outline.r, outline.g, outline.b, isActive ? 220 : 160);
+        colony::drawing::RenderRoundedRect(renderer, drawRect, Scale(22));
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        SDL_SetRenderDrawColor(renderer, baseFill.r, baseFill.g, baseFill.b, baseFill.a);
-        colony::drawing::RenderFilledRoundedRect(renderer, drawRect, Scale(26));
-        SDL_SetRenderDrawColor(renderer, outline.r, outline.g, outline.b, outline.a);
-        colony::drawing::RenderRoundedRect(renderer, drawRect, Scale(26));
 
-        SDL_Rect glowRect = drawRect;
-        glowRect.h = drawRect.h / 2;
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-        SDL_SetRenderDrawColor(renderer, hoverGlow.r, hoverGlow.g, hoverGlow.b, static_cast<Uint8>(isHovered ? 110 : 70));
-        colony::drawing::RenderFilledRoundedRect(renderer, glowRect, Scale(26));
-        if (isActive)
-        {
-            colony::drawing::RenderRoundedRect(renderer, drawRect, Scale(28));
-        }
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        SDL_Rect accentBar{drawRect.x, drawRect.y, Scale(6), drawRect.h};
+        SDL_SetRenderDrawColor(renderer, branchAccent.r, branchAccent.g, branchAccent.b, SDL_ALPHA_OPAQUE);
+        colony::drawing::RenderFilledRoundedRect(renderer, accentBar, Scale(6), colony::drawing::CornerTopLeft | colony::drawing::CornerBottomLeft);
 
         SDL_Rect iconRect{drawRect.x + tilePadding, drawRect.y + tilePadding, iconSize, iconSize};
-        SDL_Color iconFill = MixWithBackground(branchAccent, theme.heroTitle, 0.28f);
-        SDL_Color iconOutline = colony::color::Mix(branchAccent, theme.heroTitle, 0.52f);
+        SDL_Color iconFill = colony::color::Mix(branchAccent, theme.background, 0.2f);
+        SDL_Color iconOutline = colony::color::Mix(branchAccent, theme.border, 0.4f);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         colony::drawing::RenderFilledRoundedRect(renderer, iconRect, iconRect.w / 2);
-        SDL_SetRenderDrawColor(renderer, iconOutline.r, iconOutline.g, iconOutline.b, 220);
+        SDL_SetRenderDrawColor(renderer, iconOutline.r, iconOutline.g, iconOutline.b, 200);
         colony::drawing::RenderRoundedRect(renderer, iconRect, iconRect.w / 2);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         if (branch.iconGlyph.texture)
@@ -849,13 +789,10 @@ HubRenderResult HubPanelRenderer::Render(
                     chipLineHeight = 0;
                 }
                 SDL_Rect chipRect{chipCursorX, chipCursorY, chipWidth, chipHeight};
-                SDL_Color chipFill = MixWithBackground(branchAccent, theme.heroTitle, 0.22f);
-                SDL_Color chipOutline = colony::color::Mix(branchAccent, theme.heroTitle, 0.38f);
+                SDL_Color chipFill = colony::color::Mix(branchAccent, theme.libraryBackground, 0.2f);
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(renderer, chipFill.r, chipFill.g, chipFill.b, 200);
-                colony::drawing::RenderFilledRoundedRect(renderer, chipRect, chipRect.h / 2);
-                SDL_SetRenderDrawColor(renderer, chipOutline.r, chipOutline.g, chipOutline.b, 210);
-                colony::drawing::RenderRoundedRect(renderer, chipRect, chipRect.h / 2);
+                SDL_SetRenderDrawColor(renderer, chipFill.r, chipFill.g, chipFill.b, 210);
+                colony::drawing::RenderFilledRoundedRect(renderer, chipRect, Scale(14));
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
                 SDL_Rect chipTextRect{chipRect.x + tagPaddingX, chipRect.y + tagPaddingY, chip.width, chip.height};
@@ -911,11 +848,11 @@ HubRenderResult HubPanelRenderer::Render(
             branch.actionLabel.texture ? branch.actionLabel.width + buttonPaddingX * 2 + buttonIconSize + Scale(12) : Scale(180),
             branch.actionLabel.texture ? branch.actionLabel.height + buttonPaddingY * 2 : Scale(42)};
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_Color buttonFill = MixWithBackground(branchAccent, theme.heroTitle, 0.32f);
-        SDL_Color buttonOutline = colony::color::Mix(branchAccent, theme.heroTitle, 0.5f);
-        colony::drawing::RenderFilledRoundedRect(renderer, actionRect, actionRect.h / 2);
-        SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, 220);
-        colony::drawing::RenderRoundedRect(renderer, actionRect, actionRect.h / 2);
+        SDL_Color buttonFill = colony::color::Mix(branchAccent, theme.libraryBackground, 0.3f);
+        SDL_Color buttonOutline = colony::color::Mix(branchAccent, theme.border, 0.35f);
+        colony::drawing::RenderFilledRoundedRect(renderer, actionRect, Scale(18));
+        SDL_SetRenderDrawColor(renderer, buttonOutline.r, buttonOutline.g, buttonOutline.b, 210);
+        colony::drawing::RenderRoundedRect(renderer, actionRect, Scale(18));
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
         if (branch.actionLabel.texture)
@@ -948,14 +885,6 @@ HubRenderResult HubPanelRenderer::Render(
             buttonArrowRect.x + buttonArrowRect.w,
             buttonArrowRect.y + buttonArrowRect.h / 2);
 
-        if (isHovered)
-        {
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-            SDL_Color haloColor = colony::color::Mix(branchAccent, theme.heroTitle, 0.42f);
-            SDL_SetRenderDrawColor(renderer, haloColor.r, haloColor.g, haloColor.b, 120);
-            colony::drawing::RenderRoundedRect(renderer, drawRect, Scale(30));
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-        }
 
         SDL_Rect screenRect = drawRect;
         if (screenRect.y + screenRect.h >= clipRect.y && screenRect.y <= clipRect.y + clipRect.h)
@@ -1022,14 +951,18 @@ HubRenderResult HubPanelRenderer::Render(
         widgetCursorY = widgetRect.y + widgetRect.h + widgetSpacing;
 
         SDL_Color widgetAccent = widget.accent.a == 0 ? theme.channelBadge : widget.accent;
-        SDL_Color widgetFill = MixWithBackground(widgetAccent, theme.libraryCard, 0.22f);
-        SDL_Color widgetOutline = colony::color::Mix(widgetAccent, theme.heroTitle, 0.35f);
+        SDL_Color widgetFill = theme.libraryCard;
+        SDL_Color widgetOutline = theme.border;
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, widgetFill.r, widgetFill.g, widgetFill.b, 220);
-        colony::drawing::RenderFilledRoundedRect(renderer, widgetRect, Scale(24));
-        SDL_SetRenderDrawColor(renderer, widgetOutline.r, widgetOutline.g, widgetOutline.b, 230);
-        colony::drawing::RenderRoundedRect(renderer, widgetRect, Scale(24));
+        SDL_SetRenderDrawColor(renderer, widgetFill.r, widgetFill.g, widgetFill.b, 235);
+        colony::drawing::RenderFilledRoundedRect(renderer, widgetRect, Scale(22));
+        SDL_SetRenderDrawColor(renderer, widgetOutline.r, widgetOutline.g, widgetOutline.b, 170);
+        colony::drawing::RenderRoundedRect(renderer, widgetRect, Scale(22));
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+        SDL_Rect widgetAccentBar{widgetRect.x + widgetPadding, widgetRect.y + widgetPadding - Scale(10), widgetRect.w - widgetPadding * 2, Scale(4)};
+        SDL_SetRenderDrawColor(renderer, widgetAccent.r, widgetAccent.g, widgetAccent.b, SDL_ALPHA_OPAQUE);
+        colony::drawing::RenderFilledRoundedRect(renderer, widgetAccentBar, Scale(2));
 
         int widgetTextX = widgetRect.x + widgetPadding;
         int widgetCursor = widgetRect.y + widgetPadding;
@@ -1135,13 +1068,13 @@ HubRenderResult HubPanelRenderer::Render(
             cursorY = detailRect.y + detailRect.h + Scale(32);
 
             SDL_Color detailAccent = resolveAccent(detailBranch);
-            SDL_Color detailFill = MixWithBackground(detailAccent, theme.libraryCard, 0.18f);
-            SDL_Color detailOutline = colony::color::Mix(detailAccent, theme.heroTitle, 0.42f);
+            SDL_Color detailFill = theme.libraryCard;
+            SDL_Color detailOutline = theme.border;
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(renderer, detailFill.r, detailFill.g, detailFill.b, 220);
-            colony::drawing::RenderFilledRoundedRect(renderer, detailRect, Scale(28));
-            SDL_SetRenderDrawColor(renderer, detailOutline.r, detailOutline.g, detailOutline.b, 230);
-            colony::drawing::RenderRoundedRect(renderer, detailRect, Scale(28));
+            SDL_SetRenderDrawColor(renderer, detailFill.r, detailFill.g, detailFill.b, 240);
+            colony::drawing::RenderFilledRoundedRect(renderer, detailRect, Scale(24));
+            SDL_SetRenderDrawColor(renderer, detailOutline.r, detailOutline.g, detailOutline.b, 180);
+            colony::drawing::RenderRoundedRect(renderer, detailRect, Scale(24));
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
             int detailTextX = detailRect.x + detailPadding;
@@ -1219,11 +1152,11 @@ HubRenderResult HubPanelRenderer::Render(
                 detailButtonHeight};
             result.detailActionRect = ctaRect;
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-            SDL_Color ctaFill = MixWithBackground(detailAccent, theme.heroTitle, 0.28f);
-            SDL_Color ctaOutline = colony::color::Mix(detailAccent, theme.heroTitle, 0.48f);
-            colony::drawing::RenderFilledRoundedRect(renderer, ctaRect, ctaRect.h / 2);
-            SDL_SetRenderDrawColor(renderer, ctaOutline.r, ctaOutline.g, ctaOutline.b, 230);
-            colony::drawing::RenderRoundedRect(renderer, ctaRect, ctaRect.h / 2);
+            SDL_Color ctaFill = colony::color::Mix(detailAccent, theme.libraryBackground, 0.3f);
+            SDL_Color ctaOutline = colony::color::Mix(detailAccent, theme.border, 0.35f);
+            colony::drawing::RenderFilledRoundedRect(renderer, ctaRect, Scale(20));
+            SDL_SetRenderDrawColor(renderer, ctaOutline.r, ctaOutline.g, ctaOutline.b, 210);
+            colony::drawing::RenderRoundedRect(renderer, ctaRect, Scale(20));
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
             if (tileBodyFont_ != nullptr)
@@ -1257,9 +1190,9 @@ HubRenderResult HubPanelRenderer::Render(
 
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_SetRenderDrawColor(renderer, theme.libraryCard.r, theme.libraryCard.g, theme.libraryCard.b, 210);
-            colony::drawing::RenderFilledRoundedRect(renderer, pagerRect, pagerRect.h / 2);
-            SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, 180);
-            colony::drawing::RenderRoundedRect(renderer, pagerRect, pagerRect.h / 2);
+            colony::drawing::RenderFilledRoundedRect(renderer, pagerRect, Scale(18));
+            SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, 160);
+            colony::drawing::RenderRoundedRect(renderer, pagerRect, Scale(18));
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
             const int buttonSize = Scale(28);
@@ -1268,12 +1201,18 @@ HubRenderResult HubPanelRenderer::Render(
 
             auto drawPagerButton = [&](const SDL_Rect& rect, bool enabled, bool forward) {
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(renderer, theme.libraryBackground.r, theme.libraryBackground.g, theme.libraryBackground.b, enabled ? 230 : 140);
-                colony::drawing::RenderFilledRoundedRect(renderer, rect, rect.h / 2);
-                SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, 200);
-                colony::drawing::RenderRoundedRect(renderer, rect, rect.h / 2);
+                SDL_SetRenderDrawColor(
+                    renderer,
+                    theme.libraryBackground.r,
+                    theme.libraryBackground.g,
+                    theme.libraryBackground.b,
+                    enabled ? 230 : 120);
+                colony::drawing::RenderFilledRoundedRect(renderer, rect, Scale(12));
+                SDL_SetRenderDrawColor(renderer, theme.border.r, theme.border.g, theme.border.b, 160);
+                colony::drawing::RenderRoundedRect(renderer, rect, Scale(12));
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
                 const int arrowPad = Scale(6);
+                SDL_SetRenderDrawColor(renderer, theme.heroTitle.r, theme.heroTitle.g, theme.heroTitle.b, enabled ? SDL_ALPHA_OPAQUE : 140);
                 if (forward)
                 {
                     SDL_RenderDrawLine(renderer, rect.x + arrowPad, rect.y + rect.h / 2, rect.x + rect.w - arrowPad, rect.y + rect.h / 2);
@@ -1305,7 +1244,7 @@ HubRenderResult HubPanelRenderer::Render(
                 for (int i = 0; i < dotCount; ++i)
                 {
                     SDL_Rect dotRect{dotX, dotY, dotSize, dotSize};
-                    SDL_Color dotColor = i == widgetPage ? theme.heroTitle : theme.border;
+                    SDL_Color dotColor = i == widgetPage ? accentColor : theme.border;
                     SDL_SetRenderDrawColor(renderer, dotColor.r, dotColor.g, dotColor.b, SDL_ALPHA_OPAQUE);
                     colony::drawing::RenderFilledRoundedRect(renderer, dotRect, dotRect.w / 2);
                     result.widgetPagerHitboxes.push_back({HubRenderResult::WidgetPagerHitbox::Type::Page, dotRect, i, true});

@@ -110,6 +110,12 @@ class Application
     void ActivateHubBranchByIndex(int index);
     [[nodiscard]] int FindHubBranchIndexById(const std::string& branchId) const;
     void ResetHubInteractionState();
+    [[nodiscard]] std::string NormalizeHubSearchString(std::string_view value) const;
+    [[nodiscard]] std::vector<std::string> TokenizeHubSearch(std::string_view value) const;
+    void EnsureHubScrollWithinBounds();
+    void FocusHubSearch();
+    void ClearHubSearchQuery();
+    void SyncFocusedHubBranch();
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -211,6 +217,23 @@ class Application
     std::vector<ui::HubRenderResult::BranchHitbox> hubBranchHitboxes_;
     int hoveredHubBranchIndex_ = -1;
     int focusedHubBranchIndex_ = -1;
+    std::vector<std::string> hubRenderedBranchIds_;
+    std::vector<std::string> hubSearchTokens_;
+    int hubScrollOffset_ = 0;
+    int hubScrollMaxOffset_ = 0;
+    SDL_Rect hubScrollViewport_{0, 0, 0, 0};
+    bool hubScrollViewportValid_ = false;
+    bool hubSearchFocused_ = false;
+    std::string hubSearchQuery_;
+    bool isHubHeroCollapsed_ = false;
+    int hubWidgetPage_ = 0;
+    int hubWidgetsPerPage_ = 2;
+    int hubWidgetPageCount_ = 0;
+    std::optional<SDL_Rect> hubSearchInputRect_;
+    std::optional<SDL_Rect> hubSearchClearRect_;
+    std::optional<SDL_Rect> hubHeroToggleRect_;
+    std::optional<SDL_Rect> hubDetailActionRect_;
+    std::vector<ui::HubRenderResult::WidgetPagerHitbox> hubWidgetPagerHitboxes_;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
     ui::SettingsPanel::SectionStates settingsSectionStates_{};

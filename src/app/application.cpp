@@ -465,7 +465,6 @@ bool Application::LoadContent()
 
     channelSelections_.assign(content_.channels.size(), 0);
     EnsureLocalAppsChannel();
-    MoveSettingsChannelToEnd();
     return true;
 }
 
@@ -5874,62 +5873,6 @@ int Application::EnsureLocalAppsChannel()
 
     SyncNavigationEntries();
     return index;
-}
-
-void Application::MoveSettingsChannelToEnd()
-{
-    if (content_.channels.empty())
-    {
-        return;
-    }
-
-    auto toLower = [](std::string value) {
-        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
-            return static_cast<char>(std::tolower(ch));
-        });
-        return value;
-    };
-
-    const std::string settingsIdLower = toLower(std::string("settings"));
-
-    auto equalsIgnoreCase = [&](const std::string& lhs, const std::string& rhsLower) {
-        return toLower(lhs) == rhsLower;
-    };
-
-    auto settingsIt = std::find_if(content_.channels.begin(), content_.channels.end(), [&](const Channel& channel) {
-        return equalsIgnoreCase(channel.id, settingsIdLower);
-    });
-
-    if (settingsIt == content_.channels.end())
-    {
-        return;
-    }
-
-    const int settingsIndex = static_cast<int>(std::distance(content_.channels.begin(), settingsIt));
-    if (settingsIndex == static_cast<int>(content_.channels.size()) - 1)
-    {
-        return;
-    }
-
-    Channel settingsChannel = std::move(*settingsIt);
-    content_.channels.erase(settingsIt);
-    content_.channels.push_back(std::move(settingsChannel));
-
-    if (!channelSelections_.empty())
-    {
-        if (settingsIndex < static_cast<int>(channelSelections_.size()))
-        {
-            const int preservedSelection = channelSelections_[settingsIndex];
-            channelSelections_.erase(channelSelections_.begin() + settingsIndex);
-            channelSelections_.push_back(preservedSelection);
-        }
-        else
-        {
-            channelSelections_.assign(content_.channels.size(), 0);
-        }
-    }
-
-    SyncNavigationEntries();
 }
 
 bool Application::AddUserApplication(const std::filesystem::path& executablePath)

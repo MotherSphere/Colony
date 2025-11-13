@@ -68,8 +68,7 @@ SDL_Rect SidebarItem::Render(
         SDL_Rect renderRect = iconRect;
         renderRect.w = icon.width;
         renderRect.h = icon.height;
-        renderRect.x = iconRect.x + (iconRect.w - renderRect.w) / 2;
-        renderRect.y = iconRect.y + (iconRect.h - renderRect.h) / 2;
+        renderRect.y = itemRect.y + (itemRect.h - renderRect.h) / 2;
         SDL_RenderCopy(renderer, icon.texture.get(), nullptr, &renderRect);
     }
 

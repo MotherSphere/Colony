@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/content.hpp"
+#include "frontend/components/sidebar_item.hpp"
 #include "ui/program_visuals.hpp"
 #include "ui/theme.hpp"
 #include "utils/text.hpp"
@@ -29,11 +30,14 @@ class NavigationRail
         TTF_Font* navFont,
         TTF_Font* metaFont,
         const colony::AppContent& content,
-        const ThemeColors& theme);
+        const ThemeColors& theme,
+        const Typography& typography);
 
     NavigationRenderResult Render(
         SDL_Renderer* renderer,
         const ThemeColors& theme,
+        const Typography& typography,
+        const InteractionColors& interactions,
         const SDL_Rect& navRailRect,
         int statusBarHeight,
         const colony::AppContent& content,
@@ -46,7 +50,7 @@ class NavigationRail
     struct NavigationChrome
     {
         colony::TextTexture brand;
-        colony::TextTexture settingsLabel;
+        std::vector<frontend::components::SidebarItem> items;
     };
 
     NavigationChrome chrome_;

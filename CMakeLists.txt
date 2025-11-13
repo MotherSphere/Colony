@@ -18,9 +18,18 @@ target_include_directories(colony_core PUBLIC src third_party)
 
 add_library(colony_ui
     src/frontend/components/empty_state_card.cpp
+    src/frontend/components/sidebar_item.cpp
+    src/frontend/components/search_field.cpp
+    src/frontend/components/buttons.cpp
+    src/frontend/components/badge.cpp
+    src/frontend/components/brand_card.cpp
     src/frontend/components/theme_swatch.cpp
+    src/frontend/utils/font_loader.cpp
+    src/frontend/utils/icon_loader.cpp
     src/frontend/views/settings_view.cpp
+    src/frontend/views/dashboard_page.cpp
     src/frontend/models/library_view_model.cpp
+    src/ui/layout.cpp
     src/ui/theme.cpp
     src/ui/program_visuals.cpp
     src/ui/hub_panel.cpp

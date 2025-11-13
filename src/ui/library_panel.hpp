@@ -45,6 +45,7 @@ class LibraryPanelRenderer
     LibraryRenderResult Render(
         SDL_Renderer* renderer,
         const ThemeColors& theme,
+        const InteractionColors& interactions,
         const SDL_Rect& libraryRect,
         const colony::AppContent& content,
         int activeChannelIndex,
@@ -62,7 +63,6 @@ class LibraryPanelRenderer
   private:
     struct LibraryChrome
     {
-        colony::TextTexture filterPlaceholder;
     };
 
     LibraryChrome chrome_;

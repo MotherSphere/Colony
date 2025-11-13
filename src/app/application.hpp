@@ -72,6 +72,7 @@ class Application
     void InitializeViews();
     void RebuildTheme();
     void RebuildProgramVisuals();
+    void RebuildInteractionPalette();
     void ActivateChannel(int index);
     void ActivateProgram(const std::string& programId);
     void ActivateProgramInChannel(int programIndex);
@@ -116,6 +117,9 @@ class Application
     void FocusHubSearch();
     void ClearHubSearchQuery();
     void SyncFocusedHubBranch();
+
+    void UpdateTopBarTitle();
+    [[nodiscard]] std::string ResolveTopBarTitle() const;
 
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
@@ -171,8 +175,12 @@ class Application
     LocalizationManager localizationManager_{};
     ui::ThemeManager themeManager_;
     ui::ThemeColors theme_{};
+    ui::Typography typography_{};
+    ui::InteractionColors interactions_{};
+    ui::MotionTimings motion_{};
 
     ui::NavigationRail navigationRail_;
+    ui::TopBar topBar_;
     ui::LibraryPanelRenderer libraryPanel_;
     ui::HeroPanelRenderer heroPanel_;
     ui::HubPanelRenderer hubPanel_;

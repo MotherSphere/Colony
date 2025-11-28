@@ -1,6 +1,7 @@
 #include "frontend/utils/font_loader.hpp"
 
 #include "ui/layout.hpp"
+#include "utils/asset_paths.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -80,8 +81,8 @@ std::vector<std::filesystem::path> CandidateFilesForRole(FontRole role, const Lo
         AppendIfExists(candidates, overrideGeneral);
     }
 
-    const std::filesystem::path baseInterDir{"assets/fonts/Inter"};
-    const std::filesystem::path basePoppinsDir{"assets/fonts/Poppins"};
+    const std::filesystem::path baseInterDir = colony::paths::ResolveAssetDirectory("assets/fonts/Inter");
+    const std::filesystem::path basePoppinsDir = colony::paths::ResolveAssetDirectory("assets/fonts/Poppins");
 
     const auto appendFontFamily = [&](const std::filesystem::path& root, std::initializer_list<const char*> names) {
         for (const char* name : names)

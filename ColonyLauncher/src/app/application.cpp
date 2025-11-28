@@ -4,10 +4,12 @@
 #include "frontend/utils/font_loader.hpp"
 #include "frontend/views/dashboard_page.hpp"
 #include "json.hpp"
+#include "orbital_arcade/arcade_main.hpp"
 #include "ui/layout.hpp"
 #include "ui/theme.hpp"
 #include "utils/color.hpp"
 #include "utils/drawing.hpp"
+#include "utils/asset_paths.hpp"
 #include "utils/font_manager.hpp"
 #include "utils/text.hpp"
 
@@ -1845,76 +1847,11 @@ void Application::LaunchArcadeApp()
 {
     const std::string previousStatus = statusBuffer_;
 
-    SDL_Window* arcadeWindow = SDL_CreateWindow(
-        "Orbital Arcade",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        1280,
-        720,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-
-    if (arcadeWindow == nullptr)
-    {
-        std::cerr << "Unable to create Orbital Arcade window: " << SDL_GetError() << '\n';
-        return;
-    }
-
-    SDL_Renderer* arcadeRenderer = SDL_CreateRenderer(
-        arcadeWindow,
-        -1,
-        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-    if (arcadeRenderer == nullptr)
-    {
-        std::cerr << "Unable to create Orbital Arcade renderer: " << SDL_GetError() << '\n';
-        SDL_DestroyWindow(arcadeWindow);
-        return;
-    }
-
     UpdateStatusMessage("Orbital Arcade is running in a separate window. Close it to return to Colony.");
 
-    const Uint32 arcadeWindowId = SDL_GetWindowID(arcadeWindow);
-    bool running = true;
-    bool propagateQuit = false;
+    const orbital_arcade::ArcadeResult result = orbital_arcade::LaunchStandalone();
 
-    while (running)
-    {
-        SDL_Event event{};
-        while (SDL_PollEvent(&event))
-        {
-            switch (event.type)
-            {
-            case SDL_QUIT:
-                propagateQuit = true;
-                running = false;
-                break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE)
-                {
-                    running = false;
-                }
-                break;
-            case SDL_WINDOWEVENT:
-                if (event.window.windowID == arcadeWindowId && event.window.event == SDL_WINDOWEVENT_CLOSE)
-                {
-                    running = false;
-                }
-                break;
-            default:
-                break;
-            }
-        }
-
-        SDL_SetRenderDrawColor(arcadeRenderer, 6, 10, 26, SDL_ALPHA_OPAQUE);
-        SDL_RenderClear(arcadeRenderer);
-        SDL_RenderPresent(arcadeRenderer);
-        SDL_Delay(16);
-    }
-
-    SDL_DestroyRenderer(arcadeRenderer);
-    SDL_DestroyWindow(arcadeWindow);
-
-    if (propagateQuit)
+    if (result.propagateQuit)
     {
         SDL_Event quitEvent{};
         quitEvent.type = SDL_QUIT;
@@ -6218,51 +6155,13 @@ void Application::SaveSettings() const
 std::filesystem::path Application::ResolveContentPath()
 {
     constexpr char kContentFile[] = "assets/content/app_content.json";
-
-    std::filesystem::path candidate{kContentFile};
-    std::error_code error;
-    if (std::filesystem::exists(candidate, error))
-    {
-        return candidate;
-    }
-
-    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
-    {
-        std::filesystem::path base{basePath};
-        SDL_free(basePath);
-        std::filesystem::path baseCandidate = base / kContentFile;
-        if (std::filesystem::exists(baseCandidate, error))
-        {
-            return baseCandidate;
-        }
-    }
-
-    return candidate;
+    return colony::paths::ResolveAssetPath(kContentFile);
 }
 
 std::filesystem::path Application::ResolveLocalizationDirectory()
 {
     constexpr char kLocalizationDir[] = "assets/content/i18n";
-
-    std::filesystem::path candidate{kLocalizationDir};
-    std::error_code error;
-    if (std::filesystem::is_directory(candidate, error))
-    {
-        return candidate;
-    }
-
-    if (char* basePath = SDL_GetBasePath(); basePath != nullptr)
-    {
-        std::filesystem::path base{basePath};
-        SDL_free(basePath);
-        std::filesystem::path baseCandidate = base / kLocalizationDir;
-        if (std::filesystem::is_directory(baseCandidate, error))
-        {
-            return baseCandidate;
-        }
-    }
-
-    return candidate;
+    return colony::paths::ResolveAssetDirectory(kLocalizationDir);
 }
 
 std::filesystem::path Application::ResolveSettingsPath() const

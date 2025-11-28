@@ -1,6 +1,6 @@
 # Colony Launcher
 
-Colony Launcher is the primary application for the ecosystem. It opens a resizable SDL2 window, handles navigation and settings, and can launch secondary modules such as **Orbital Arcade** from within the main experience. The launcher and every supporting module live together inside this repository under the `ColonyLauncher/` directory.
+Colony Launcher is the primary application for the ecosystem. It opens a resizable SDL2 window, handles navigation and settings, and can launch secondary modules such as **Nexus** from within the main experience. The launcher and every supporting module live together inside this repository under the `ColonyLauncher/` directory.
 
 ## Prerequisites
 
@@ -38,7 +38,7 @@ cmake -S . -B build
 cmake --build build
 ```
 
-The resulting executable (`ecosystem_app`) and the `orbital_arcade` module library will be located in the `build` directory. Run the main launcher to display the application window:
+The resulting executable (`ecosystem_app`) and the `nexus` module library will be located in the `build` directory. Run the main launcher to display the application window:
 
 ```bash
 ./build/ecosystem_app

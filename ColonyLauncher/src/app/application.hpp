@@ -95,7 +95,7 @@ class Application
     void UpdateStatusMessage(const std::string& statusText);
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
-    void LaunchArcadeApp();
+    void LaunchNexusApp();
     void LoadSettings();
     void SaveSettings() const;
     bool SetAppearanceCustomizationValue(const std::string& id, float value);
@@ -363,7 +363,7 @@ class Application
 
     [[nodiscard]] static bool IsSettingsProgramId(std::string_view programId);
     [[nodiscard]] static std::string_view SettingsSectionForProgram(std::string_view programId);
-    static constexpr char kOrbitalArcadeProgramId[] = "ORBITAL_ARCADE";
+    static constexpr char kNexusProgramId[] = "NEXUS";
 
 };
 

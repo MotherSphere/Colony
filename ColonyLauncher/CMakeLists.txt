@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 
-add_subdirectory(OrbitalArcade)
+add_subdirectory(Nexus)
 
 add_library(colony_core
     src/core/content_loader.cpp
@@ -57,8 +57,8 @@ add_library(colony_app
 )
 
 target_include_directories(colony_app PUBLIC src third_party)
-target_include_directories(colony_app PUBLIC src third_party OrbitalArcade/src)
-target_link_libraries(colony_app PUBLIC colony_ui orbital_arcade)
+target_include_directories(colony_app PUBLIC src third_party Nexus/src)
+target_link_libraries(colony_app PUBLIC colony_ui nexus)
 
 add_executable(ecosystem_app
     src/main.cpp

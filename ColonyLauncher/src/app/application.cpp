@@ -4,7 +4,7 @@
 #include "frontend/utils/font_loader.hpp"
 #include "frontend/views/dashboard_page.hpp"
 #include "json.hpp"
-#include "orbital_arcade/arcade_main.hpp"
+#include "nexus/nexus_main.hpp"
 #include "ui/layout.hpp"
 #include "ui/theme.hpp"
 #include "utils/color.hpp"
@@ -1059,9 +1059,9 @@ void Application::HandleMouseClick(int x, int y)
     {
         viewRegistry_.TriggerPrimaryAction(statusBuffer_);
         UpdateStatusMessage(statusBuffer_);
-        if (activeProgramId_ == kOrbitalArcadeProgramId)
+        if (activeProgramId_ == kNexusProgramId)
         {
-            LaunchArcadeApp();
+            LaunchNexusApp();
         }
         else if (const auto appIt = userAppExecutables_.find(activeProgramId_); appIt != userAppExecutables_.end())
         {
@@ -1843,13 +1843,13 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
 }
 
 
-void Application::LaunchArcadeApp()
+void Application::LaunchNexusApp()
 {
     const std::string previousStatus = statusBuffer_;
 
-    UpdateStatusMessage("Orbital Arcade is running in a separate window. Close it to return to Colony.");
+    UpdateStatusMessage("Nexus is running in a separate window. Close it to return to Colony.");
 
-    const orbital_arcade::ArcadeResult result = orbital_arcade::LaunchStandalone();
+    const nexus::NexusResult result = nexus::LaunchStandalone();
 
     if (result.propagateQuit)
     {

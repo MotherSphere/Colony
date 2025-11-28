@@ -1,17 +1,17 @@
-#include "orbital_arcade/arcade_main.hpp"
+#include "nexus/nexus_main.hpp"
 
 #include <SDL2/SDL.h>
 
 #include <iostream>
 
-namespace orbital_arcade
+namespace nexus
 {
-ArcadeResult LaunchStandalone()
+NexusResult LaunchStandalone()
 {
-    ArcadeResult result{};
+    NexusResult result{};
 
     SDL_Window* arcadeWindow = SDL_CreateWindow(
-        "Orbital Arcade",
+        "Nexus",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         1280,
@@ -20,7 +20,7 @@ ArcadeResult LaunchStandalone()
 
     if (arcadeWindow == nullptr)
     {
-        std::cerr << "Unable to create Orbital Arcade window: " << SDL_GetError() << '\n';
+        std::cerr << "Unable to create Nexus window: " << SDL_GetError() << '\n';
         return result;
     }
 
@@ -31,7 +31,7 @@ ArcadeResult LaunchStandalone()
 
     if (arcadeRenderer == nullptr)
     {
-        std::cerr << "Unable to create Orbital Arcade renderer: " << SDL_GetError() << '\n';
+        std::cerr << "Unable to create Nexus renderer: " << SDL_GetError() << '\n';
         SDL_DestroyWindow(arcadeWindow);
         return result;
     }
@@ -78,5 +78,5 @@ ArcadeResult LaunchStandalone()
 
     return result;
 }
-} // namespace orbital_arcade
+} // namespace nexus
 

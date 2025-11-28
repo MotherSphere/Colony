@@ -3,6 +3,7 @@
 #include "ui/layout.hpp"
 #include "utils/color.hpp"
 #include "utils/drawing.hpp"
+#include "utils/asset_paths.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -195,7 +196,7 @@ std::optional<IconTexture> LoadIconAsset(SDL_Renderer* renderer, std::string_vie
 {
     namespace fs = std::filesystem;
     std::error_code error;
-    const fs::path directory{kIconDirectory};
+    const fs::path directory = colony::paths::ResolveAssetDirectory(kIconDirectory);
     if (!fs::exists(directory, error))
     {
         return std::nullopt;

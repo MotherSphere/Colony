@@ -4,4 +4,4 @@ This directory contains the standalone Nexus window. All Nexus-specific source c
 
 - `src/` – source files for the Nexus module.
 - `assets/` – audio, images, and fonts scoped to Nexus.
-- `arcade_main.cpp` entry point lives under `src/nexus/` and is built as the `nexus` library.
+- `nexus_main.cpp` entry point lives under `src/nexus/` and is built as the `nexus` library.

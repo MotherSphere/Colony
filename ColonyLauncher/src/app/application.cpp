@@ -4,7 +4,7 @@
 #include "frontend/utils/font_loader.hpp"
 #include "frontend/views/dashboard_page.hpp"
 #include "json.hpp"
-#include "nexus/arcade_main.hpp"
+#include "nexus/nexus_main.hpp"
 #include "ui/layout.hpp"
 #include "ui/theme.hpp"
 #include "utils/color.hpp"
@@ -1849,7 +1849,7 @@ void Application::LaunchNexusApp()
 
     UpdateStatusMessage("Nexus is running in a separate window. Close it to return to Colony.");
 
-    const nexus::ArcadeResult result = nexus::LaunchStandalone();
+    const nexus::NexusResult result = nexus::LaunchStandalone();
 
     if (result.propagateQuit)
     {

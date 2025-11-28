@@ -1,5 +1,5 @@
 add_library(nexus STATIC
-    src/nexus/arcade_main.cpp
+    src/nexus/nexus_main.cpp
 )
 
 target_include_directories(nexus PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

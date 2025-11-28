@@ -1,4 +1,4 @@
-#include "nexus/arcade_main.hpp"
+#include "nexus/nexus_main.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -6,9 +6,9 @@
 
 namespace nexus
 {
-ArcadeResult LaunchStandalone()
+NexusResult LaunchStandalone()
 {
-    ArcadeResult result{};
+    NexusResult result{};
 
     SDL_Window* arcadeWindow = SDL_CreateWindow(
         "Nexus",

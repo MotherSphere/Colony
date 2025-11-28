@@ -4,12 +4,12 @@
 
 namespace nexus
 {
-struct ArcadeResult
+struct NexusResult
 {
     bool propagateQuit = false;
 };
 
 /// Launches the Nexus window as a secondary module.
-[[nodiscard]] ArcadeResult LaunchStandalone();
+[[nodiscard]] NexusResult LaunchStandalone();
 } // namespace nexus
 

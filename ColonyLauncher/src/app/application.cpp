@@ -39,16 +39,6 @@ namespace colony
 {
 namespace
 {
-bool SDLCallSucceeded(int result)
-{
-    if (result < 0)
-    {
-        std::cerr << "SDL error: " << SDL_GetError() << '\n';
-        return false;
-    }
-    return true;
-}
-
 void RemoveLastUtf8Codepoint(std::string& value)
 {
     if (value.empty())
@@ -219,31 +209,20 @@ Application::Application() = default;
 
 int Application::Run()
 {
-    if (!InitializeSDL())
+    if (!rendererHost_.Init("Colony Launcher", kWindowWidth, kWindowHeight))
     {
-        return EXIT_FAILURE;
-    }
-
-    struct TtfGuard
-    {
-        ~TtfGuard() { TTF_Quit(); }
-    } ttfGuard;
-
-    if (!CreateWindowAndRenderer())
-    {
-        SDL_Quit();
         return EXIT_FAILURE;
     }
 
     if (!InitializeFonts())
     {
-        SDL_Quit();
+        rendererHost_.Shutdown();
         return EXIT_FAILURE;
     }
 
     if (!LoadContent())
     {
-        SDL_Quit();
+        rendererHost_.Shutdown();
         return EXIT_FAILURE;
     }
 
@@ -251,7 +230,7 @@ int Application::Run()
 
     if (!InitializeLocalization())
     {
-        SDL_Quit();
+        rendererHost_.Shutdown();
         return EXIT_FAILURE;
     }
 
@@ -295,7 +274,7 @@ int Application::Run()
     }
 
     SaveSettings();
-    SDL_Quit();
+    rendererHost_.Shutdown();
     return EXIT_SUCCESS;
 }
 
@@ -319,50 +298,6 @@ void Application::EnterMainInterface()
     hubBranchHitboxes_.clear();
     hoveredHubBranchIndex_ = -1;
     focusedHubBranchIndex_ = -1;
-}
-
-bool Application::InitializeSDL()
-{
-    if (!SDLCallSucceeded(SDL_Init(SDL_INIT_VIDEO)))
-    {
-        return false;
-    }
-
-    if (TTF_Init() == -1)
-    {
-        std::cerr << "Failed to initialize SDL_ttf: " << TTF_GetError() << '\n';
-        return false;
-    }
-
-    return true;
-}
-
-bool Application::CreateWindowAndRenderer()
-{
-    window_ = sdl::WindowHandle{SDL_CreateWindow(
-        "Colony Launcher",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        kWindowWidth,
-        kWindowHeight,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE)};
-    if (!window_)
-    {
-        std::cerr << "Failed to create window: " << SDL_GetError() << '\n';
-        return false;
-    }
-
-    renderer_ = sdl::RendererHandle{SDL_CreateRenderer(
-        window_.get(),
-        -1,
-        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE)};
-    if (!renderer_)
-    {
-        std::cerr << "Failed to create renderer: " << SDL_GetError() << '\n';
-        return false;
-    }
-
-    return true;
 }
 
 bool Application::InitializeFonts()
@@ -541,7 +476,7 @@ void Application::RebuildTheme()
     const auto localize = [this](std::string_view key) { return GetLocalizedString(key); };
 
     navigationRail_.Build(
-        renderer_.get(),
+        rendererHost_.Renderer(),
         fonts_.brand.get(),
         fonts_.navigation.get(),
         fonts_.tileMeta.get(),
@@ -549,8 +484,8 @@ void Application::RebuildTheme()
         theme_,
         typography_);
 
-    libraryPanel_.Build(renderer_.get(), fonts_.tileMeta.get(), theme_, localize);
-    heroPanel_.Build(renderer_.get(), fonts_.tileMeta.get(), theme_, localize);
+    libraryPanel_.Build(rendererHost_.Renderer(), fonts_.tileMeta.get(), theme_, localize);
+    heroPanel_.Build(rendererHost_.Renderer(), fonts_.tileMeta.get(), theme_, localize);
 
     std::string searchPlaceholder = localize("library.filter_placeholder");
     if (searchPlaceholder.empty())
@@ -563,7 +498,7 @@ void Application::RebuildTheme()
     }
 
     topBar_.Build(
-        renderer_.get(),
+        rendererHost_.Renderer(),
         fonts_.heroSubtitle.get(),
         fonts_.tileMeta.get(),
         theme_,
@@ -572,7 +507,7 @@ void Application::RebuildTheme()
         ResolveTopBarTitle());
     UpdateTopBarTitle();
     settingsPanel_.Build(
-        renderer_.get(),
+        rendererHost_.Renderer(),
         fonts_.heroTitle.get(),
         fonts_.heroBody.get(),
         theme_.heroTitle,
@@ -595,7 +530,7 @@ void Application::RebuildTheme()
             ? content_.views.at(activeProgramId_).statusMessage
             : statusBuffer_);
 
-    viewContext_.renderer = renderer_.get();
+    viewContext_.renderer = rendererHost_.Renderer();
     viewContext_.headingFont = fonts_.heroTitle.get();
     viewContext_.paragraphFont = fonts_.heroBody.get();
     viewContext_.buttonFont = fonts_.button.get();
@@ -629,7 +564,7 @@ void Application::RebuildProgramVisuals()
             id,
             ui::BuildProgramVisuals(
                 view,
-                renderer_.get(),
+                rendererHost_.Renderer(),
                 fonts_.heroTitle.get(),
                 fonts_.heroSubtitle.get(),
                 fonts_.heroBody.get(),
@@ -661,13 +596,13 @@ void Application::RebuildInteractionPalette()
 
 void Application::UpdateTopBarTitle()
 {
-    if (!renderer_ || !fonts_.heroSubtitle)
+    if (!rendererHost_.Renderer() || !fonts_.heroSubtitle)
     {
         return;
     }
 
     const std::string title = ResolveTopBarTitle();
-    topBar_.UpdateTitle(renderer_.get(), title, theme_.heroTitle);
+    topBar_.UpdateTitle(rendererHost_.Renderer(), title, theme_.heroTitle);
 }
 
 std::string Application::ResolveTopBarTitle() const
@@ -1294,7 +1229,7 @@ void Application::BeginResizeDrag(int x, int y, bool adjustNavRail)
 {
     (void)y;
 
-    if (!renderer_)
+    if (!rendererHost_.Renderer())
     {
         return;
     }
@@ -1316,14 +1251,14 @@ void Application::EndResizeDrag()
 
 void Application::UpdateResizeDrag(int x)
 {
-    if (!renderer_ || resizeState_.target == ResizeState::Target::None)
+    if (!rendererHost_.Renderer() || resizeState_.target == ResizeState::Target::None)
     {
         return;
     }
 
-    int outputWidth = 0;
-    int outputHeight = 0;
-    SDL_GetRendererOutputSize(renderer_.get(), &outputWidth, &outputHeight);
+    const platform::RendererDimensions outputDimensions = rendererHost_.OutputSize();
+    const int outputWidth = outputDimensions.width;
+    const int outputHeight = outputDimensions.height;
 
     if (resizeState_.target == ResizeState::Target::NavRail)
     {
@@ -1551,17 +1486,18 @@ void Application::RenderHubFrame(double deltaSeconds)
 {
     (void)deltaSeconds;
 
-    if (!renderer_)
+    SDL_Renderer* renderer = rendererHost_.Renderer();
+    if (!renderer)
     {
         return;
     }
 
-    int outputWidth = 0;
-    int outputHeight = 0;
-    SDL_GetRendererOutputSize(renderer_.get(), &outputWidth, &outputHeight);
+    const platform::RendererDimensions outputDimensions = rendererHost_.OutputSize();
+    const int outputWidth = outputDimensions.width;
+    const int outputHeight = outputDimensions.height;
 
-    SDL_SetRenderDrawColor(renderer_.get(), theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
-    SDL_RenderClear(renderer_.get());
+    SDL_SetRenderDrawColor(renderer, theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
+    SDL_RenderClear(renderer);
 
     const SDL_Rect bounds{0, 0, std::max(0, outputWidth), std::max(0, outputHeight)};
     const double timeSeconds = animationTimeSeconds_;
@@ -1573,7 +1509,7 @@ void Application::RenderHubFrame(double deltaSeconds)
     }
 
     ui::HubRenderResult renderResult = hubPanel_.Render(
-        renderer_.get(),
+        renderer,
         theme_,
         bounds,
         timeSeconds,
@@ -1615,22 +1551,23 @@ void Application::RenderHubFrame(double deltaSeconds)
         hubWidgetPage_ = std::clamp(hubWidgetPage_, 0, hubWidgetPageCount_ - 1);
     }
 
-    SDL_RenderPresent(renderer_.get());
+    SDL_RenderPresent(renderer);
 }
 
 void Application::RenderMainInterfaceFrame(double deltaSeconds)
 {
-    if (!renderer_)
+    SDL_Renderer* renderer = rendererHost_.Renderer();
+    if (!renderer)
     {
         return;
     }
 
-    int outputWidth = 0;
-    int outputHeight = 0;
-    SDL_GetRendererOutputSize(renderer_.get(), &outputWidth, &outputHeight);
+    const platform::RendererDimensions outputDimensions = rendererHost_.OutputSize();
+    int outputWidth = outputDimensions.width;
+    int outputHeight = outputDimensions.height;
 
-    SDL_SetRenderDrawColor(renderer_.get(), theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
-    SDL_RenderClear(renderer_.get());
+    SDL_SetRenderDrawColor(renderer, theme_.background.r, theme_.background.g, theme_.background.b, theme_.background.a);
+    SDL_RenderClear(renderer);
 
     const double timeSeconds = animationTimeSeconds_;
     const double realtimeSeconds = static_cast<double>(SDL_GetTicks64()) / 1000.0;
@@ -1645,8 +1582,8 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
     UpdateLayoutForOutputWidth(outputWidth);
 
     SDL_Rect navRailRect{0, 0, std::max(0, navRailWidth_), outputHeight};
-    SDL_SetRenderDrawColor(renderer_.get(), theme_.navRail.r, theme_.navRail.g, theme_.navRail.b, theme_.navRail.a);
-    SDL_RenderFillRect(renderer_.get(), &navRailRect);
+    SDL_SetRenderDrawColor(renderer, theme_.navRail.r, theme_.navRail.g, theme_.navRail.b, theme_.navRail.a);
+    SDL_RenderFillRect(renderer, &navRailRect);
     navRailRect_ = navRailRect;
 
     const SDL_Rect contentRect{navRailRect.w, 0, std::max(0, outputWidth - navRailRect.w), outputHeight};
@@ -1662,7 +1599,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
     const int statusBarHeight = ui::Scale(kStatusBarHeight);
 
     ui::NavigationRenderResult navigationRender = navigationRail_.Render(
-        renderer_.get(),
+        renderer,
         theme_,
         typography_,
         interactions_,
@@ -1677,7 +1614,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
     hubButtonRect_ = navigationRender.hubButtonRect;
 
     auto topBarResult = topBar_.Render(
-        renderer_.get(),
+        renderer,
         theme_,
         typography_,
         interactions_,
@@ -1708,7 +1645,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
     auto programEntries = libraryViewModel_.BuildProgramList(content_, activeChannelIndex_, channelSelections_);
 
     auto libraryResult = libraryPanel_.Render(
-        renderer_.get(),
+        renderer,
         theme_,
         interactions_,
         layout.libraryArea,
@@ -1739,14 +1676,14 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
         const float gradientPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 0.6));
         SDL_Color gradientStart = color::Mix(activeVisuals->gradientStart, activeVisuals->accent, 0.15f + 0.1f * gradientPulse);
         SDL_Color gradientEnd = color::Mix(activeVisuals->gradientEnd, theme_.heroGradientFallbackEnd, 0.2f * gradientPulse);
-        color::RenderVerticalGradient(renderer_.get(), heroRect_, gradientStart, gradientEnd);
+        color::RenderVerticalGradient(renderer, heroRect_, gradientStart, gradientEnd);
     }
     else
     {
         const float gradientPulse = static_cast<float>(0.5 + 0.5 * std::sin(timeSeconds * 0.8));
         SDL_Color gradientStart = color::Mix(theme_.heroGradientFallbackStart, theme_.channelBadge, 0.1f + 0.15f * gradientPulse);
         SDL_Color gradientEnd = color::Mix(theme_.heroGradientFallbackEnd, theme_.border, 0.1f * static_cast<float>(std::cos(timeSeconds * 0.6) * 0.5 + 0.5));
-        color::RenderVerticalGradient(renderer_.get(), heroRect_, gradientStart, gradientEnd);
+        color::RenderVerticalGradient(renderer, heroRect_, gradientStart, gradientEnd);
     }
 
     heroActionRect_.reset();
@@ -1763,7 +1700,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
         settingsScrollOffset_ = std::clamp(settingsScrollOffset_, 0, previousMaxScroll);
 
         heroPanel_.RenderSettings(
-            renderer_.get(),
+            renderer,
             theme_,
             heroRect_,
             settingsPanel_,
@@ -1805,7 +1742,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
     else if (activeVisuals != nullptr)
     {
         const auto heroResult = heroPanel_.RenderHero(
-            renderer_.get(),
+            renderer,
             theme_,
             heroRect_,
             visualsIt->second,
@@ -1822,7 +1759,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
         settingsScrollOffset_ = 0;
     }
 
-    heroPanel_.RenderStatusBar(renderer_.get(), theme_, heroRect_, statusBarHeight, activeVisuals, timeSeconds);
+    heroPanel_.RenderStatusBar(renderer, theme_, heroRect_, statusBarHeight, activeVisuals, timeSeconds);
 
     if (customThemeDialog_.visible)
     {
@@ -1839,7 +1776,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
         RenderEditUserAppDialog(timeSeconds);
     }
 
-    SDL_RenderPresent(renderer_.get());
+    SDL_RenderPresent(renderer);
 }
 
 
@@ -1872,7 +1809,7 @@ void Application::UpdateStatusMessage(const std::string& statusText)
     if (auto it = programVisuals_.find(activeProgramId_); it != programVisuals_.end())
     {
         it->second.statusBar = CreateTextTexture(
-            renderer_.get(),
+            rendererHost_.Renderer(),
             fonts_.status.get(),
             statusBuffer_,
             theme_.statusBarText);
@@ -1988,7 +1925,8 @@ void Application::QueueLibraryFilterUpdate()
 
 void Application::BuildHubPanel()
 {
-    if (!renderer_)
+    SDL_Renderer* renderer = rendererHost_.Renderer();
+    if (!renderer)
     {
         return;
     }
@@ -2194,7 +2132,7 @@ void Application::BuildHubPanel()
     }
 
     hubPanel_.Build(
-        renderer_.get(),
+        renderer,
         hubContent,
         fonts_.heroTitle.get(),
         fonts_.heroBody.get(),
@@ -2862,19 +2800,23 @@ void Application::HideCustomThemeDialog()
 
 void Application::RenderCustomThemeDialog(double timeSeconds)
 {
-    if (!customThemeDialog_.visible || !renderer_)
+    if (!customThemeDialog_.visible)
     {
         return;
     }
 
-    SDL_Renderer* renderer = renderer_.get();
+    SDL_Renderer* renderer = rendererHost_.Renderer();
+    if (!renderer)
+    {
+        return;
+    }
     SDL_BlendMode previousBlendMode = SDL_BLENDMODE_NONE;
     SDL_GetRenderDrawBlendMode(renderer, &previousBlendMode);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-    int outputWidth = 0;
-    int outputHeight = 0;
-    SDL_GetRendererOutputSize(renderer, &outputWidth, &outputHeight);
+    const platform::RendererDimensions outputDimensions = rendererHost_.OutputSize();
+    int outputWidth = outputDimensions.width;
+    int outputHeight = outputDimensions.height;
 
     SDL_Rect overlayRect{0, 0, outputWidth, outputHeight};
     SDL_SetRenderDrawColor(renderer, 6, 10, 26, 208);
@@ -3815,7 +3757,7 @@ void Application::RefreshAddAppDialogEntries()
         return;
     }
 
-    SDL_Renderer* renderer = renderer_.get();
+    SDL_Renderer* renderer = rendererHost_.Renderer();
     TTF_Font* font = fonts_.heroBody.get();
     if (renderer == nullptr || font == nullptr)
     {
@@ -4257,19 +4199,24 @@ void Application::RefreshAddAppDialogEntries()
 
 void Application::RenderAddAppDialog(double timeSeconds)
 {
-    if (!addAppDialog_.visible || !renderer_)
+    if (!addAppDialog_.visible)
     {
         return;
     }
 
-    SDL_Renderer* renderer = renderer_.get();
+    SDL_Renderer* renderer = rendererHost_.Renderer();
+    if (!renderer)
+    {
+        return;
+    }
+
     SDL_BlendMode previousBlendMode = SDL_BLENDMODE_NONE;
     SDL_GetRenderDrawBlendMode(renderer, &previousBlendMode);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-    int outputWidth = 0;
-    int outputHeight = 0;
-    SDL_GetRendererOutputSize(renderer, &outputWidth, &outputHeight);
+    const platform::RendererDimensions outputDimensions = rendererHost_.OutputSize();
+    int outputWidth = outputDimensions.width;
+    int outputHeight = outputDimensions.height;
 
     SDL_Rect overlayRect{0, 0, outputWidth, outputHeight};
     SDL_SetRenderDrawColor(renderer, 6, 10, 26, 190);
@@ -4791,19 +4738,24 @@ void Application::RenderAddAppDialog(double timeSeconds)
 
 void Application::RenderEditUserAppDialog(double timeSeconds)
 {
-    if (!editAppDialog_.visible || !renderer_)
+    if (!editAppDialog_.visible)
     {
         return;
     }
 
-    SDL_Renderer* renderer = renderer_.get();
+    SDL_Renderer* renderer = rendererHost_.Renderer();
+    if (!renderer)
+    {
+        return;
+    }
+
     SDL_BlendMode previousBlendMode = SDL_BLENDMODE_NONE;
     SDL_GetRenderDrawBlendMode(renderer, &previousBlendMode);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-    int outputWidth = 0;
-    int outputHeight = 0;
-    SDL_GetRendererOutputSize(renderer, &outputWidth, &outputHeight);
+    const platform::RendererDimensions outputDimensions = rendererHost_.OutputSize();
+    int outputWidth = outputDimensions.width;
+    int outputHeight = outputDimensions.height;
 
     SDL_Rect overlayRect{0, 0, outputWidth, outputHeight};
     SDL_SetRenderDrawColor(renderer, 6, 10, 26, 210);

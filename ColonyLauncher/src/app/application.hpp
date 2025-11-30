@@ -5,6 +5,7 @@
 #include "core/localization_manager.hpp"
 #include "frontend/models/library_view_model.hpp"
 #include "frontend/utils/debounce.hpp"
+#include "platform/renderer_host.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/hub_panel.hpp"
 #include "ui/layout.hpp"
@@ -64,8 +65,6 @@ class Application
         sdl::FontHandle status;
     };
 
-    [[nodiscard]] bool InitializeSDL();
-    [[nodiscard]] bool CreateWindowAndRenderer();
     [[nodiscard]] bool InitializeFonts();
     [[nodiscard]] bool LoadContent();
     [[nodiscard]] bool InitializeLocalization();
@@ -167,8 +166,7 @@ class Application
     static constexpr std::string_view kLocalAppsChannelId = "local_apps";
     static constexpr std::string_view kLocalAppsChannelLabel = "Local Apps";
 
-    sdl::WindowHandle window_;
-    sdl::RendererHandle renderer_;
+    platform::RendererHost rendererHost_;
     FontResources fonts_;
     std::unordered_map<std::string, sdl::FontHandle> languageFonts_;
 

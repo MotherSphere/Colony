@@ -57,6 +57,10 @@ add_library(colony_app
     src/input/input_handlers.cpp
     src/input/input_router.cpp
     src/platform/renderer_host.cpp
+    src/ui/dialogs/add_app_dialog.cpp
+    src/ui/dialogs/custom_theme_dialog.cpp
+    src/ui/dialogs/dialog_base.cpp
+    src/ui/dialogs/edit_user_app_dialog.cpp
 )
 
 target_include_directories(colony_app PUBLIC src third_party)

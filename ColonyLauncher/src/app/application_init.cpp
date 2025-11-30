@@ -723,15 +723,15 @@ void Application::UpdateLayoutForOutputWidth(int outputWidth)
         return;
     }
 
-    const int navMin = ui::Scale(72);
-    const int navMax = ui::Scale(160);
+    const int navMin = ui::Scale(120);
+    const int navMax = ui::Scale(200);
     const int libraryMin = ui::Scale(220);
     const int libraryMax = ui::Scale(560);
     const int heroMin = ui::Scale(220);
 
     if (navRailWidth_ <= 0)
     {
-        navRailWidth_ = ui::Scale(88);
+        navRailWidth_ = ui::Scale(140);
     }
 
     if (libraryWidth_ <= 0)

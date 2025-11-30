@@ -3412,5 +3412,3 @@ std::string Application::GetLocalizedString(std::string_view key, std::string_vi
 
 } // namespace colony
 
-} // namespace colony
-

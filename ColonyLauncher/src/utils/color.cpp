@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 namespace colony::color
@@ -130,6 +132,19 @@ void RenderVerticalGradient(SDL_Renderer* renderer, const SDL_Rect& area, SDL_Co
         SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
         SDL_RenderDrawLine(renderer, area.x, area.y + offset, area.x + area.w - 1, area.y + offset);
     }
+}
+
+std::string ToHexString(const SDL_Color& color)
+{
+    std::ostringstream stream;
+    stream << '#'
+           << std::uppercase << std::hex << std::setfill('0')
+           << std::setw(2) << static_cast<int>(color.r)
+           << std::setw(2) << static_cast<int>(color.g)
+           << std::setw(2) << static_cast<int>(color.b)
+           << std::setw(2) << static_cast<int>(color.a);
+
+    return stream.str();
 }
 
 } // namespace colony::color

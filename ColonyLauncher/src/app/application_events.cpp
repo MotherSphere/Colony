@@ -785,5 +785,8 @@ int Application::FindHubBranchIndexById(const std::string& branchId) const
         }
     }
 
+    return -1;
+}
+
 } // namespace colony
 

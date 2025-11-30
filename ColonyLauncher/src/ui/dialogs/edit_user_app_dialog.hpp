@@ -3,6 +3,7 @@
 #include "ui/dialogs/dialog_base.hpp"
 
 #include <SDL2/SDL.h>
+#include <string>
 
 namespace colony
 {

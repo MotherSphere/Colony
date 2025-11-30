@@ -729,7 +729,7 @@ bool LibraryInputHandler::HandleMouseWheel(const SDL_Event& event, bool& running
         return false;
     }
 
-    if (ui::SettingsPanel::RenderResult::Viewport viewport = app_.settingsRenderResult_.viewport; viewport.w > 0 && viewport.h > 0
+    if (SDL_Rect viewport = app_.settingsRenderResult_.viewport; viewport.w > 0 && viewport.h > 0
         && Application::IsSettingsProgramId(app_.activeProgramId_))
     {
         int mouseX = 0;

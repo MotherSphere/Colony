@@ -7,6 +7,8 @@
 #include "frontend/utils/debounce.hpp"
 #include "input/input_handlers.hpp"
 #include "input/input_router.h"
+#include "services/settings_service.hpp"
+#include "services/theme_service.hpp"
 #include "platform/renderer_host.hpp"
 #include "ui/dialogs/add_app_dialog.hpp"
 #include "ui/dialogs/custom_theme_dialog.hpp"
@@ -87,7 +89,6 @@ class Application
     void InitializeInputRouter();
     void RebuildTheme();
     void RebuildProgramVisuals();
-    void RebuildInteractionPalette();
     void ActivateChannel(int index);
     void ActivateProgram(const std::string& programId);
     void ActivateProgramInChannel(int programIndex);
@@ -102,12 +103,8 @@ class Application
     void UpdateViewContextAccent();
     void ChangeLanguage(const std::string& languageId);
     void LaunchNexusApp();
-    void LoadSettings();
-    void SaveSettings() const;
     bool SetAppearanceCustomizationValue(const std::string& id, float value);
     [[nodiscard]] float GetAppearanceCustomizationValue(std::string_view id) const;
-    void ApplyInterfaceDensity() const;
-    void ApplyAppearanceCustomizations();
     void QueueLibraryFilterUpdate();
     void BuildHubPanel();
     void HandleHubMouseClick(int x, int y);
@@ -180,6 +177,8 @@ class Application
     AppContent content_;
     LocalizationManager localizationManager_{};
     ui::ThemeManager themeManager_;
+    services::SettingsService settingsService_{};
+    services::ThemeService themeService_;
     ui::ThemeColors theme_{};
     ui::Typography typography_{};
     ui::InteractionColors interactions_{};
@@ -253,18 +252,6 @@ class Application
     ui::SettingsPanel::SectionStates settingsSectionStates_{};
     std::optional<std::string> pendingSettingsSectionId_{};
     std::optional<std::string> activeCustomizationDragId_{};
-    std::string activeLanguageId_ = "en";
-    std::unordered_map<std::string, bool> basicToggleStates_{
-        {"notifications", true},
-        {"sound", true},
-        {"auto_updates", true},
-        {"reduced_motion", false},
-    };
-    std::unordered_map<std::string, float> appearanceCustomizationValues_{
-        {"accent_intensity", 0.5f},
-        {"background_depth", 0.5f},
-        {"interface_density", 0.5f},
-    };
 
     std::string libraryFilterDraft_;
     bool libraryFilterFocused_ = false;

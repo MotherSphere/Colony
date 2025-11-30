@@ -57,6 +57,8 @@ add_library(colony_app
     src/input/input_handlers.cpp
     src/input/input_router.cpp
     src/platform/renderer_host.cpp
+    src/services/settings_service.cpp
+    src/services/theme_service.cpp
     src/ui/dialogs/add_app_dialog.cpp
     src/ui/dialogs/custom_theme_dialog.cpp
     src/ui/dialogs/dialog_base.cpp

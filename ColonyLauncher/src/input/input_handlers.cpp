@@ -632,11 +632,14 @@ bool LibraryInputHandler::HandleMouseButtonDown(const SDL_Event& event, bool& ru
                 app_.ChangeLanguage(region.id);
                 break;
             case ui::SettingsPanel::RenderResult::InteractionType::Toggle:
-                if (auto it = app_.basicToggleStates_.find(region.id); it != app_.basicToggleStates_.end())
+            {
+                auto& toggleStates = app_.settingsService_.ToggleStates();
+                if (auto it = toggleStates.find(region.id); it != toggleStates.end())
                 {
                     it->second = !it->second;
                 }
                 break;
+            }
             case ui::SettingsPanel::RenderResult::InteractionType::Customization:
             {
                 const float newValue = ComputeCustomizationSliderValue(region.rect, event.button.x);

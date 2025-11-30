@@ -3,7 +3,6 @@
 #include "core/content_loader.hpp"
 #include "frontend/utils/font_loader.hpp"
 #include "frontend/views/dashboard_page.hpp"
-#include "json.hpp"
 #include "nexus/nexus_main.hpp"
 #include "ui/layout.hpp"
 #include "ui/theme.hpp"
@@ -18,7 +17,6 @@
 #include <cmath>
 #include <cctype>
 #include <filesystem>
-#include <fstream>
 #include <ctime>
 #include <cstring>
 #include <iomanip>
@@ -153,33 +151,6 @@ const std::vector<AddDialogFileTypeFilter>& GetAddDialogFileTypeFilters()
     return kFilters;
 }
 
-struct CustomThemeFieldDefinition
-{
-    const char* id;
-    SDL_Color ui::ThemeColors::*member;
-    const char* localizationKey;
-};
-
-constexpr std::size_t kCustomThemeFieldCount = 16;
-
-const std::array<CustomThemeFieldDefinition, kCustomThemeFieldCount> kCustomThemeFields = {{
-    {"background", &ui::ThemeColors::background, "settings.appearance.custom_theme.dialog.fields.background"},
-    {"navRail", &ui::ThemeColors::navRail, "settings.appearance.custom_theme.dialog.fields.navRail"},
-    {"libraryBackground", &ui::ThemeColors::libraryBackground, "settings.appearance.custom_theme.dialog.fields.libraryBackground"},
-    {"libraryCard", &ui::ThemeColors::libraryCard, "settings.appearance.custom_theme.dialog.fields.libraryCard"},
-    {"libraryCardHover", &ui::ThemeColors::libraryCardHover, "settings.appearance.custom_theme.dialog.fields.libraryCardHover"},
-    {"libraryCardActive", &ui::ThemeColors::libraryCardActive, "settings.appearance.custom_theme.dialog.fields.libraryCardActive"},
-    {"navText", &ui::ThemeColors::navText, "settings.appearance.custom_theme.dialog.fields.navText"},
-    {"heroTitle", &ui::ThemeColors::heroTitle, "settings.appearance.custom_theme.dialog.fields.heroTitle"},
-    {"heroBody", &ui::ThemeColors::heroBody, "settings.appearance.custom_theme.dialog.fields.heroBody"},
-    {"muted", &ui::ThemeColors::muted, "settings.appearance.custom_theme.dialog.fields.muted"},
-    {"border", &ui::ThemeColors::border, "settings.appearance.custom_theme.dialog.fields.border"},
-    {"statusBar", &ui::ThemeColors::statusBar, "settings.appearance.custom_theme.dialog.fields.statusBar"},
-    {"statusBarText", &ui::ThemeColors::statusBarText, "settings.appearance.custom_theme.dialog.fields.statusBarText"},
-    {"channelBadge", &ui::ThemeColors::channelBadge, "settings.appearance.custom_theme.dialog.fields.channelBadge"},
-    {"heroGradientFallbackStart", &ui::ThemeColors::heroGradientFallbackStart, "settings.appearance.custom_theme.dialog.fields.heroGradientFallbackStart"},
-    {"heroGradientFallbackEnd", &ui::ThemeColors::heroGradientFallbackEnd, "settings.appearance.custom_theme.dialog.fields.heroGradientFallbackEnd"},
-}};
 }
 
 bool Application::IsSettingsProgramId(std::string_view programId)
@@ -213,6 +184,7 @@ Application::Application()
     , addAppDialogController_(*this)
     , editUserAppDialogController_(*this)
     , customThemeDialogController_(*this)
+    , themeService_(themeManager_)
 {}
 
 int Application::Run()
@@ -234,7 +206,7 @@ int Application::Run()
         return EXIT_FAILURE;
     }
 
-    LoadSettings();
+    settingsService_.Load(ResolveSettingsPath(), themeManager_);
 
     if (!InitializeLocalization())
     {
@@ -267,8 +239,9 @@ int Application::Run()
         }
         deltaSeconds = std::min(deltaSeconds, 0.25);
 
-        const auto reduceMotionIt = basicToggleStates_.find("reduced_motion");
-        const bool reduceMotion = reduceMotionIt != basicToggleStates_.end() && reduceMotionIt->second;
+        const auto& toggleStates = settingsService_.ToggleStates();
+        const auto reduceMotionIt = toggleStates.find("reduced_motion");
+        const bool reduceMotion = reduceMotionIt != toggleStates.end() && reduceMotionIt->second;
         if (!reduceMotion)
         {
             animationTimeSeconds_ += deltaSeconds;
@@ -282,7 +255,7 @@ int Application::Run()
         RenderFrame(reduceMotion ? 0.0 : deltaSeconds);
     }
 
-    SaveSettings();
+    settingsService_.Save(ResolveSettingsPath(), themeManager_);
     rendererHost_.Shutdown();
     return EXIT_SUCCESS;
 }
@@ -311,7 +284,7 @@ void Application::EnterMainInterface()
 
 bool Application::InitializeFonts()
 {
-    const fonts::FontConfiguration fontConfiguration = fonts::BuildFontConfiguration(activeLanguageId_);
+    const fonts::FontConfiguration fontConfiguration = fonts::BuildFontConfiguration(settingsService_.ActiveLanguageId());
     if (fontConfiguration.primaryFontPath.empty())
     {
         std::cerr << "Unable to locate a usable font file. Provide JetBrainsMono-Regular.ttf in assets/fonts or set COLONY_FONT_PATH." << '\n';
@@ -419,13 +392,14 @@ bool Application::InitializeLocalization()
     localizationManager_.SetResourceDirectory(ResolveLocalizationDirectory());
     localizationManager_.SetFallbackLanguage("en");
 
-    if (!localizationManager_.LoadLanguage(activeLanguageId_))
+    const std::string currentLanguage = settingsService_.ActiveLanguageId();
+    if (!localizationManager_.LoadLanguage(currentLanguage))
     {
-        std::cerr << "Failed to load localization for language '" << activeLanguageId_ << "'." << '\n';
-        if (activeLanguageId_ != localizationManager_.FallbackLanguage()
+        std::cerr << "Failed to load localization for language '" << currentLanguage << "'." << '\n';
+        if (currentLanguage != localizationManager_.FallbackLanguage()
             && localizationManager_.LoadLanguage(localizationManager_.FallbackLanguage()))
         {
-            activeLanguageId_ = localizationManager_.FallbackLanguage();
+            settingsService_.SetActiveLanguageId(localizationManager_.FallbackLanguage());
         }
         else
         {
@@ -480,15 +454,11 @@ void Application::RebuildTheme()
 {
     const int previousSettingsScrollOffset = settingsScrollOffset_;
 
-    const ui::ColorScheme& activeScheme = themeManager_.ActiveScheme();
-    theme_ = activeScheme.colors;
-    typography_ = activeScheme.typography;
-    interactions_ = activeScheme.interactions;
-    motion_ = activeScheme.motion;
-
-    ApplyInterfaceDensity();
-    ApplyAppearanceCustomizations();
-    RebuildInteractionPalette();
+    const auto themeData = themeService_.BuildTheme(settingsService_);
+    theme_ = themeData.theme;
+    typography_ = themeData.typography;
+    interactions_ = themeData.interactions;
+    motion_ = themeData.motion;
 
     const auto localize = [this](std::string_view key) { return GetLocalizedString(key); };
 
@@ -600,15 +570,6 @@ void Application::RebuildProgramVisuals()
                 theme_.heroGradientFallbackStart,
                 theme_.heroGradientFallbackEnd));
     }
-}
-
-void Application::RebuildInteractionPalette()
-{
-    interactions_.hover = color::Mix(theme_.libraryCardHover, theme_.libraryCard, 0.5f);
-    interactions_.active = color::Mix(theme_.libraryCardActive, theme_.libraryCardHover, 0.55f);
-    interactions_.focus = theme_.focusRing;
-    interactions_.subtleGlow = color::Mix(theme_.channelBadge, theme_.buttonGhost, 0.35f);
-    interactions_.subtleGlow.a = 90;
 }
 
 void Application::UpdateTopBarTitle()
@@ -1141,10 +1102,10 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
             settingsPanel_,
             settingsScrollOffset_,
             themeManager_.ActiveScheme().id,
-            activeLanguageId_,
+            settingsService_.ActiveLanguageId(),
             settingsSectionStates_,
-            appearanceCustomizationValues_,
-            basicToggleStates_,
+            settingsService_.AppearanceCustomizationValues(),
+            settingsService_.ToggleStates(),
             settingsRenderResult_,
             timeSeconds);
 
@@ -1271,82 +1232,12 @@ void Application::UpdateViewContextAccent()
 
 bool Application::SetAppearanceCustomizationValue(const std::string& id, float value)
 {
-    const float clamped = std::clamp(value, 0.0f, 1.0f);
-    auto [it, inserted] = appearanceCustomizationValues_.try_emplace(id, clamped);
-    if (!inserted)
-    {
-        if (std::abs(it->second - clamped) < 0.001f)
-        {
-            return false;
-        }
-        it->second = clamped;
-        return true;
-    }
-
-    return true;
+    return settingsService_.SetAppearanceCustomizationValue(id, value);
 }
 
 float Application::GetAppearanceCustomizationValue(std::string_view id) const
 {
-    const auto it = appearanceCustomizationValues_.find(std::string{id});
-    if (it != appearanceCustomizationValues_.end())
-    {
-        return it->second;
-    }
-
-    return 0.5f;
-}
-
-void Application::ApplyInterfaceDensity() const
-{
-    const float density = std::clamp(GetAppearanceCustomizationValue("interface_density"), 0.0f, 1.0f);
-    constexpr float kMinScale = 0.74f;
-    constexpr float kMaxScale = 0.9f;
-    const float scale = kMinScale + (kMaxScale - kMinScale) * density;
-    ui::SetUiScale(scale);
-}
-
-void Application::ApplyAppearanceCustomizations()
-{
-    const float accentValue = std::clamp(GetAppearanceCustomizationValue("accent_intensity"), 0.0f, 1.0f);
-    const float backgroundValue = std::clamp(GetAppearanceCustomizationValue("background_depth"), 0.0f, 1.0f);
-
-    const float accentDelta = accentValue - 0.5f;
-    if (accentDelta > 0.0f)
-    {
-        theme_.channelBadge = color::Mix(theme_.channelBadge, theme_.heroTitle, accentDelta * 0.6f);
-        theme_.libraryCardActive = color::Mix(theme_.libraryCardActive, theme_.heroTitle, accentDelta * 0.45f);
-        theme_.statusBar = color::Mix(theme_.statusBar, theme_.heroTitle, accentDelta * 0.35f);
-    }
-    else if (accentDelta < 0.0f)
-    {
-        const float factor = -accentDelta;
-        theme_.channelBadge = color::Mix(theme_.channelBadge, theme_.muted, factor * 0.6f);
-        theme_.libraryCardActive = color::Mix(theme_.libraryCardActive, theme_.muted, factor * 0.45f);
-        theme_.statusBar = color::Mix(theme_.statusBar, theme_.muted, factor * 0.35f);
-    }
-
-    const float depthDelta = backgroundValue - 0.5f;
-    if (depthDelta != 0.0f)
-    {
-        const float depthAmount = std::abs(depthDelta) * 0.45f;
-        const SDL_Color darkTarget{0, 0, 0, SDL_ALPHA_OPAQUE};
-        const SDL_Color lightTarget{255, 255, 255, SDL_ALPHA_OPAQUE};
-        const SDL_Color target = depthDelta > 0.0f ? darkTarget : lightTarget;
-
-        auto adjust = [&](SDL_Color color) {
-            return color::Mix(color, target, depthAmount);
-        };
-
-        theme_.background = adjust(theme_.background);
-        theme_.libraryBackground = adjust(theme_.libraryBackground);
-        theme_.navRail = adjust(theme_.navRail);
-        theme_.libraryCard = adjust(theme_.libraryCard);
-        theme_.libraryCardHover = adjust(theme_.libraryCardHover);
-        theme_.libraryCardActive = adjust(theme_.libraryCardActive);
-        theme_.heroGradientFallbackStart = adjust(theme_.heroGradientFallbackStart);
-        theme_.heroGradientFallbackEnd = adjust(theme_.heroGradientFallbackEnd);
-    }
+    return settingsService_.GetAppearanceCustomizationValue(id);
 }
 
 void Application::QueueLibraryFilterUpdate()
@@ -2204,9 +2095,10 @@ void Application::ShowCustomThemeDialog()
     customThemeDialog_.colorFieldContentHeight = 0;
 
     const ui::ColorScheme& activeScheme = themeManager_.ActiveScheme();
-    for (std::size_t index = 0; index < kCustomThemeFields.size(); ++index)
+    const auto& customThemeFields = services::CustomThemeFields();
+    for (std::size_t index = 0; index < customThemeFields.size(); ++index)
     {
-        SDL_Color color = activeScheme.colors.*(kCustomThemeFields[index].member);
+        SDL_Color color = activeScheme.colors.*(customThemeFields[index].member);
         customThemeDialog_.colorInputs[index] = ColorToHex(color);
     }
 
@@ -2420,9 +2312,10 @@ void Application::RenderCustomThemeDialog(double timeSeconds)
     std::array<int, columns> columnOffsets{};
     columnOffsets.fill(0);
 
-    for (std::size_t index = 0; index < kCustomThemeFields.size(); ++index)
+    const auto& customThemeFields = services::CustomThemeFields();
+    for (std::size_t index = 0; index < customThemeFields.size(); ++index)
     {
-        const auto& field = kCustomThemeFields[index];
+        const auto& field = customThemeFields[index];
         const int column = static_cast<int>(index % columns);
         const int fieldX = panelRect.x + panelPadding + column * (columnWidth + columnSpacing);
         int localOffset = columnOffsets[column];
@@ -2775,7 +2668,7 @@ bool Application::HandleCustomThemeDialogKey(SDL_Keycode key)
         return true;
     case SDLK_TAB:
     {
-        const int focusable = 1 + static_cast<int>(kCustomThemeFields.size());
+    const int focusable = 1 + static_cast<int>(services::CustomThemeFields().size());
         if (focusable <= 0)
         {
             return true;
@@ -2974,7 +2867,8 @@ bool Application::ApplyCustomThemeDialog()
     std::array<std::string, CustomThemeDialogState::kColorFieldCount> normalizedInputs{};
     std::array<SDL_Color, CustomThemeDialogState::kColorFieldCount> parsedColors{};
 
-    for (std::size_t index = 0; index < kCustomThemeFields.size(); ++index)
+    const auto& customThemeFields = services::CustomThemeFields();
+    for (std::size_t index = 0; index < customThemeFields.size(); ++index)
     {
         std::string value = TrimString(customThemeDialog_.colorInputs[index]);
         if (value.empty())
@@ -3081,16 +2975,16 @@ bool Application::ApplyCustomThemeDialog()
     ui::ColorScheme scheme;
     scheme.id = candidateId;
     scheme.name = trimmedName;
-    for (std::size_t index = 0; index < kCustomThemeFields.size(); ++index)
+    for (std::size_t index = 0; index < customThemeFields.size(); ++index)
     {
-        scheme.colors.*(kCustomThemeFields[index].member) = parsedColors[index];
+        scheme.colors.*(customThemeFields[index].member) = parsedColors[index];
         customThemeDialog_.colorInputs[index] = normalizedInputs[index];
     }
 
     themeManager_.AddCustomScheme(std::move(scheme), true);
     HideCustomThemeDialog();
     RebuildTheme();
-    SaveSettings();
+    settingsService_.Save(ResolveSettingsPath(), themeManager_);
     return true;
 }
 
@@ -5325,7 +5219,7 @@ void Application::LaunchUserApp(const std::filesystem::path& executablePath, con
 
 void Application::ChangeLanguage(const std::string& languageId)
 {
-    if (languageId.empty() || languageId == activeLanguageId_)
+    if (languageId.empty() || languageId == settingsService_.ActiveLanguageId())
     {
         return;
     }
@@ -5336,207 +5230,13 @@ void Application::ChangeLanguage(const std::string& languageId)
         return;
     }
 
-    activeLanguageId_ = languageId;
+    settingsService_.SetActiveLanguageId(languageId);
     if (!InitializeFonts())
     {
         std::cerr << "Failed to reload fonts for language '" << languageId << "'." << '\n';
         return;
     }
     RebuildTheme();
-}
-
-void Application::LoadSettings()
-{
-    const std::filesystem::path settingsPath = ResolveSettingsPath();
-    if (settingsPath.empty())
-    {
-        return;
-    }
-
-    std::error_code error;
-    if (!std::filesystem::exists(settingsPath, error) || error)
-    {
-        return;
-    }
-
-    std::ifstream input{settingsPath};
-    if (!input.is_open())
-    {
-        std::cerr << "Unable to open settings file: " << settingsPath << '\n';
-        return;
-    }
-
-    try
-    {
-        const nlohmann::json document = nlohmann::json::parse(input);
-
-        if (document.contains("theme") && document["theme"].is_string())
-        {
-            themeManager_.SetActiveScheme(document["theme"].get<std::string>());
-        }
-
-        if (document.contains("language") && document["language"].is_string())
-        {
-            activeLanguageId_ = document["language"].get<std::string>();
-        }
-
-        if (document.contains("toggles") && document["toggles"].is_object())
-        {
-            for (const auto& [key, value] : document["toggles"].items())
-            {
-                if (!value.is_boolean())
-                {
-                    continue;
-                }
-
-                if (auto it = basicToggleStates_.find(key); it != basicToggleStates_.end())
-                {
-                    it->second = value.get<bool>();
-                }
-                else
-                {
-                    basicToggleStates_.emplace(key, value.get<bool>());
-                }
-            }
-        }
-
-        if (document.contains("customThemes") && document["customThemes"].is_array())
-        {
-            for (const auto& entry : document["customThemes"])
-            {
-                if (!entry.is_object())
-                {
-                    continue;
-                }
-
-                ui::ColorScheme scheme;
-                scheme.isCustom = true;
-                scheme.id = entry.value("id", std::string{});
-                scheme.name = entry.value("name", scheme.id);
-
-                if (scheme.id.empty())
-                {
-                    continue;
-                }
-
-                if (!entry.contains("colors") || !entry["colors"].is_object())
-                {
-                    continue;
-                }
-
-                const auto& colorsObject = entry["colors"];
-                bool missing = false;
-                for (const auto& field : kCustomThemeFields)
-                {
-                    if (!colorsObject.contains(field.id) || !colorsObject[field.id].is_string())
-                    {
-                        missing = true;
-                        break;
-                    }
-
-                    const std::string colorValue = colorsObject[field.id].get<std::string>();
-                    scheme.colors.*(field.member) = color::ParseHexColor(colorValue, scheme.colors.*(field.member));
-                }
-
-                if (missing)
-                {
-                    continue;
-                }
-
-                themeManager_.AddCustomScheme(std::move(scheme));
-            }
-        }
-
-        if (document.contains("appearance") && document["appearance"].is_object())
-        {
-            for (const auto& [key, value] : document["appearance"].items())
-            {
-                if (!value.is_number())
-                {
-                    continue;
-                }
-
-                SetAppearanceCustomizationValue(key, static_cast<float>(value.get<double>()));
-            }
-        }
-    }
-    catch (const std::exception& ex)
-    {
-        std::cerr << "Failed to load settings: " << ex.what() << '\n';
-    }
-}
-
-void Application::SaveSettings() const
-{
-    const std::filesystem::path settingsPath = ResolveSettingsPath();
-    if (settingsPath.empty())
-    {
-        return;
-    }
-
-    const std::filesystem::path directory = settingsPath.parent_path();
-    std::error_code error;
-    if (!directory.empty() && !std::filesystem::exists(directory, error))
-    {
-        std::filesystem::create_directories(directory, error);
-        if (error)
-        {
-            std::cerr << "Unable to create settings directory: " << directory << '\n';
-            return;
-        }
-    }
-
-    nlohmann::json document;
-    document["theme"] = themeManager_.ActiveScheme().id;
-    document["language"] = activeLanguageId_;
-    nlohmann::json toggles = nlohmann::json::object();
-    for (const auto& [key, value] : basicToggleStates_)
-    {
-        toggles[key] = value;
-    }
-    document["toggles"] = std::move(toggles);
-
-    nlohmann::json appearance = nlohmann::json::object();
-    for (const auto& [key, value] : appearanceCustomizationValues_)
-    {
-        appearance[key] = value;
-    }
-    document["appearance"] = std::move(appearance);
-
-    nlohmann::json customThemes = nlohmann::json::array();
-    for (const auto& scheme : themeManager_.Schemes())
-    {
-        if (!scheme.isCustom)
-        {
-            continue;
-        }
-
-        nlohmann::json colors = nlohmann::json::object();
-        for (const auto& field : kCustomThemeFields)
-        {
-            colors[field.id] = ColorToHex(scheme.colors.*(field.member));
-        }
-
-        nlohmann::json entry = nlohmann::json::object();
-        entry["id"] = scheme.id;
-        entry["name"] = scheme.name;
-        entry["colors"] = std::move(colors);
-        customThemes.push_back(std::move(entry));
-    }
-
-    if (!customThemes.empty())
-    {
-        document["customThemes"] = std::move(customThemes);
-    }
-
-    std::ofstream output{settingsPath};
-    if (!output.is_open())
-    {
-        std::cerr << "Unable to write settings file: " << settingsPath << '\n';
-        return;
-    }
-
-    output << document.dump(2) << '\n';
 }
 
 std::filesystem::path Application::ResolveContentPath()

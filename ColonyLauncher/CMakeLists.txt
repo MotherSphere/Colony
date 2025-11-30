@@ -53,7 +53,10 @@ target_include_directories(colony_ui PUBLIC src third_party)
 target_link_libraries(colony_ui PUBLIC colony_core SDL2::SDL2 SDL2_ttf::SDL2_ttf)
 
 add_library(colony_app
-    src/app/application.cpp
+    src/app/application_init.cpp
+    src/app/application_render.cpp
+    src/app/application_events.cpp
+    src/app/application_dialogs.cpp
     src/input/input_handlers.cpp
     src/input/input_router.cpp
     src/platform/renderer_host.cpp

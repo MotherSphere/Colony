@@ -1,6 +1,6 @@
 #include "input/input_handlers.hpp"
 
-#include "app/application.hpp"
+#include "app/application.h"
 
 #include <algorithm>
 #include <cctype>

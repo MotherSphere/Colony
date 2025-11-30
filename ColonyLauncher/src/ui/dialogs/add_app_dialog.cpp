@@ -1,6 +1,6 @@
 #include "ui/dialogs/add_app_dialog.hpp"
 
-#include "app/application.hpp"
+#include "app/application.h"
 
 namespace colony::ui::dialogs
 {

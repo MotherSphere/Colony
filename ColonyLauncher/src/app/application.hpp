@@ -5,6 +5,8 @@
 #include "core/localization_manager.hpp"
 #include "frontend/models/library_view_model.hpp"
 #include "frontend/utils/debounce.hpp"
+#include "input/input_handlers.hpp"
+#include "input/input_router.h"
 #include "platform/renderer_host.hpp"
 #include "ui/hero_panel.hpp"
 #include "ui/hub_panel.hpp"
@@ -65,11 +67,17 @@ class Application
         sdl::FontHandle status;
     };
 
+    friend class input::NavigationInputHandler;
+    friend class input::HubInputHandler;
+    friend class input::DialogInputHandler;
+    friend class input::LibraryInputHandler;
+
     [[nodiscard]] bool InitializeFonts();
     [[nodiscard]] bool LoadContent();
     [[nodiscard]] bool InitializeLocalization();
     void InitializeNavigation();
     void InitializeViews();
+    void InitializeInputRouter();
     void RebuildTheme();
     void RebuildProgramVisuals();
     void RebuildInteractionPalette();
@@ -79,14 +87,6 @@ class Application
     void SyncNavigationEntries();
     int EnsureLocalAppsChannel();
     [[nodiscard]] std::string GetActiveProgramId() const;
-    void HandleEvent(const SDL_Event& event, bool& running);
-    void HandleMouseClick(int x, int y);
-    void HandleMouseButtonUp(int x, int y);
-    void HandleMouseMotion(const SDL_MouseMotionEvent& motion);
-    void HandleMouseWheel(const SDL_MouseWheelEvent& wheel);
-    void HandleKeyDown(SDL_Keycode key);
-    void HandleMouseRightClick(int x, int y);
-    bool HandleTextInput(const SDL_TextInputEvent& event);
     bool UpdateCustomizationValueFromPosition(const std::string& id, int mouseX);
     void RenderFrame(double deltaSeconds);
     void RenderHubFrame(double deltaSeconds);
@@ -338,6 +338,11 @@ class Application
     } customThemeDialog_{};
 
     NavigationController navigationController_;
+    input::InputRouter inputRouter_;
+    input::NavigationInputHandler navigationInputHandler_;
+    input::HubInputHandler hubInputHandler_;
+    input::DialogInputHandler dialogInputHandler_;
+    input::LibraryInputHandler libraryInputHandler_;
     ViewRegistry viewRegistry_;
     ViewFactory viewFactory_;
     RenderContext viewContext_{};

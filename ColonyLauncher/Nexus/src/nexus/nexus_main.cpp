@@ -2,41 +2,58 @@
 
 #include <SDL2/SDL.h>
 
+#include <cstdlib>
 #include <iostream>
+#include <string>
 
 namespace nexus
 {
+namespace
+{
+std::string ResolveModuleName()
+{
+    if (const char* envName = std::getenv("COLONY_MODULE_NAME"))
+    {
+        return envName;
+    }
+
+    return "Nexus";
+}
+} // namespace
+
 NexusResult LaunchStandalone()
 {
     NexusResult result{};
 
-    SDL_Window* arcadeWindow = SDL_CreateWindow(
-        "Nexus",
+    const std::string moduleName = ResolveModuleName();
+
+    SDL_Window* moduleWindow = SDL_CreateWindow(
+        moduleName.c_str(),
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         1280,
         720,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
-    if (arcadeWindow == nullptr)
+    if (moduleWindow == nullptr)
     {
-        std::cerr << "Unable to create Nexus window: " << SDL_GetError() << '\n';
+        std::cerr << "Unable to create module window: " << SDL_GetError() << '\n';
         return result;
     }
 
-    SDL_Renderer* arcadeRenderer = SDL_CreateRenderer(
-        arcadeWindow,
+    SDL_Renderer* moduleRenderer = SDL_CreateRenderer(
+        moduleWindow,
         -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-    if (arcadeRenderer == nullptr)
+    if (moduleRenderer == nullptr)
     {
-        std::cerr << "Unable to create Nexus renderer: " << SDL_GetError() << '\n';
-        SDL_DestroyWindow(arcadeWindow);
+        std::cerr << "Unable to create module renderer: " << SDL_GetError() << '\n';
+        SDL_DestroyWindow(moduleWindow);
         return result;
     }
 
-    const Uint32 arcadeWindowId = SDL_GetWindowID(arcadeWindow);
+    const Uint32 moduleWindowId = SDL_GetWindowID(moduleWindow);
     bool running = true;
 
     while (running)
@@ -57,7 +74,7 @@ NexusResult LaunchStandalone()
                 }
                 break;
             case SDL_WINDOWEVENT:
-                if (event.window.windowID == arcadeWindowId && event.window.event == SDL_WINDOWEVENT_CLOSE)
+                if (event.window.windowID == moduleWindowId && event.window.event == SDL_WINDOWEVENT_CLOSE)
                 {
                     running = false;
                 }
@@ -67,14 +84,14 @@ NexusResult LaunchStandalone()
             }
         }
 
-        SDL_SetRenderDrawColor(arcadeRenderer, 6, 10, 26, SDL_ALPHA_OPAQUE);
-        SDL_RenderClear(arcadeRenderer);
-        SDL_RenderPresent(arcadeRenderer);
+        SDL_SetRenderDrawColor(moduleRenderer, 6, 10, 26, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(moduleRenderer);
+        SDL_RenderPresent(moduleRenderer);
         SDL_Delay(16);
     }
 
-    SDL_DestroyRenderer(arcadeRenderer);
-    SDL_DestroyWindow(arcadeWindow);
+    SDL_DestroyRenderer(moduleRenderer);
+    SDL_DestroyWindow(moduleWindow);
 
     return result;
 }

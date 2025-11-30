@@ -1,6 +1,6 @@
 #include "ui/dialogs/custom_theme_dialog.hpp"
 
-#include "app/application.hpp"
+#include "app/application.h"
 
 namespace colony::ui::dialogs
 {

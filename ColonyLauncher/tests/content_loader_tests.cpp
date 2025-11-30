@@ -4,7 +4,7 @@
 #include "core/content_loader.hpp"
 #include "core/localization_manager.hpp"
 #define private public
-#include "app/application.hpp"
+#include "app/application.h"
 #undef private
 #include "utils/color.hpp"
 

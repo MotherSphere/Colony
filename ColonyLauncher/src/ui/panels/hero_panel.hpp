@@ -10,7 +10,7 @@
 #include <functional>
 #include <unordered_map>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 
 struct HeroRenderResult
@@ -18,7 +18,7 @@ struct HeroRenderResult
     std::optional<SDL_Rect> actionButtonRect;
 };
 
-class HeroPanelRenderer
+class HeroPanel
 {
   public:
     void Build(
@@ -60,6 +60,10 @@ class HeroPanelRenderer
         const ProgramVisuals* visuals,
         double timeSeconds) const;
 
+    bool OnClick(int /*x*/, int /*y*/) const { return false; }
+    bool OnWheel(const SDL_MouseWheelEvent& /*wheel*/) const { return false; }
+    bool OnKey(SDL_Keycode /*key*/) const { return false; }
+
   private:
     struct HeroChrome
     {
@@ -70,4 +74,4 @@ class HeroPanelRenderer
     HeroChrome chrome_;
 };
 
-} // namespace colony::ui
+} // namespace colony::ui::panels

@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 
 struct LibraryRenderResult
@@ -33,7 +33,7 @@ struct LibraryRenderResult
     std::vector<SortChipHitbox> sortChipHitboxes;
 };
 
-class LibraryPanelRenderer
+class LibraryPanel
 {
   public:
     void Build(
@@ -60,6 +60,10 @@ class LibraryPanelRenderer
         const std::vector<colony::frontend::models::LibraryProgramEntry>& programs,
         const std::vector<colony::frontend::models::LibrarySortChip>& sortChips) const;
 
+    bool OnClick(int /*x*/, int /*y*/) const { return false; }
+    bool OnWheel(const SDL_MouseWheelEvent& /*wheel*/) const { return false; }
+    bool OnKey(SDL_Keycode /*key*/) const { return false; }
+
   private:
     struct LibraryChrome
     {
@@ -68,4 +72,4 @@ class LibraryPanelRenderer
     LibraryChrome chrome_;
 };
 
-} // namespace colony::ui
+} // namespace colony::ui::panels

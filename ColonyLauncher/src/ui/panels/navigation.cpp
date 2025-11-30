@@ -1,4 +1,4 @@
-#include "ui/navigation.hpp"
+#include "ui/panels/navigation.hpp"
 
 #include "ui/layout.hpp"
 
@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <cmath>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 
-void NavigationRail::Build(
+void NavigationRailPanel::Build(
     SDL_Renderer* renderer,
     TTF_Font* brandFont,
     TTF_Font* navFont,
@@ -40,7 +40,7 @@ void NavigationRail::Build(
     }
 }
 
-NavigationRenderResult NavigationRail::Render(
+NavigationRenderResult NavigationRailPanel::Render(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const Typography& typography,
@@ -115,4 +115,4 @@ NavigationRenderResult NavigationRail::Render(
     return result;
 }
 
-} // namespace colony::ui
+} // namespace colony::ui::panels

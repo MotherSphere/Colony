@@ -941,7 +941,7 @@ void Application::RenderHubFrame(double deltaSeconds)
         activeBranchIndex = content_.hub.branches.empty() ? -1 : 0;
     }
 
-    ui::HubRenderResult renderResult = hubPanel_.Render(
+    ui::panels::HubRenderResult renderResult = hubPanel_.Render(
         renderer,
         theme_,
         bounds,
@@ -1031,7 +1031,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
 
     const int statusBarHeight = ui::Scale(kStatusBarHeight);
 
-    ui::NavigationRenderResult navigationRender = navigationRail_.Render(
+    ui::panels::NavigationRenderResult navigationRender = navigationRail_.Render(
         renderer,
         theme_,
         typography_,
@@ -1368,7 +1368,7 @@ void Application::BuildHubPanel()
 
     hubSearchTokens_ = TokenizeHubSearch(hubSearchQuery_);
 
-    ui::HubContent hubContent;
+    ui::panels::HubContent hubContent;
     hubContent.searchPlaceholder = GetLocalizedString("hub.search.placeholder", "Rechercher une destination");
 
     if (!hubConfig.headlineLocalizationKey.empty())
@@ -1455,7 +1455,7 @@ void Application::BuildHubPanel()
             continue;
         }
 
-        ui::HubBranchContent branchContent;
+        ui::panels::HubBranchContent branchContent;
         branchContent.id = branch.id;
         branchContent.title = title;
         branchContent.description = description;
@@ -1523,7 +1523,7 @@ void Application::BuildHubPanel()
     hubContent.widgets.reserve(hubConfig.widgets.size());
     for (const auto& widget : hubConfig.widgets)
     {
-        ui::HubWidgetContent widgetContent;
+        ui::panels::HubWidgetContent widgetContent;
         widgetContent.id = widget.id;
         widgetContent.title = widget.titleLocalizationKey.empty() ? widget.id
                                                                   : GetLocalizedString(widget.titleLocalizationKey, widget.id);
@@ -1690,7 +1690,7 @@ void Application::SyncFocusedHubBranch()
     auto it = std::find_if(
         hubBranchHitboxes_.begin(),
         hubBranchHitboxes_.end(),
-        [&](const ui::HubRenderResult::BranchHitbox& hitbox) { return hitbox.branchIndex == focusedHubBranchIndex_; });
+        [&](const ui::panels::HubRenderResult::BranchHitbox& hitbox) { return hitbox.branchIndex == focusedHubBranchIndex_; });
     if (it == hubBranchHitboxes_.end())
     {
         return;
@@ -1768,9 +1768,9 @@ void Application::HandleHubMouseClick(int x, int y)
                 const int maxPage = std::max(0, hubWidgetPageCount_ - 1);
                 switch (pagerHitbox.type)
                 {
-                case ui::HubRenderResult::WidgetPagerHitbox::Type::Previous:
-                case ui::HubRenderResult::WidgetPagerHitbox::Type::Next:
-                case ui::HubRenderResult::WidgetPagerHitbox::Type::Page:
+                case ui::panels::HubRenderResult::WidgetPagerHitbox::Type::Previous:
+                case ui::panels::HubRenderResult::WidgetPagerHitbox::Type::Next:
+                case ui::panels::HubRenderResult::WidgetPagerHitbox::Type::Page:
                     hubWidgetPage_ = std::clamp(pagerHitbox.pageIndex, 0, maxPage);
                     break;
                 }

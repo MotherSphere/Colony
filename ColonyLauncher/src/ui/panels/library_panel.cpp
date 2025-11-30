@@ -1,4 +1,4 @@
-#include "ui/library_panel.hpp"
+#include "ui/panels/library_panel.hpp"
 
 #include "frontend/components/brand_card.hpp"
 #include "frontend/components/buttons.hpp"
@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 namespace
 {
@@ -44,7 +44,7 @@ SDL_Color ResolveAccentColor(
 }
 }
 
-void LibraryPanelRenderer::Build(
+void LibraryPanel::Build(
     SDL_Renderer* renderer,
     TTF_Font* bodyFont,
     const ThemeColors& theme,
@@ -56,7 +56,7 @@ void LibraryPanelRenderer::Build(
     (void)localize;
 }
 
-LibraryRenderResult LibraryPanelRenderer::Render(
+LibraryRenderResult LibraryPanel::Render(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const InteractionColors& interactions,
@@ -184,4 +184,4 @@ LibraryRenderResult LibraryPanelRenderer::Render(
     return result;
 }
 
-} // namespace colony::ui
+} // namespace colony::ui::panels

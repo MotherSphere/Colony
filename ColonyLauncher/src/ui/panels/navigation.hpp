@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 
 struct NavigationRenderResult
@@ -21,7 +21,7 @@ struct NavigationRenderResult
     std::optional<SDL_Rect> hubButtonRect;
 };
 
-class NavigationRail
+class NavigationRailPanel
 {
   public:
     void Build(
@@ -46,6 +46,10 @@ class NavigationRail
         const std::unordered_map<std::string, ProgramVisuals>& programVisuals,
         double timeSeconds) const;
 
+    bool OnClick(int /*x*/, int /*y*/) const { return false; }
+    bool OnWheel(const SDL_MouseWheelEvent& /*wheel*/) const { return false; }
+    bool OnKey(SDL_Keycode /*key*/) const { return false; }
+
   private:
     struct NavigationChrome
     {
@@ -54,6 +58,7 @@ class NavigationRail
     };
 
     NavigationChrome chrome_;
+    NavigationRenderResult lastRender_{};
 };
 
-} // namespace colony::ui
+} // namespace colony::ui::panels

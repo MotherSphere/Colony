@@ -8,11 +8,11 @@
 #include "input/input_handlers.hpp"
 #include "input/input_router.h"
 #include "platform/renderer_host.hpp"
-#include "ui/hero_panel.hpp"
-#include "ui/hub_panel.hpp"
+#include "ui/panels/hero_panel.hpp"
+#include "ui/panels/hub_panel.hpp"
 #include "ui/layout.hpp"
-#include "ui/library_panel.hpp"
-#include "ui/navigation.hpp"
+#include "ui/panels/library_panel.hpp"
+#include "ui/panels/navigation.hpp"
 #include "ui/program_visuals.hpp"
 #include "ui/settings_panel.hpp"
 #include "ui/theme.hpp"
@@ -178,11 +178,11 @@ class Application
     ui::InteractionColors interactions_{};
     ui::MotionTimings motion_{};
 
-    ui::NavigationRail navigationRail_;
+    ui::panels::NavigationRailPanel navigationRail_;
     ui::TopBar topBar_;
-    ui::LibraryPanelRenderer libraryPanel_;
-    ui::HeroPanelRenderer heroPanel_;
-    ui::HubPanelRenderer hubPanel_;
+    ui::panels::LibraryPanel libraryPanel_;
+    ui::panels::HeroPanel heroPanel_;
+    ui::panels::HubPanel hubPanel_;
     ui::SettingsPanel settingsPanel_;
 
     std::unordered_map<std::string, ui::ProgramVisuals> programVisuals_;
@@ -218,10 +218,10 @@ class Application
     std::vector<SDL_Rect> programTileRects_;
     std::optional<SDL_Rect> addAppButtonRect_;
     std::optional<SDL_Rect> libraryFilterInputRect_;
-    std::vector<ui::LibraryRenderResult::SortChipHitbox> librarySortChipHitboxes_;
+    std::vector<ui::panels::LibraryRenderResult::SortChipHitbox> librarySortChipHitboxes_;
     std::optional<SDL_Rect> heroActionRect_;
     std::optional<SDL_Rect> hubButtonRect_;
-    std::vector<ui::HubRenderResult::BranchHitbox> hubBranchHitboxes_;
+    std::vector<ui::panels::HubRenderResult::BranchHitbox> hubBranchHitboxes_;
     int hoveredHubBranchIndex_ = -1;
     int focusedHubBranchIndex_ = -1;
     std::vector<std::string> hubRenderedBranchIds_;
@@ -240,7 +240,7 @@ class Application
     std::optional<SDL_Rect> hubSearchClearRect_;
     std::optional<SDL_Rect> hubHeroToggleRect_;
     std::optional<SDL_Rect> hubDetailActionRect_;
-    std::vector<ui::HubRenderResult::WidgetPagerHitbox> hubWidgetPagerHitboxes_;
+    std::vector<ui::panels::HubRenderResult::WidgetPagerHitbox> hubWidgetPagerHitboxes_;
     ui::SettingsPanel::RenderResult settingsRenderResult_{};
     int settingsScrollOffset_ = 0;
     ui::SettingsPanel::SectionStates settingsSectionStates_{};

@@ -210,8 +210,10 @@ Application::Application()
     , hubInputHandler_(*this)
     , dialogInputHandler_(*this)
     , libraryInputHandler_(*this)
-{
-}
+    , addAppDialogController_(*this)
+    , editUserAppDialogController_(*this)
+    , customThemeDialogController_(*this)
+{}
 
 int Application::Run()
 {

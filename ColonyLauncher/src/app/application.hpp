@@ -8,6 +8,10 @@
 #include "input/input_handlers.hpp"
 #include "input/input_router.h"
 #include "platform/renderer_host.hpp"
+#include "ui/dialogs/add_app_dialog.hpp"
+#include "ui/dialogs/custom_theme_dialog.hpp"
+#include "ui/dialogs/dialog_base.hpp"
+#include "ui/dialogs/edit_user_app_dialog.hpp"
 #include "ui/panels/hero_panel.hpp"
 #include "ui/panels/hub_panel.hpp"
 #include "ui/layout.hpp"
@@ -71,6 +75,9 @@ class Application
     friend class input::HubInputHandler;
     friend class input::DialogInputHandler;
     friend class input::LibraryInputHandler;
+    friend class ui::dialogs::AddAppDialog;
+    friend class ui::dialogs::EditUserAppDialog;
+    friend class ui::dialogs::CustomThemeDialog;
 
     [[nodiscard]] bool InitializeFonts();
     [[nodiscard]] bool LoadContent();
@@ -336,6 +343,10 @@ class Application
         SDL_Rect saveButtonRect{0, 0, 0, 0};
         SDL_Rect cancelButtonRect{0, 0, 0, 0};
     } customThemeDialog_{};
+
+    [[maybe_unused]] ui::dialogs::AddAppDialog addAppDialogController_;
+    [[maybe_unused]] ui::dialogs::EditUserAppDialog editUserAppDialogController_;
+    [[maybe_unused]] ui::dialogs::CustomThemeDialog customThemeDialogController_;
 
     NavigationController navigationController_;
     input::InputRouter inputRouter_;

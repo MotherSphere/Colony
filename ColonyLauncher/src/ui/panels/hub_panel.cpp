@@ -1,4 +1,4 @@
-#include "ui/hub_panel.hpp"
+#include "ui/panels/hub_panel.hpp"
 
 #include "ui/layout.hpp"
 
@@ -11,7 +11,7 @@
 #include <cmath>
 #include <numbers>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 namespace
 {
@@ -21,7 +21,7 @@ SDL_Color MixWithBackground(SDL_Color foreground, SDL_Color background, float fa
 }
 } // namespace
 
-void HubPanelRenderer::Build(
+void HubPanel::Build(
     SDL_Renderer* renderer,
     const HubContent& content,
     TTF_Font* headlineFont,
@@ -159,7 +159,7 @@ void HubPanelRenderer::Build(
     }
 }
 
-HubRenderResult HubPanelRenderer::Render(
+HubRenderResult HubPanel::Render(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& bounds,
@@ -1347,7 +1347,7 @@ HubRenderResult HubPanelRenderer::Render(
     return result;
 }
 
-void HubPanelRenderer::RebuildHeroDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const
+void HubPanel::RebuildHeroDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const
 {
     if (heroBodyFont_ == nullptr)
     {
@@ -1377,7 +1377,7 @@ void HubPanelRenderer::RebuildHeroDescription(SDL_Renderer* renderer, int maxWid
     }
 }
 
-void HubPanelRenderer::RebuildHeroActionDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const
+void HubPanel::RebuildHeroActionDescription(SDL_Renderer* renderer, int maxWidth, SDL_Color color) const
 {
     if (heroBodyFont_ == nullptr)
     {
@@ -1407,7 +1407,7 @@ void HubPanelRenderer::RebuildHeroActionDescription(SDL_Renderer* renderer, int 
     }
 }
 
-void HubPanelRenderer::RebuildBranchDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color) const
+void HubPanel::RebuildBranchDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color) const
 {
     if (tileBodyFont_ == nullptr)
     {
@@ -1437,7 +1437,7 @@ void HubPanelRenderer::RebuildBranchDescription(SDL_Renderer* renderer, BranchCh
     }
 }
 
-void HubPanelRenderer::RebuildBranchDetailDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color)
+void HubPanel::RebuildBranchDetailDescription(SDL_Renderer* renderer, BranchChrome& branch, int maxWidth, SDL_Color color)
     const
 {
     if (tileBodyFont_ == nullptr)
@@ -1492,7 +1492,7 @@ void HubPanelRenderer::RebuildBranchDetailDescription(SDL_Renderer* renderer, Br
     }
 }
 
-void HubPanelRenderer::RebuildWidgetDescription(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const
+void HubPanel::RebuildWidgetDescription(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const
 {
     if (tileBodyFont_ == nullptr)
     {
@@ -1522,7 +1522,7 @@ void HubPanelRenderer::RebuildWidgetDescription(SDL_Renderer* renderer, WidgetCh
     }
 }
 
-void HubPanelRenderer::RebuildWidgetItems(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const
+void HubPanel::RebuildWidgetItems(SDL_Renderer* renderer, WidgetChrome& widget, int maxWidth, SDL_Color color) const
 {
     if (tileBodyFont_ == nullptr)
     {
@@ -1564,5 +1564,5 @@ void HubPanelRenderer::RebuildWidgetItems(SDL_Renderer* renderer, WidgetChrome& 
     }
 }
 
-} // namespace colony::ui
+} // namespace colony::ui::panels
 

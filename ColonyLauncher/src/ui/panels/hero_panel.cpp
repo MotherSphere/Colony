@@ -1,4 +1,4 @@
-#include "ui/hero_panel.hpp"
+#include "ui/panels/hero_panel.hpp"
 
 #include "ui/layout.hpp"
 #include "utils/color.hpp"
@@ -7,10 +7,10 @@
 #include <algorithm>
 #include <cmath>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 
-void HeroPanelRenderer::Build(
+void HeroPanel::Build(
     SDL_Renderer* renderer,
     TTF_Font* labelFont,
     const ThemeColors& theme,
@@ -21,7 +21,7 @@ void HeroPanelRenderer::Build(
     chrome_.updatesLabel = colony::CreateTextTexture(renderer, labelFont, localize("hero.patch_notes"), theme.muted);
 }
 
-HeroRenderResult HeroPanelRenderer::RenderHero(
+HeroRenderResult HeroPanel::RenderHero(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& heroRect,
@@ -438,7 +438,7 @@ HeroRenderResult HeroPanelRenderer::RenderHero(
     return result;
 }
 
-void HeroPanelRenderer::RenderSettings(
+void HeroPanel::RenderSettings(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& heroRect,
@@ -492,7 +492,7 @@ void HeroPanelRenderer::RenderSettings(
     }
 }
 
-void HeroPanelRenderer::RenderStatusBar(
+void HeroPanel::RenderStatusBar(
     SDL_Renderer* renderer,
     const ThemeColors& theme,
     const SDL_Rect& heroRect,
@@ -534,4 +534,4 @@ void HeroPanelRenderer::RenderStatusBar(
     }
 }
 
-} // namespace colony::ui
+} // namespace colony::ui::panels

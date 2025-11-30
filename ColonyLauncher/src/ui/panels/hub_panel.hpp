@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-namespace colony::ui
+namespace colony::ui::panels
 {
 
 struct HubBranchContent
@@ -86,7 +86,7 @@ struct HubRenderResult
     int widgetPageCount = 0;
 };
 
-class HubPanelRenderer
+class HubPanel
 {
   public:
     void Build(
@@ -112,6 +112,10 @@ class HubPanelRenderer
         bool searchFocused,
         int widgetPage,
         int widgetsPerPage) const;
+
+    bool OnClick(int /*x*/, int /*y*/) const { return false; }
+    bool OnWheel(const SDL_MouseWheelEvent& /*wheel*/) const { return false; }
+    bool OnKey(SDL_Keycode /*key*/) const { return false; }
 
   private:
     struct HeroChrome
@@ -187,5 +191,5 @@ class HubPanelRenderer
     TTF_Font* tileBodyFont_ = nullptr;
 };
 
-} // namespace colony::ui
+} // namespace colony::ui::panels
 

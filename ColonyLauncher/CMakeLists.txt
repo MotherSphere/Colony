@@ -34,10 +34,10 @@ add_library(colony_ui
     src/ui/layout.cpp
     src/ui/theme.cpp
     src/ui/program_visuals.cpp
-    src/ui/hub_panel.cpp
-    src/ui/navigation.cpp
-    src/ui/library_panel.cpp
-    src/ui/hero_panel.cpp
+    src/ui/panels/hub_panel.cpp
+    src/ui/panels/navigation.cpp
+    src/ui/panels/library_panel.cpp
+    src/ui/panels/hero_panel.cpp
     src/ui/settings_panel.cpp
     src/views/simple_text_view.cpp
     src/views/view_registry.cpp

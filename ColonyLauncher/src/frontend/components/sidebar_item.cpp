@@ -59,27 +59,11 @@ SDL_Rect SidebarItem::Render(
     }
 
     const int iconSize = colony::ui::Scale(28);
-    const int minimumInset = colony::ui::Scale(12);
+    const int padding = colony::ui::Scale(18);
+    const SDL_Rect iconRect{itemRect.x + padding, itemRect.y + (itemRect.h - iconSize) / 2, iconSize, iconSize};
 
     const auto& icon = icons::LoadSidebarIcon(renderer, id_, accent, theme);
-    const bool hasIcon = static_cast<bool>(icon.texture);
-    const int gap = hasIcon ? colony::ui::Scale(12) : 0;
-    const int iconWidth = hasIcon ? iconSize : 0;
-
-    const colony::TextTexture& renderLabel = labelTexture_;
-    const int labelWidth = renderLabel.texture ? renderLabel.width : 0;
-
-    const int totalContentWidth = iconWidth + gap + labelWidth;
-    const int centeredX = itemRect.x + (itemRect.w - totalContentWidth) / 2;
-    const int contentStartX = std::max(itemRect.x + minimumInset, centeredX);
-
-    SDL_Rect iconRect{
-        contentStartX,
-        itemRect.y + (itemRect.h - iconSize) / 2,
-        iconWidth,
-        iconSize};
-
-    if (hasIcon)
+    if (icon.texture)
     {
         SDL_Rect renderRect = iconRect;
         renderRect.w = icon.width;
@@ -88,13 +72,14 @@ SDL_Rect SidebarItem::Render(
         SDL_RenderCopy(renderer, icon.texture.get(), nullptr, &renderRect);
     }
 
-    int textX = iconRect.x + iconRect.w + gap;
+    int textX = iconRect.x + iconRect.w + colony::ui::Scale(12);
     SDL_Color textColor = active ? theme.heroTitle : theme.navText;
     if (hovered && !active)
     {
         textColor = colony::color::Mix(textColor, theme.heroTitle, 0.35f);
     }
 
+    const colony::TextTexture& renderLabel = labelTexture_;
     if (renderLabel.texture)
     {
         SDL_Rect labelRect{

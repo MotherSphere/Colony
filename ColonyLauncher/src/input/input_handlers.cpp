@@ -530,7 +530,7 @@ bool LibraryInputHandler::HandleMouseButtonDown(const SDL_Event& event, bool& ru
             }
 
             const std::string& programId = app_.programTileProgramIds_[i];
-            if (app_.userAppExecutables_.find(programId) != app_.userAppExecutables_.end())
+            if (app_.userApplications_.find(programId) != app_.userApplications_.end())
             {
                 app_.ShowEditUserAppDialog(programId);
             }

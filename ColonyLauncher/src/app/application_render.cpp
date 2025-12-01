@@ -143,7 +143,7 @@ void Application::RenderMainInterfaceFrame(double deltaSeconds)
 
     if (!layoutSizesInitialized_)
     {
-        navRailWidth_ = ui::Scale(160);
+        navRailWidth_ = ui::Scale(112);
         layoutSizesInitialized_ = true;
     }
 

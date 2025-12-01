@@ -37,7 +37,17 @@ std::unordered_map<std::string, float> BuildDefaultAppearanceValues()
 SettingsService::SettingsService()
     : basicToggleStates_(BuildDefaultToggleStates())
     , appearanceCustomizationValues_(BuildDefaultAppearanceValues())
+    , pythonInterpreterPath_(DefaultPythonInterpreter())
 {}
+
+std::string SettingsService::DefaultPythonInterpreter()
+{
+#if defined(_WIN32)
+    return "py -3";
+#else
+    return "python3";
+#endif
+}
 
 void SettingsService::SetActiveLanguageId(std::string languageId)
 {
@@ -73,6 +83,21 @@ bool SettingsService::SetAppearanceCustomizationValue(const std::string& id, flo
     }
 
     return true;
+}
+
+void SettingsService::SetPythonInterpreterPath(std::string interpreter)
+{
+    pythonInterpreterPath_ = std::move(interpreter);
+}
+
+std::string SettingsService::ResolvedPythonInterpreter() const
+{
+    if (!pythonInterpreterPath_.empty())
+    {
+        return pythonInterpreterPath_;
+    }
+
+    return DefaultPythonInterpreter();
 }
 
 void SettingsService::Load(const std::filesystem::path& settingsPath, ui::ThemeManager& themeManager)
@@ -183,6 +208,15 @@ void SettingsService::Load(const std::filesystem::path& settingsPath, ui::ThemeM
                 SetAppearanceCustomizationValue(key, static_cast<float>(value.get<double>()));
             }
         }
+
+        if (document.contains("pythonInterpreter") && document["pythonInterpreter"].is_string())
+        {
+            pythonInterpreterPath_ = document["pythonInterpreter"].get<std::string>();
+        }
+        else if (!document.contains("pythonInterpreter"))
+        {
+            pythonInterpreterPath_ = DefaultPythonInterpreter();
+        }
     }
     catch (const std::exception& ex)
     {
@@ -225,6 +259,8 @@ void SettingsService::Save(const std::filesystem::path& settingsPath, const ui::
         appearance[key] = value;
     }
     document["appearance"] = std::move(appearance);
+
+    document["pythonInterpreter"] = pythonInterpreterPath_;
 
     nlohmann::json customThemes = nlohmann::json::array();
     for (const auto& scheme : themeManager.Schemes())

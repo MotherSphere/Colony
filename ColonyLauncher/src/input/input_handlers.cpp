@@ -676,7 +676,8 @@ bool LibraryInputHandler::HandleMouseButtonDown(const SDL_Event& event, bool& ru
         {
             app_.LaunchNexusApp();
         }
-        else if (const auto appIt = app_.userAppExecutables_.find(app_.activeProgramId_); appIt != app_.userAppExecutables_.end())
+        else if (const auto appIt = app_.userApplications_.find(app_.activeProgramId_);
+                 appIt != app_.userApplications_.end())
         {
             app_.LaunchUserApp(appIt->second, app_.activeProgramId_);
         }

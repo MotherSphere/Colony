@@ -156,7 +156,13 @@ class Application
     void EnsureCustomThemeFieldVisible(int focusIndex);
     void UpdateTextInputState();
     bool AddUserApplication(const std::filesystem::path& executablePath);
-    void LaunchUserApp(const std::filesystem::path& executablePath, const std::string& programId);
+    struct UserApplicationEntry
+    {
+        std::filesystem::path executablePath;
+        bool isPythonScript = false;
+    };
+
+    void LaunchUserApp(const UserApplicationEntry& appEntry, const std::string& programId);
     static std::string ColorToHex(SDL_Color color);
     static std::string MakeDisplayNameFromPath(const std::filesystem::path& path);
     static bool IsValidHexColor(const std::string& value);
@@ -352,7 +358,7 @@ class Application
     std::vector<std::string> programTileProgramIds_;
     bool textInputActive_ = false;
 
-    std::unordered_map<std::string, std::filesystem::path> userAppExecutables_;
+    std::unordered_map<std::string, UserApplicationEntry> userApplications_;
     int nextCustomProgramId_ = 1;
 
     static constexpr int kWindowWidth = 1600;

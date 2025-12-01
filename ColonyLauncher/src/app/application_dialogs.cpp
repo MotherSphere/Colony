@@ -92,6 +92,7 @@ const std::vector<AddDialogFileTypeFilter>& GetAddDialogFileTypeFilters()
         std::vector<AddDialogFileTypeFilter> filters;
         filters.emplace_back(AddDialogFileTypeFilter{"All files (*.*)", {}, true, false, false});
         filters.emplace_back(AddDialogFileTypeFilter{"Folders", {}, true, true, false});
+        filters.emplace_back(makeFilter("Python script (*.py)", ".py"));
 
 #if defined(_WIN32)
         filters.emplace_back(makeFilter("Executable (*.exe)", ".exe"));
@@ -1707,6 +1708,15 @@ void Application::RenderAddAppDialog(double timeSeconds)
         cursorY += titleRect.h + ui::Scale(10);
     }
 
+    const std::string subtitleText = "Add an executable or Python script to your library.";
+    TextTexture subtitleTexture = CreateTextTexture(renderer, fonts_.tileSubtitle.get(), subtitleText, theme_.muted);
+    if (subtitleTexture.texture)
+    {
+        SDL_Rect subtitleRect{cursorX, cursorY, subtitleTexture.width, subtitleTexture.height};
+        RenderTexture(renderer, subtitleTexture, subtitleRect);
+        cursorY += subtitleRect.h + ui::Scale(12);
+    }
+
     const int parentButtonHeight = ui::Scale(34);
     const int parentButtonWidth = ui::Scale(150);
     addAppDialog_.parentButtonRect = SDL_Rect{
@@ -3213,13 +3223,26 @@ int Application::EnsureLocalAppsChannel()
     return index;
 }
 
+namespace
+{
+bool PathIsPythonScript(const std::filesystem::path& path)
+{
+    std::string extension = path.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+
+    return extension == ".py";
+}
+}
+
 bool Application::AddUserApplication(const std::filesystem::path& executablePath)
 {
     std::error_code ec;
     if (executablePath.empty() || std::filesystem::is_directory(executablePath, ec)
         || !std::filesystem::exists(executablePath, ec))
     {
-        addAppDialog_.errorMessage = "Select a valid executable file.";
+        addAppDialog_.errorMessage = "Select a valid executable file or Python script.";
         return false;
     }
 
@@ -3232,20 +3255,34 @@ bool Application::AddUserApplication(const std::filesystem::path& executablePath
 
     const std::string programId = "CUSTOM_APP_" + std::to_string(nextCustomProgramId_++);
     const std::string displayName = MakeDisplayNameFromPath(resolvedPath);
+    const bool isPythonScript = PathIsPythonScript(resolvedPath);
 
     ViewContent viewContent;
     viewContent.heading = displayName;
-    viewContent.tagline = "Launch an external application directly from Colony.";
-    viewContent.paragraphs = {
-        "Executable path: " + resolvedPath.string(),
-        "Launch opens the binary in a separate process."};
+    viewContent.tagline = "Launch an external application or Python script directly from Colony.";
+    if (isPythonScript)
+    {
+        const std::string interpreter = settingsService_.ResolvedPythonInterpreter();
+        viewContent.paragraphs = {
+            "Python script: " + resolvedPath.string(),
+            "Interpreter: " + (interpreter.empty() ? std::string("python3") : interpreter),
+            "Launch opens the script in a separate process."};
+        viewContent.statusMessage = "Ready to launch " + displayName + " with Python.";
+        viewContent.version = "Python (.py)";
+    }
+    else
+    {
+        viewContent.paragraphs = {
+            "Executable path: " + resolvedPath.string(),
+            "Launch opens the binary in a separate process."};
+        viewContent.statusMessage = "Ready to launch " + displayName;
+        viewContent.version = resolvedPath.extension().empty() ? "Binary" : "Binary " + resolvedPath.extension().string();
+    }
     viewContent.heroHighlights = {
         std::string("Manually added to the ") + std::string(kLocalAppsChannelLabel) + " category",
         "Launches without leaving Colony",
         "Remove or update by editing your configuration"};
     viewContent.primaryActionLabel = "Launch";
-    viewContent.statusMessage = "Ready to launch " + displayName;
-    viewContent.version = resolvedPath.extension().empty() ? "Binary" : "Binary " + resolvedPath.extension().string();
     viewContent.installState = "Manual entry";
     viewContent.availability = "Ready";
     viewContent.lastLaunched = "Never launched";
@@ -3261,7 +3298,7 @@ bool Application::AddUserApplication(const std::filesystem::path& executablePath
     viewRegistry_.Register(viewFactory_.CreateSimpleTextView(programId));
     viewRegistry_.BindContent(content_);
 
-    userAppExecutables_[programId] = resolvedPath;
+    userApplications_[programId] = UserApplicationEntry{resolvedPath, isPythonScript};
 
     const int targetChannelIndex = EnsureLocalAppsChannel();
     if (targetChannelIndex < 0 || targetChannelIndex >= static_cast<int>(content_.channels.size()))
@@ -3295,8 +3332,9 @@ bool Application::AddUserApplication(const std::filesystem::path& executablePath
     return true;
 }
 
-void Application::LaunchUserApp(const std::filesystem::path& executablePath, const std::string& programId)
+void Application::LaunchUserApp(const UserApplicationEntry& appEntry, const std::string& programId)
 {
+    const std::filesystem::path& executablePath = appEntry.executablePath;
     std::error_code ec;
     if (!std::filesystem::exists(executablePath, ec))
     {
@@ -3308,14 +3346,65 @@ void Application::LaunchUserApp(const std::filesystem::path& executablePath, con
     const std::string displayName = viewIt != content_.views.end() ? viewIt->second.heading : executablePath.filename().string();
     UpdateStatusMessage("Launching " + displayName + "...");
 
+    if (appEntry.isPythonScript)
+    {
+        std::vector<std::string> commands;
+
+        const std::string configuredInterpreter = settingsService_.ResolvedPythonInterpreter();
+        const auto buildPythonCommand = [&](const std::string& interpreter) {
 #if defined(_WIN32)
-    std::string command = "start \"\" \"" + executablePath.string() + "\"";
+            return std::string{"start \"\" "} + interpreter + " \"" + executablePath.string() + "\"";
 #else
-    std::string command = "\"" + executablePath.string() + "\" &";
+            return interpreter + " \"" + executablePath.string() + "\" &";
+#endif
+        };
+
+        if (!configuredInterpreter.empty())
+        {
+            commands.push_back(buildPythonCommand(configuredInterpreter));
+        }
+
+#if defined(_WIN32)
+        if (configuredInterpreter != "python.exe")
+        {
+            commands.push_back(buildPythonCommand("python.exe"));
+        }
 #endif
 
-    std::thread launcherThread([command]() { std::system(command.c_str()); });
-    launcherThread.detach();
+        if (commands.empty())
+        {
+            UpdateStatusMessage("No Python interpreter configured.");
+            return;
+        }
+
+        std::thread launcherThread([commands = std::move(commands)]() {
+            for (const auto& command : commands)
+            {
+                if (command.empty())
+                {
+                    continue;
+                }
+
+                const int result = std::system(command.c_str());
+                if (result == 0)
+                {
+                    break;
+                }
+            }
+        });
+        launcherThread.detach();
+    }
+    else
+    {
+#if defined(_WIN32)
+        std::string command = "start \"\" \"" + executablePath.string() + "\"";
+#else
+        std::string command = "\"" + executablePath.string() + "\" &";
+#endif
+
+        std::thread launcherThread([command]() { std::system(command.c_str()); });
+        launcherThread.detach();
+    }
 
     if (viewIt != content_.views.end())
     {
@@ -3330,7 +3419,8 @@ void Application::LaunchUserApp(const std::filesystem::path& executablePath, con
         std::ostringstream timeStream;
         timeStream << "Launched " << std::put_time(&local, "%H:%M");
         view.lastLaunched = timeStream.str();
-        view.statusMessage = "Launch command sent to " + displayName + ".";
+        view.statusMessage = appEntry.isPythonScript ? "Launch command sent to " + displayName + " (Python)."
+                                                     : "Launch command sent to " + displayName + ".";
         UpdateStatusMessage(view.statusMessage);
     }
 

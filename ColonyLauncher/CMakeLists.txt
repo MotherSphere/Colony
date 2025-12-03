@@ -12,6 +12,7 @@ add_subdirectory(Nexus)
 
 add_library(colony_core
     src/core/content_loader.cpp
+    src/core/filesystem_discovery.cpp
     src/core/localization_manager.cpp
     src/controllers/navigation_controller.cpp
 )
@@ -96,7 +97,7 @@ endif()
 
 enable_testing()
 
-add_executable(content_loader_tests tests/content_loader_tests.cpp)
+add_executable(content_loader_tests tests/content_loader_tests.cpp tests/filesystem_discovery_tests.cpp)
 target_include_directories(content_loader_tests PRIVATE src third_party)
 target_link_libraries(content_loader_tests PRIVATE colony_app)
 add_test(NAME content_loader_tests COMMAND content_loader_tests)

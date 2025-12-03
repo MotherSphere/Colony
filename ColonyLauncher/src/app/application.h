@@ -128,6 +128,7 @@ class Application
     [[nodiscard]] static std::filesystem::path ResolveContentPath();
     [[nodiscard]] static std::filesystem::path ResolveLocalizationDirectory();
     [[nodiscard]] std::filesystem::path ResolveSettingsPath() const;
+    void DiscoverFilesystemChannels();
     [[nodiscard]] bool PointInRect(const SDL_Rect& rect, int x, int y) const;
     [[nodiscard]] std::string GetLocalizedString(std::string_view key) const;
     [[nodiscard]] std::string GetLocalizedString(std::string_view key, std::string_view fallback) const;

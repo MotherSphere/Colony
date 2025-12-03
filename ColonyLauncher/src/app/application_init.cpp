@@ -1,6 +1,7 @@
 #include "app/application.h"
 
 #include "core/content_loader.hpp"
+#include "core/filesystem_discovery.hpp"
 #include "frontend/utils/font_loader.hpp"
 #include "frontend/views/dashboard_page.hpp"
 #include "nexus/nexus_main.hpp"
@@ -13,6 +14,7 @@
 #include "utils/text.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cctype>
@@ -37,6 +39,25 @@ namespace colony
 {
 namespace
 {
+constexpr const char* kContentRootEnvVariable = "COLONY_CONTENT_ROOT";
+
+const std::array<FolderChannelSpec, 4> kFolderChannelSpecs{{
+    {"applications", "Applications", "Applications"},
+    {"programs", "Programs", "Programs"},
+    {"addons", "Addons", "Addons"},
+    {"games", "Games", "Games"},
+}};
+
+std::filesystem::path ResolveContentRootOverride()
+{
+    if (const char* envRoot = std::getenv(kContentRootEnvVariable); envRoot != nullptr && envRoot[0] != '\0')
+    {
+        return std::filesystem::path{envRoot};
+    }
+
+    return colony::paths::ResolveAssetDirectory("assets/content");
+}
+
 void RemoveLastUtf8Codepoint(std::string& value)
 {
     if (value.empty())
@@ -292,6 +313,8 @@ bool Application::LoadContent()
         return false;
     }
 
+    DiscoverFilesystemChannels();
+
     if (content_.channels.empty())
     {
         std::cerr << "No channels defined in content file." << '\n';
@@ -301,6 +324,44 @@ bool Application::LoadContent()
     channelSelections_.assign(content_.channels.size(), 0);
     EnsureLocalAppsChannel();
     return true;
+}
+
+void Application::DiscoverFilesystemChannels()
+{
+    const auto discoveredChannels = DiscoverChannelsFromFilesystem(
+        ResolveContentRootOverride(), std::vector<FolderChannelSpec>{kFolderChannelSpecs.begin(), kFolderChannelSpecs.end()});
+
+    for (const auto& channel : discoveredChannels)
+    {
+        const auto channelIt = std::find_if(
+            content_.channels.begin(),
+            content_.channels.end(),
+            [&](const Channel& existing) { return existing.id == channel.id; });
+
+        Channel* targetChannel = nullptr;
+        if (channelIt == content_.channels.end())
+        {
+            content_.channels.push_back(Channel{channel.id, channel.label, {}});
+            targetChannel = &content_.channels.back();
+        }
+        else
+        {
+            targetChannel = &(*channelIt);
+            targetChannel->label = channel.label;
+            targetChannel->programs.clear();
+        }
+
+        for (const auto& program : channel.programs)
+        {
+            targetChannel->programs.push_back(program.programId);
+            content_.views[program.programId] = program.view;
+
+            if (!program.launchTarget.empty())
+            {
+                userApplications_[program.programId] = UserApplicationEntry{program.launchTarget, program.isPythonScript};
+            }
+        }
+    }
 }
 
 bool Application::InitializeLocalization()

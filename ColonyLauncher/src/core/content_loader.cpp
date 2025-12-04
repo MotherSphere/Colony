@@ -455,11 +455,6 @@ void ContentValidator::ParseChannelsSection(const nlohmann::json& document, AppC
             channel.programs.emplace_back(programJson.get<std::string>());
         }
 
-        if (channel.programs.empty())
-        {
-            throw std::runtime_error("Channel \"" + channel.id + "\" must declare at least one program id.");
-        }
-
         content.channels.emplace_back(std::move(channel));
     }
 

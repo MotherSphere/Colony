@@ -40,22 +40,39 @@ namespace colony
 namespace
 {
 constexpr const char* kContentRootEnvVariable = "COLONY_CONTENT_ROOT";
+constexpr const char* kNexusModulesRoot = "Nexus/Modules";
 
-const std::array<FolderChannelSpec, 4> kFolderChannelSpecs{{
+// Nexus filesystem auto-discovery is intentionally limited to these folders under the Nexus Modules root.
+// Other windows (e.g., Launcher) own their own discovery logic.
+const std::array<FolderChannelSpec, 5> kFolderChannelSpecs{{
     {"applications", "Applications", "Applications"},
     {"programs", "Programs", "Programs"},
     {"addons", "Addons", "Addons"},
     {"games", "Games", "Games"},
+    {std::string{kLocalAppsChannelId}, std::string{kLocalAppsChannelLabel}, "LocalApps"},
 }};
 
 std::filesystem::path ResolveContentRootOverride()
 {
+    std::filesystem::path resolvedRoot;
+
     if (const char* envRoot = std::getenv(kContentRootEnvVariable); envRoot != nullptr && envRoot[0] != '\0')
     {
-        return std::filesystem::path{envRoot};
+        resolvedRoot = std::filesystem::path{envRoot};
+    }
+    else
+    {
+        resolvedRoot = colony::paths::ResolveAssetDirectory(kNexusModulesRoot);
     }
 
-    return colony::paths::ResolveAssetDirectory("assets/content");
+    std::error_code ec;
+    std::filesystem::create_directories(resolvedRoot, ec);
+    for (const auto& folder : kFolderChannelSpecs)
+    {
+        std::filesystem::create_directories(resolvedRoot / folder.folderName, ec);
+    }
+
+    return resolvedRoot;
 }
 
 void RemoveLastUtf8Codepoint(std::string& value)

@@ -49,6 +49,9 @@ class Application
     void ShowHub();
     void EnterMainInterface();
 
+    static constexpr std::string_view kLocalAppsChannelId = "local_apps";
+    static constexpr std::string_view kLocalAppsChannelLabel = "Local Apps";
+
   private:
     enum class InterfaceState
     {
@@ -173,9 +176,6 @@ class Application
     void BeginResizeDrag(int x, int y, bool adjustNavRail);
     void EndResizeDrag();
     void UpdateResizeDrag(int x);
-
-    static constexpr std::string_view kLocalAppsChannelId = "local_apps";
-    static constexpr std::string_view kLocalAppsChannelLabel = "Local Apps";
 
     platform::RendererHost rendererHost_;
     FontResources fonts_;

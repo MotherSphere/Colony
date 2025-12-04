@@ -48,7 +48,8 @@ std::filesystem::path WriteExecutableFile(const std::filesystem::path& path)
 TEST_CASE("DiscoverChannelsFromFilesystem builds entries for folders")
 {
     const auto root = GenerateUniqueTempPath("colony-fs-root");
-    const auto appFolder = root / "Applications" / "alpha-mission";
+    const auto modulesRoot = root / "Modules";
+    const auto appFolder = modulesRoot / "Applications" / "alpha-mission";
     std::filesystem::create_directories(appFolder);
     WriteExecutableFile(appFolder / "launch.sh");
 
@@ -57,7 +58,7 @@ TEST_CASE("DiscoverChannelsFromFilesystem builds entries for folders")
         {"programs", "Programs", "Programs"},
     }};
 
-    const auto channels = colony::DiscoverChannelsFromFilesystem(root, specs);
+    const auto channels = colony::DiscoverChannelsFromFilesystem(modulesRoot, specs);
     REQUIRE(channels.size() == 1);
     CHECK(channels.front().id == "applications");
     CHECK(channels.front().programs.size() == 1);
@@ -69,7 +70,8 @@ TEST_CASE("DiscoverChannelsFromFilesystem builds entries for folders")
 TEST_CASE("Python scripts are marked for interpreter dispatch")
 {
     const auto root = GenerateUniqueTempPath("colony-fs-root");
-    const auto gameFolder = root / "Games" / "nebula_trainer";
+    const auto modulesRoot = root / "Modules";
+    const auto gameFolder = modulesRoot / "Games" / "nebula_trainer";
     std::filesystem::create_directories(gameFolder);
 
     std::ofstream script{gameFolder / "trainer.py"};
@@ -81,9 +83,34 @@ TEST_CASE("Python scripts are marked for interpreter dispatch")
         {"games", "Games", "Games"},
     }};
 
-    const auto channels = colony::DiscoverChannelsFromFilesystem(root, specs);
+    const auto channels = colony::DiscoverChannelsFromFilesystem(modulesRoot, specs);
     REQUIRE(channels.size() == 1);
     REQUIRE(channels.front().programs.size() == 1);
     CHECK(channels.front().programs.front().isPythonScript);
+}
+
+TEST_CASE("Folders outside Nexus Modules are ignored")
+{
+    const auto root = GenerateUniqueTempPath("colony-fs-root");
+    const auto modulesRoot = root / "Modules";
+
+    const auto strayFolder = root / "Applications" / "ghost";
+    const auto managedProgramFolder = modulesRoot / "Programs" / "delta";
+
+    std::filesystem::create_directories(strayFolder);
+    std::filesystem::create_directories(managedProgramFolder);
+    WriteExecutableFile(managedProgramFolder / "run.sh");
+
+    const std::vector<colony::FolderChannelSpec> specs{{
+        {"applications", "Applications", "Applications"},
+        {"programs", "Programs", "Programs"},
+    }};
+
+    const auto channels = colony::DiscoverChannelsFromFilesystem(modulesRoot, specs);
+
+    REQUIRE(channels.size() == 1);
+    CHECK(channels.front().id == "programs");
+    REQUIRE(channels.front().programs.size() == 1);
+    CHECK(channels.front().programs.front().programId == "PROGRAMS_DELTA");
 }
 

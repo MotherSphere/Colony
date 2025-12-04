@@ -50,10 +50,9 @@ std::filesystem::path BundledFontDestination()
     return bundledRoot / kJetBrainsFontSubdirectory / kPrimaryFontRelativePath;
 }
 
-std::filesystem::path ResolveBundledFontInternal(std::string_view relativePath)
+std::filesystem::path ResolveBundledFont(std::string_view relativePath)
 {
     const std::filesystem::path relative{relativePath};
-    const bool hasSubdirectory = relative.has_parent_path() && relative.parent_path() != std::filesystem::path{};
     std::vector<std::filesystem::path> directCandidates;
 
     const auto appendIfUnique = [](std::vector<std::filesystem::path>& container, std::filesystem::path path) {
@@ -75,50 +74,24 @@ std::filesystem::path ResolveBundledFontInternal(std::string_view relativePath)
     {
         basePath = std::filesystem::path{rawBasePath};
         SDL_free(rawBasePath);
-    }
 
-    std::vector<std::filesystem::path> assetRoots;
-    if (!basePath.empty())
-    {
-        appendIfUnique(assetRoots, basePath);
-        appendIfUnique(assetRoots, basePath / kBundledFontDirectory);
-
-        const std::filesystem::path baseParent = basePath.parent_path();
-        if (!baseParent.empty())
-        {
-            appendIfUnique(assetRoots, baseParent);
-            appendIfUnique(assetRoots, baseParent / kBundledFontDirectory);
-        }
+        appendIfUnique(directCandidates, basePath / kBundledFontDirectory / relative);
+        appendIfUnique(directCandidates, basePath / kBundledFontDirectory / kJetBrainsFontSubdirectory / relative);
+        appendIfUnique(directCandidates, basePath / relative);
+        appendIfUnique(directCandidates, basePath / kBundledFontDirectory / relative.filename());
+        appendIfUnique(directCandidates, basePath / "fonts" / relative.filename());
     }
 
     if (!bundledFonts.empty())
     {
-        appendIfUnique(assetRoots, bundledFonts);
-        appendIfUnique(assetRoots, bundledFonts.parent_path());
+        appendIfUnique(directCandidates, bundledFonts / relative);
+        appendIfUnique(directCandidates, bundledFonts / kJetBrainsFontSubdirectory / relative);
+        appendIfUnique(directCandidates, bundledFonts / relative.filename());
+        appendIfUnique(directCandidates, bundledFonts / kJetBrainsFontSubdirectory / relative.filename());
     }
-
-    appendIfUnique(assetRoots, std::filesystem::path{kBundledFontDirectory});
-    appendIfUnique(assetRoots, std::filesystem::path{"fonts"});
-
-    for (const auto& root : assetRoots)
-    {
-        appendIfUnique(directCandidates, root / relative);
-        appendIfUnique(directCandidates, root / kJetBrainsFontSubdirectory / relative);
-
-        if (!hasSubdirectory)
-        {
-            appendIfUnique(directCandidates, root / relative.filename());
-            appendIfUnique(directCandidates, root / kJetBrainsFontSubdirectory / relative.filename());
-        }
-    }
-
     appendIfUnique(directCandidates, relative);
     appendIfUnique(directCandidates, std::filesystem::path{"fonts"} / relative);
-
-    if (!hasSubdirectory)
-    {
-        appendIfUnique(directCandidates, std::filesystem::path{"fonts"} / relative.filename());
-    }
+    appendIfUnique(directCandidates, std::filesystem::path{"fonts"} / relative.filename());
 
     for (const auto& candidate : directCandidates)
     {
@@ -155,11 +128,19 @@ std::filesystem::path ResolveBundledFontInternal(std::string_view relativePath)
     }
 
     std::vector<std::filesystem::path> searchDirectories;
-    for (const auto& root : assetRoots)
+    if (!basePath.empty())
     {
-        appendIfUnique(searchDirectories, root);
-        appendIfUnique(searchDirectories, root / kJetBrainsFontSubdirectory);
+        appendIfUnique(searchDirectories, basePath / kBundledFontDirectory);
+        appendIfUnique(searchDirectories, basePath / kBundledFontDirectory / kJetBrainsFontSubdirectory);
+        appendIfUnique(searchDirectories, basePath / "fonts");
     }
+
+    if (!bundledFonts.empty())
+    {
+        appendIfUnique(searchDirectories, bundledFonts);
+        appendIfUnique(searchDirectories, bundledFonts / kJetBrainsFontSubdirectory);
+    }
+    appendIfUnique(searchDirectories, std::filesystem::path{"fonts"});
 
     for (const auto& directory : searchDirectories)
     {
@@ -286,11 +267,6 @@ bool DownloadToFile(const std::string& url, const std::filesystem::path& destina
 }
 
 } // namespace
-
-std::filesystem::path ResolveBundledFont(std::string_view relativePath)
-{
-    return ResolveBundledFontInternal(relativePath);
-}
 
 std::filesystem::path GetBundledFontPath()
 {

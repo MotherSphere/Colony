@@ -12,6 +12,8 @@ std::filesystem::path GetBundledFontPath();
 
 bool EnsureBundledFontAvailable();
 
+std::filesystem::path ResolveBundledFont(std::string_view relativePath);
+
 struct FontConfiguration
 {
     std::string primaryFontPath;

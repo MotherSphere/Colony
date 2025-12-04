@@ -100,7 +100,9 @@
     {
       "id": "applications",
       "label": "Applications",
-      "programs": []
+      "programs": [
+        "PROGRAMS_CORE_SUITE"
+      ]
     },
     {
       "id": "programs",

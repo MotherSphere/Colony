@@ -49,7 +49,7 @@ const std::array<FolderChannelSpec, 5> kFolderChannelSpecs{{
     {"programs", "Programs", "Programs"},
     {"addons", "Addons", "Addons"},
     {"games", "Games", "Games"},
-    {std::string{kLocalAppsChannelId}, std::string{kLocalAppsChannelLabel}, "LocalApps"},
+    {std::string{Application::kLocalAppsChannelId}, std::string{Application::kLocalAppsChannelLabel}, "LocalApps"},
 }};
 
 std::filesystem::path ResolveContentRootOverride()

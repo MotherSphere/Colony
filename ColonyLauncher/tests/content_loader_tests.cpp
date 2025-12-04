@@ -7,6 +7,7 @@
 #include "app/application.h"
 #undef private
 #include "utils/color.hpp"
+#include "utils/font_manager.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -761,4 +762,44 @@ TEST_CASE("LoadContentFromFile validates channels")
             doctest::Contains("references unknown program id"),
             std::runtime_error);
     }
+}
+
+TEST_CASE("ResolveBundledFont finds nested font beside executable")
+{
+    std::filesystem::path basePath;
+    if (char* rawBasePath = SDL_GetBasePath(); rawBasePath != nullptr)
+    {
+        basePath = std::filesystem::path{rawBasePath};
+        SDL_free(rawBasePath);
+    }
+
+    REQUIRE_MESSAGE(!basePath.empty(), "SDL_GetBasePath should provide an executable directory");
+
+    const std::filesystem::path sourceFont{
+        "assets/fonts/NotoSansArabic/NotoSansArabic-Regular.ttf"};
+    REQUIRE(std::filesystem::exists(sourceFont));
+
+    const std::filesystem::path targetRoot = basePath / "assets/fonts/NotoSansArabic";
+    std::error_code error;
+    std::filesystem::create_directories(targetRoot, error);
+    REQUIRE_FALSE_MESSAGE(error, error.message());
+
+    const std::filesystem::path targetFont = targetRoot / "NotoSansArabic-Regular.ttf";
+    std::filesystem::copy_file(
+        sourceFont,
+        targetFont,
+        std::filesystem::copy_options::overwrite_existing,
+        error);
+    REQUIRE_FALSE_MESSAGE(error, error.message());
+
+    const std::filesystem::path resolved =
+        colony::fonts::ResolveBundledFont("NotoSansArabic/NotoSansArabic-Regular.ttf");
+
+    CHECK(resolved == targetFont);
+    CHECK(std::filesystem::exists(resolved));
+
+    std::filesystem::remove(targetFont, error);
+    std::filesystem::remove(targetRoot, error);
+    std::filesystem::remove(targetRoot.parent_path(), error);
+    std::filesystem::remove(targetRoot.parent_path().parent_path(), error);
 }
